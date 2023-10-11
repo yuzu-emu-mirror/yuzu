@@ -2872,36 +2872,36 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     std::filesystem::path target_directory{};
 
-// Determine target directory for shortcut
-if (target == GameListShortcutTarget::Desktop) {
-    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    target_directory = desktopPath.toUtf8().toStdString();
-    QDir dir(QString::fromStdString(target_directory.generic_string()));
-    if (!dir.exists()) {
-        QMessageBox::critical(
-            this, tr("Create Shortcut"),
-            tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
-                .arg(QString::fromStdString(target_directory.generic_string())),
-            QMessageBox::StandardButton::Ok);
-        return;
+    // Determine target directory for shortcut
+    if (target == GameListShortcutTarget::Desktop) {
+        QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+        target_directory = desktopPath.toUtf8().toStdString();
+        QDir dir(QString::fromStdString(target_directory.generic_string()));
+        if (!dir.exists()) {
+            QMessageBox::critical(
+                this, tr("Create Shortcut"),
+                tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
+                    .arg(QString::fromStdString(target_directory.generic_string())),
+                QMessageBox::StandardButton::Ok);
+            return;
+        }
+    } else if (target == GameListShortcutTarget::Applications) {
+#if defined(__linux__)
+        QString applicationsPath =
+            QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+        target_directory = applicationsPath.toUtf8().toStdString();
+        QDir dir(QString::fromStdString(target_directory.generic_string()));
+        if (!dir.exists()) {
+            QMessageBox::critical(
+                this, tr("Create Shortcut"),
+                tr("Cannot create shortcut in applications menu. Path \"%1\" "
+                   "does not exist and cannot be created.")
+                    .arg(QString::fromStdString(target_directory.generic_string())),
+                QMessageBox::StandardButton::Ok);
+            return;
+        }
+#endif
     }
-} else if (target == GameListShortcutTarget::Applications) {
- #if defined(__linux__)
-    QString applicationsPath =
-        QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-    target_directory = applicationsPath.toUtf8().toStdString();
-    QDir dir(QString::fromStdString(target_directory.generic_string()));
-    if (!dir.exists()) {
-        QMessageBox::critical(
-            this, tr("Create Shortcut"),
-            tr("Cannot create shortcut in applications menu. Path \"%1\" "
-               "does not exist and cannot be created.")
-                .arg(QString::fromStdString(target_directory.generic_string())),
-            QMessageBox::StandardButton::Ok);
-        return;
-    }
- #endif
-}
 
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
