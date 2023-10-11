@@ -2872,22 +2872,22 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     std::filesystem::path target_directory{};
 
-switch (target) {
-   case GameListShortcutTarget::Desktop: {
-       const QString desktopPath =
-           QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-       target_directory = desktopPath.toUtf8().toStdString();
-       break;
-   }
-   case GameListShortcutTarget::Applications: {
-       const QString applicationsPath =
-           QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-       target_directory = applicationsPath.toUtf8().toStdString();
-       break;
-   }
-   default:
-       return;
-   }
+    switch (target) {
+    case GameListShortcutTarget::Desktop: {
+        const QString desktop_Path =
+            QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+        target_directory = desktop_Path.toUtf8().toStdString();
+        break;
+    }
+    case GameListShortcutTarget::Applications: {
+        const QString applications_Path =
+            QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+        target_directory = applications_Path.toUtf8().toStdString();
+        break;
+    }
+    default:
+        return;
+    }
 
    const QDir dir(QString::fromStdString(target_directory.generic_string()));
    if (!dir.exists()) {
