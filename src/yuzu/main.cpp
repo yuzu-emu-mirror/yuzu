@@ -81,6 +81,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QSysInfo>
 #include <QUrl>
 #include <QtConcurrent/QtConcurrent>
+#include <QStandardPaths>
+#include <QDir>
 
 #ifdef HAVE_SDL2
 #include <SDL.h> // For SDL ScreenSaver functions
@@ -2869,38 +2871,37 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 #endif // __linux__
 
     std::filesystem::path target_directory{};
-    // Determine target directory for shortcut
-#if defined(WIN32)
-    const char* home = std::getenv("USERPROFILE");
-#else
-    const char* home = std::getenv("HOME");
-#endif
-    const std::filesystem::path home_path = (home == nullptr ? "~" : home);
-    const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
 
-    if (target == GameListShortcutTarget::Desktop) {
-        target_directory = home_path / "Desktop";
-        if (!Common::FS::IsDir(target_directory)) {
-            QMessageBox::critical(
-                this, tr("Create Shortcut"),
-                tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
-                    .arg(QString::fromStdString(target_directory.generic_string())),
-                QMessageBox::StandardButton::Ok);
-            return;
-        }
-    } else if (target == GameListShortcutTarget::Applications) {
-        target_directory = (xdg_data_home == nullptr ? home_path / ".local/share" : xdg_data_home) /
-                           "applications";
-        if (!Common::FS::CreateDirs(target_directory)) {
-            QMessageBox::critical(
-                this, tr("Create Shortcut"),
-                tr("Cannot create shortcut in applications menu. Path \"%1\" "
-                   "does not exist and cannot be created.")
-                    .arg(QString::fromStdString(target_directory.generic_string())),
-                QMessageBox::StandardButton::Ok);
-            return;
-        }
+// Determine target directory for shortcut
+if (target == GameListShortcutTarget::Desktop) {
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    target_directory = desktopPath.toUtf8().toStdString();
+    QDir dir(QString::fromStdString(target_directory.generic_string()));
+    if (!dir.exists()) {
+        QMessageBox::critical(
+            this, tr("Create Shortcut"),
+            tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
+                .arg(QString::fromStdString(target_directory.generic_string())),
+            QMessageBox::StandardButton::Ok);
+        return;
+     }
+} else if (target == GameListShortcutTarget::Applications) {
+ #if defined(__linux__)
+    QString applicationsPath =
+        QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+    target_directory = applicationsPath.toUtf8().toStdString();
+    QDir dir(QString::fromStdString(target_directory.generic_string()));
+    if (!dir.exists()) {
+        QMessageBox::critical(
+            this, tr("Create Shortcut"),
+            tr("Cannot create shortcut in applications menu. Path \"%1\" "
+               "does not exist and cannot be created.")
+                .arg(QString::fromStdString(target_directory.generic_string())),
+            QMessageBox::StandardButton::Ok);
+        return;
     }
+ #endif
+}
 
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
