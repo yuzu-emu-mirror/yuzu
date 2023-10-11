@@ -2874,15 +2874,15 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     switch (target) {
     case GameListShortcutTarget::Desktop: {
-        const QString desktop_Path =
+        const QString desktop_path =
             QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-        target_directory = desktop_Path.toUtf8().toStdString();
+        target_directory = desktop_path.toUtf8().toStdString();
         break;
     }
     case GameListShortcutTarget::Applications: {
-        const QString applications_Path =
+        const QString applications_path =
             QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-        target_directory = applications_Path.toUtf8().toStdString();
+        target_directory = applications_path.toUtf8().toStdString();
         break;
     }
     default:
