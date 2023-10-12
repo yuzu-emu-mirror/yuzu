@@ -67,6 +67,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #define QT_NO_OPENGL
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -76,13 +77,12 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QPushButton>
 #include <QScreen>
 #include <QShortcut>
+#include <QStandardPaths>
 #include <QStatusBar>
 #include <QString>
 #include <QSysInfo>
 #include <QUrl>
 #include <QtConcurrent/QtConcurrent>
-#include <QStandardPaths>
-#include <QDir>
 
 #ifdef HAVE_SDL2
 #include <SDL.h> // For SDL ScreenSaver functions
@@ -2889,14 +2889,14 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         return;
     }
 
-   const QDir dir(QString::fromStdString(target_directory.generic_string()));
-   if (!dir.exists()) {
-      QMessageBox::critical(this, tr("Create Shortcut"),
-                            tr("Cannot create shortcut. Path \"%1\" does not exist.")
-                                .arg(QString::fromStdString(target_directory.generic_string())),
-                            QMessageBox::StandardButton::Ok);
-      return;
-   }
+    const QDir dir(QString::fromStdString(target_directory.generic_string()));
+    if (!dir.exists()) {
+        QMessageBox::critical(this, tr("Create Shortcut"),
+                              tr("Cannot create shortcut. Path \"%1\" does not exist.")
+                                  .arg(QString::fromStdString(target_directory.generic_string())),
+                              QMessageBox::StandardButton::Ok);
+        return;
+    }
 
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
