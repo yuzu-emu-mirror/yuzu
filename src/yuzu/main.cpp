@@ -2908,8 +2908,12 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
 #if defined(__linux__) || defined(__FreeBSD__)
+    const char* home = std::getenv("HOME");
+    const std::filesystem::path home_path = (home == nullptr ? "~" : home);
+    const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
+
     std::filesystem::path system_icons_path =
-        (xdg_data_home == nullptr ? home_path / ".local/share/" : xdg_data_home) /
+        (xdg_data_home == nullptr ? home_path / ".local/share/" : std::filesystem::path(xdg_data_home)) /
         "icons/hicolor/256x256";
     if (!Common::FS::CreateDirs(system_icons_path)) {
         QMessageBox::critical(
