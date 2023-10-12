@@ -2913,7 +2913,8 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
 
     std::filesystem::path system_icons_path =
-        (xdg_data_home == nullptr ? home_path / ".local/share/" : std::filesystem::path(xdg_data_home)) /
+        (xdg_data_home == nullptr ? home_path / ".local/share/"
+                                  : std::filesystem::path(xdg_data_home)) /
         "icons/hicolor/256x256";
     if (!Common::FS::CreateDirs(system_icons_path)) {
         QMessageBox::critical(
