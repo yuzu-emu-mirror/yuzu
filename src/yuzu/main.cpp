@@ -2882,7 +2882,14 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     case GameListShortcutTarget::Applications: {
         const QString applications_path =
             QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-        target_directory = applications_path.toUtf8().toStdString();
+        if (applications_path.isEmpty()) {
+            const char* home = std::getenv("HOME");
+            if (home != nullptr) {
+                target_directory = std::filesystem::path(home) / ".local/share/applications";
+            }
+        } else {
+            target_directory = applications_path.toUtf8().toStdString();
+        }
         break;
     }
     default:
