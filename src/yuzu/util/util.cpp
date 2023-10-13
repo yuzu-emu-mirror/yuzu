@@ -3,11 +3,19 @@
 
 #include <array>
 #include <cmath>
+#include <fstream>
+#include <QApplication>
 #include <QPainter>
-#include "yuzu/util/util.h"
-#ifdef _WIN32
-#include <windows.h>
+#include <QStandardPaths>
+
 #include "common/fs/file.h"
+#include "common/string_util.h"
+#include "yuzu/game_list.h"
+#include "yuzu/util/util.h"
+
+#ifdef _WIN32
+#include <shlobj.h>
+#include <windows.h>
 #endif
 
 QFont GetMonospaceFont() {
@@ -42,7 +50,27 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color) {
     return circle_pixmap;
 }
 
-bool SaveIconToFile(const std::string_view path, const QImage& image) {
+QString GetTargetPath(GameListShortcutTarget target) {
+    if (target == GameListShortcutTarget::Desktop) {
+        return QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    }
+
+    if (target != GameListShortcutTarget::Applications) {
+        return {};
+    }
+
+    const QString applications_path =
+        QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+
+    if (!applications_path.isEmpty()) {
+        return applications_path;
+    }
+
+    // If Qt fails to find the application path try to use the generic location
+    return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+}
+
+bool SaveIconToFile(const QString file_path, const QImage& image) {
 #if defined(WIN32)
 #pragma pack(push, 2)
     struct IconDir {
@@ -73,7 +101,8 @@ bool SaveIconToFile(const std::string_view path, const QImage& image) {
         .id_count = static_cast<WORD>(scale_sizes.size()),
     };
 
-    Common::FS::IOFile icon_file(path, Common::FS::FileAccessMode::Write,
+    Common::FS::IOFile icon_file(file_path.toUtf8().toStdString(),
+                                 Common::FS::FileAccessMode::Write,
                                  Common::FS::FileType::BinaryFile);
     if (!icon_file.IsOpen()) {
         return false;
@@ -136,6 +165,66 @@ bool SaveIconToFile(const std::string_view path, const QImage& image) {
 
     return true;
 #else
-    return false;
+    return image.save(file_path);
 #endif
+}
+
+bool CreateShortcut(const std::string& shortcut_path, const std::string& title,
+                    const std::string& comment, const std::string& icon_path,
+                    const std::string& command, const std::string& arguments,
+                    const std::string& categories, const std::string& keywords) {
+#if defined(__linux__) || defined(__FreeBSD__)
+    // This desktop file template was writing referencing
+    // https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
+    std::string shortcut_contents{};
+    shortcut_contents.append("[Desktop Entry]\n");
+    shortcut_contents.append("Type=Application\n");
+    shortcut_contents.append("Version=1.0\n");
+    shortcut_contents.append(fmt::format("Name={:s}\n", title));
+    shortcut_contents.append(fmt::format("Comment={:s}\n", comment));
+    shortcut_contents.append(fmt::format("Icon={:s}\n", icon_path));
+    shortcut_contents.append(fmt::format("TryExec={:s}\n", command));
+    shortcut_contents.append(fmt::format("Exec={:s} {:s}\n", command, arguments));
+    shortcut_contents.append(fmt::format("Categories={:s}\n", categories));
+    shortcut_contents.append(fmt::format("Keywords={:s}\n", keywords));
+
+    std::ofstream shortcut_stream(shortcut_path);
+    if (!shortcut_stream.is_open()) {
+        LOG_WARNING(Common, "Failed to create file {:s}", shortcut_path);
+        return false;
+    }
+    shortcut_stream << shortcut_contents;
+    shortcut_stream.close();
+
+    return true;
+#elif defined(WIN32)
+    IShellLinkW* shell_link;
+    auto hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW,
+                                 (void**)&shell_link);
+    if (FAILED(hres)) {
+        return false;
+    }
+    shell_link->SetPath(
+        Common::UTF8ToUTF16W(command).data()); // Path to the object we are referring to
+    shell_link->SetArguments(Common::UTF8ToUTF16W(arguments).data());
+    shell_link->SetDescription(Common::UTF8ToUTF16W(comment).data());
+    shell_link->SetIconLocation(Common::UTF8ToUTF16W(icon_path).data(), 0);
+
+    IPersistFile* persist_file;
+    hres = shell_link->QueryInterface(IID_IPersistFile, (void**)&persist_file);
+    if (FAILED(hres)) {
+        return false;
+    }
+
+    hres = persist_file->Save(Common::UTF8ToUTF16W(shortcut_path).data(), TRUE);
+    if (FAILED(hres)) {
+        return false;
+    }
+
+    persist_file->Release();
+    shell_link->Release();
+
+    return true;
+#endif
+    return false;
 }

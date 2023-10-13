@@ -426,10 +426,6 @@ private:
     void ConfigureFilesystemProvider(const std::string& filepath);
 
     QString GetTasStateDescription() const;
-    bool CreateShortcut(const std::string& shortcut_path, const std::string& title,
-                        const std::string& comment, const std::string& icon_path,
-                        const std::string& command, const std::string& arguments,
-                        const std::string& categories, const std::string& keywords);
 
     std::unique_ptr<Ui::MainWindow> ui;
 
