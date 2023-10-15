@@ -10,7 +10,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
     xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
   <asmv3:application>
     <asmv3:windowsSettings>
-      <!-- Windows 7/8/8.1/10 -->
+      <!-- Windows 7/8/8.1/10/11 -->
       <dpiAware
         xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
         true/pm
