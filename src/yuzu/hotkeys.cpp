@@ -181,6 +181,10 @@ bool ControllerShortcut::IsEnabled() const {
     return is_enabled;
 }
 
+bool ControllerShortcut::IsActive() const {
+    return active;
+}
+
 void ControllerShortcut::ControllerUpdateEvent(Core::HID::ControllerTriggerType type) {
     if (!is_enabled) {
         return;

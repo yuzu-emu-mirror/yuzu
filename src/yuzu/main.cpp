@@ -3449,7 +3449,19 @@ void GMainWindow::OnStopGame() {
 }
 
 bool GMainWindow::ConfirmShutdownGame() {
-    if (UISettings::values.confirm_before_stopping.GetValue() == ConfirmStop::Ask_Always) {
+    static const QString main_window = QStringLiteral("Main Window");
+    static const QString action = QStringLiteral("Stop Emulation");
+    auto* controller = system->HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+    auto* hotkey = hotkey_registry.GetControllerHotkey(main_window, action, controller);
+
+    ConfirmStop confirm_action = UISettings::values.confirm_before_stopping.GetValue();
+
+    // Always ask when using the controller hotkey
+    if (hotkey != nullptr && hotkey->IsActive()) {
+        confirm_action = ConfirmStop::Ask_Always;
+    }
+
+    if (confirm_action == ConfirmStop::Ask_Always) {
         if (system->GetExitLocked()) {
             if (!ConfirmForceLockedExit()) {
                 return false;
@@ -3459,13 +3471,9 @@ bool GMainWindow::ConfirmShutdownGame() {
                 return false;
             }
         }
-    } else {
-        if (UISettings::values.confirm_before_stopping.GetValue() ==
-                ConfirmStop::Ask_Based_On_Game &&
-            system->GetExitLocked()) {
-            if (!ConfirmForceLockedExit()) {
-                return false;
-            }
+    } else if (confirm_action == ConfirmStop::Ask_Based_On_Game && system->GetExitLocked()) {
+        if (!ConfirmForceLockedExit()) {
+            return false;
         }
     }
     return true;

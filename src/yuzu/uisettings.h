@@ -98,7 +98,7 @@ struct Values {
         true,    true};
 
     SwitchableSetting<ConfirmStop> confirm_before_stopping{linkage,
-                                                           ConfirmStop::Ask_Always,
+                                                           ConfirmStop::Ask_Based_On_Game,
                                                            "confirmStop",
                                                            Category::UiGeneral,
                                                            Settings::Specialization::Default,

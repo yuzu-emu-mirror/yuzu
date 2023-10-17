@@ -39,6 +39,7 @@ public:
 
     void SetEnabled(bool enable);
     bool IsEnabled() const;
+    bool IsActive() const;
 
 Q_SIGNALS:
     void Activated();
