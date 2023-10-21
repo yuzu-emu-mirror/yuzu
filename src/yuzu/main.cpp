@@ -3440,35 +3440,31 @@ void GMainWindow::OnStopGame() {
         play_time_manager->Stop();
         // Update game list to show new play time
         game_list->PopulateAsync(UISettings::values.game_dirs);
-        if (OnShutdownBegin()) {
-            OnShutdownBeginDialog();
-        } else {
-            OnEmulationStopped();
-        }
+        OnEmulationStopped();
     }
 }
 
 bool GMainWindow::ConfirmShutdownGame() {
+    bool showDialog = false;
     if (UISettings::values.confirm_before_stopping.GetValue() == ConfirmStop::Ask_Always) {
         if (system->GetExitLocked()) {
-            if (!ConfirmForceLockedExit()) {
-                return false;
-            }
+            showDialog = ConfirmForceLockedExit();
         } else {
-            if (!ConfirmChangeGame()) {
-                return false;
-            }
+            showDialog = ConfirmChangeGame();
         }
     } else {
         if (UISettings::values.confirm_before_stopping.GetValue() ==
                 ConfirmStop::Ask_Based_On_Game &&
             system->GetExitLocked()) {
-            if (!ConfirmForceLockedExit()) {
-                return false;
-            }
+            showDialog = ConfirmForceLockedExit();
         }
     }
-    return true;
+
+    if (showDialog && OnShutdownBegin()) {
+        OnShutdownBeginDialog();
+    }
+
+    return showDialog;
 }
 
 void GMainWindow::OnLoadComplete() {
