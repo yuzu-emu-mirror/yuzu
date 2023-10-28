@@ -11,6 +11,10 @@
 #include "common/common_types.h"
 #include "core/hle/service/nvnflinger/ui/fence.h"
 
+namespace Service::Nvidia::NvCore {
+class NvMap;
+}
+
 namespace Service::android {
 
 struct GraphicBuffer;
@@ -22,10 +26,27 @@ enum class BufferState : u32 {
     Acquired = 3,
 };
 
+class MapHandle final {
+public:
+    MapHandle();
+    ~MapHandle();
+
+    MapHandle(const MapHandle& rhs) = delete;
+    MapHandle& operator=(const MapHandle& rhs);
+
+    void emplace(Service::Nvidia::NvCore::NvMap& nvmap, u32 nvmap_id);
+    void reset();
+
+private:
+    Service::Nvidia::NvCore::NvMap* m_nvmap;
+    u32 m_nvmap_id;
+};
+
 struct BufferSlot final {
-    constexpr BufferSlot() = default;
+    BufferSlot() = default;
 
     std::shared_ptr<GraphicBuffer> graphic_buffer;
+    MapHandle map_handle;
     BufferState buffer_state{BufferState::Free};
     bool request_buffer_called{};
     u64 frame_number{};

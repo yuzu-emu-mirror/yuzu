@@ -24,6 +24,33 @@
 
 namespace Service::android {
 
+MapHandle::MapHandle() : m_nvmap(), m_nvmap_id() {}
+MapHandle::~MapHandle() {
+    this->reset();
+}
+
+MapHandle& MapHandle::operator=(const MapHandle& rhs) {
+    this->reset();
+    m_nvmap = rhs.m_nvmap;
+    m_nvmap_id = rhs.m_nvmap_id;
+    return *this;
+}
+
+void MapHandle::emplace(Service::Nvidia::NvCore::NvMap& nvmap, u32 nvmap_id) {
+    this->reset();
+
+    m_nvmap = std::addressof(nvmap);
+    m_nvmap_id = nvmap_id;
+    m_nvmap->DuplicateHandle(m_nvmap_id, true);
+}
+
+void MapHandle::reset() {
+    if (m_nvmap) {
+        m_nvmap->FreeHandle(m_nvmap_id, true);
+        m_nvmap = nullptr;
+    }
+}
+
 BufferQueueProducer::BufferQueueProducer(Service::KernelHelpers::ServiceContext& service_context_,
                                          std::shared_ptr<BufferQueueCore> buffer_queue_core_,
                                          Service::Nvidia::NvCore::NvMap& nvmap_)
@@ -532,7 +559,7 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
         item.swap_interval = swap_interval;
 
-        nvmap.DuplicateHandle(item.graphic_buffer->BufferId(), true);
+        slots[slot].map_handle.emplace(nvmap, item.graphic_buffer->BufferId());
 
         sticky_transform = sticky_transform_;
 
@@ -745,8 +772,8 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
 
         // HACK: We are not Android. Remove handle for items in queue, and clear queue.
         // Allows synchronous destruction of nvmap handles.
-        for (auto& item : core->queue) {
-            nvmap.FreeHandle(item.graphic_buffer->BufferId(), true);
+        for (auto& slot : slots) {
+            slot.map_handle.reset();
         }
         core->queue.clear();
 

@@ -25,8 +25,7 @@ class IConsumerListener;
 
 class BufferQueueConsumer final {
 public:
-    explicit BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_,
-                                 Service::Nvidia::NvCore::NvMap& nvmap_);
+    explicit BufferQueueConsumer(std::shared_ptr<BufferQueueCore> core_);
     ~BufferQueueConsumer();
 
     Status AcquireBuffer(BufferItem* out_buffer, std::chrono::nanoseconds expected_present);
@@ -37,7 +36,6 @@ public:
 private:
     std::shared_ptr<BufferQueueCore> core;
     BufferQueueDefs::SlotsType& slots;
-    Service::Nvidia::NvCore::NvMap& nvmap;
 };
 
 } // namespace Service::android
