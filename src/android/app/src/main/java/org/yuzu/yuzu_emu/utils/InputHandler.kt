@@ -60,19 +60,11 @@ class InputHandler {
 
     private fun getPlayerNumber(index: Int): Int {
         // TODO: Joycons are handled as different controllers. Find a way to merge them.
-        return when (index) {
-            2 -> NativeLibrary.Player2Device
-            3 -> NativeLibrary.Player3Device
-            4 -> NativeLibrary.Player4Device
-            5 -> NativeLibrary.Player5Device
-            6 -> NativeLibrary.Player6Device
-            7 -> NativeLibrary.Player7Device
-            8 -> NativeLibrary.Player8Device
-            else -> if (NativeLibrary.isHandheldOnly()) {
-                NativeLibrary.ConsoleDevice
-            } else {
-                NativeLibrary.Player1Device
-            }
+        // Since we don't have controller remapping currently, only choose from one of the primary controllers
+        return if (NativeLibrary.isHandheldOnly()) {
+            NativeLibrary.ConsoleDevice
+        } else {
+            NativeLibrary.Player1Device
         }
     }
 
