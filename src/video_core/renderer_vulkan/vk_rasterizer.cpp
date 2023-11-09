@@ -174,7 +174,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache(*this, cpu_memory_, buffer_cache_runtime),
       query_cache_runtime(this, cpu_memory_, buffer_cache, device, memory_allocator, scheduler,
                           staging_pool, compute_pass_descriptor_queue, descriptor_pool),
-      query_cache(gpu, *this, cpu_memory_, query_cache_runtime),
+      query_cache(gpu, *this, cpu_memory_, query_cache_runtime, device.HasBrokenOcclusionQuery()),
       pipeline_cache(*this, device, scheduler, descriptor_pool, guest_descriptor_queue,
                      render_pass_cache, buffer_cache, texture_cache, gpu.ShaderNotify()),
       accelerate_dma(buffer_cache, texture_cache, scheduler),

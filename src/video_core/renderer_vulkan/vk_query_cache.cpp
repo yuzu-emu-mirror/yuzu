@@ -116,8 +116,9 @@ public:
                              Scheduler& scheduler_, const MemoryAllocator& memory_allocator_,
                              ComputePassDescriptorQueue& compute_pass_descriptor_queue,
                              DescriptorPool& descriptor_pool)
-        : BaseStreamer(id_), runtime{runtime_}, rasterizer{rasterizer_}, device{device_},
-          scheduler{scheduler_}, memory_allocator{memory_allocator_} {
+        : BaseStreamer(id_), runtime{runtime_},
+          rasterizer{rasterizer_}, device{device_}, scheduler{scheduler_},
+          memory_allocator{memory_allocator_}, is_broken{device.HasBrokenOcclusionQuery()} {
         current_bank = nullptr;
         current_query = nullptr;
         ammend_value = 0;
@@ -150,12 +151,14 @@ public:
             return;
         }
         ReserveHostQuery();
-        scheduler.Record([query_pool = current_query_pool,
-                          query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
-            const bool use_precise = Settings::IsGPULevelHigh();
-            cmdbuf.BeginQuery(query_pool, static_cast<u32>(query_index),
-                              use_precise ? VK_QUERY_CONTROL_PRECISE_BIT : 0);
-        });
+        if (!is_broken) {
+            scheduler.Record([query_pool = current_query_pool,
+                              query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
+                const bool use_precise = Settings::IsGPULevelHigh();
+                cmdbuf.BeginQuery(query_pool, static_cast<u32>(query_index),
+                                  use_precise ? VK_QUERY_CONTROL_PRECISE_BIT : 0);
+            });
+        }
         has_started = true;
     }
 
@@ -163,10 +166,12 @@ public:
         if (!has_started) {
             return;
         }
-        scheduler.Record([query_pool = current_query_pool,
-                          query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
-            cmdbuf.EndQuery(query_pool, static_cast<u32>(query_index));
-        });
+        if (!is_broken) {
+            scheduler.Record([query_pool = current_query_pool,
+                              query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
+                cmdbuf.EndQuery(query_pool, static_cast<u32>(query_index));
+            });
+        }
         has_started = false;
     }
 
@@ -573,6 +578,7 @@ private:
     bool accumulation_since_last_sync{};
     VideoCommon::HostQueryBase* current_query;
     bool has_started{};
+    bool is_broken{};
     std::mutex flush_guard;
 
     std::unique_ptr<QueriesPrefixScanPass> queries_prefix_scan_pass;

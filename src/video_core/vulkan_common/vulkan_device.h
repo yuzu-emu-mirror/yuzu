@@ -599,6 +599,10 @@ public:
         return has_broken_cube_compatibility;
     }
 
+    bool HasBrokenOcclusionQuery() const {
+        return has_broken_occlusion_query;
+    }
+
     /// Returns the vendor name reported from Vulkan.
     std::string_view GetVendorName() const {
         return properties.driver.driverName;
@@ -794,6 +798,7 @@ private:
     bool is_non_gpu{};                         ///< Is SoftwareRasterizer, FPGA, non-GPU device.
     bool has_broken_compute{};                 ///< Compute shaders can cause crashes
     bool has_broken_cube_compatibility{};      ///< Has broken cube compatibility bit
+    bool has_broken_occlusion_query{};         ///< Has broken occlusion queries
     bool has_renderdoc{};                      ///< Has RenderDoc attached
     bool has_nsight_graphics{};                ///< Has Nsight Graphics attached
     bool supports_d24_depth{};                 ///< Supports D24 depth buffers.

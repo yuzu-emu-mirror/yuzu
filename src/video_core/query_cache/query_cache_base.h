@@ -53,7 +53,8 @@ public:
     };
 
     explicit QueryCacheBase(Tegra::GPU& gpu, VideoCore::RasterizerInterface& rasterizer_,
-                            Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_);
+                            Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_,
+                            bool has_broken_occlusion_query_);
 
     ~QueryCacheBase();
 

@@ -513,6 +513,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 #endif
     }
 
+    if (is_turnip) {
+        LOG_WARNING(Render_Vulkan, "Turnip drivers have broken occlusion queries");
+        has_broken_occlusion_query = true;
+    }
+
     if (is_arm) {
         must_emulate_scaled_formats = true;
 

@@ -113,9 +113,10 @@ struct QueryCacheBase<Traits>::QueryCacheBaseImpl {
     using RuntimeType = typename Traits::RuntimeType;
 
     QueryCacheBaseImpl(QueryCacheBase<Traits>* owner_, VideoCore::RasterizerInterface& rasterizer_,
-                       Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_, Tegra::GPU& gpu_)
-        : owner{owner_}, rasterizer{rasterizer_},
-          cpu_memory{cpu_memory_}, runtime{runtime_}, gpu{gpu_} {
+                       Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_, Tegra::GPU& gpu_,
+                       bool has_broken_occlusion_query_)
+        : owner{owner_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_}, runtime{runtime_},
+          gpu{gpu_}, has_broken_occlusion_query{has_broken_occlusion_query_} {
         streamer_mask = 0;
         for (size_t i = 0; i < static_cast<size_t>(QueryType::MaxQueryTypes); i++) {
             streamers[i] = runtime.GetStreamerInterface(static_cast<QueryType>(i));
@@ -163,6 +164,7 @@ struct QueryCacheBase<Traits>::QueryCacheBaseImpl {
     Tegra::GPU& gpu;
     std::array<StreamerInterface*, static_cast<size_t>(QueryType::MaxQueryTypes)> streamers;
     u64 streamer_mask;
+    bool has_broken_occlusion_query;
     std::mutex flush_guard;
     std::deque<u64> flushes_pending;
     std::vector<QueryCacheBase<Traits>::QueryLocation> pending_unregister;
@@ -171,10 +173,11 @@ struct QueryCacheBase<Traits>::QueryCacheBaseImpl {
 template <typename Traits>
 QueryCacheBase<Traits>::QueryCacheBase(Tegra::GPU& gpu_,
                                        VideoCore::RasterizerInterface& rasterizer_,
-                                       Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_)
+                                       Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_,
+                                       bool has_broken_occlusion_query_)
     : cached_queries{} {
     impl = std::make_unique<QueryCacheBase<Traits>::QueryCacheBaseImpl>(
-        this, rasterizer_, cpu_memory_, runtime_, gpu_);
+        this, rasterizer_, cpu_memory_, runtime_, gpu_, has_broken_occlusion_query_);
 }
 
 template <typename Traits>
@@ -223,6 +226,19 @@ void QueryCacheBase<Traits>::BindToChannel(s32 id) {
     impl->runtime.Bind3DEngine(maxwell3d);
 }
 
+constexpr u64 OcclusionQueryAdjustValue(bool has_broken_occlusion_query, QueryType counter_type) {
+    if (!has_broken_occlusion_query) {
+        return 0;
+    }
+    switch (counter_type) {
+    case QueryType::ZPassPixelCount:
+    case QueryType::ZPassPixelCount64:
+        return 120;
+    default:
+        return 0;
+    }
+}
+
 template <typename Traits>
 void QueryCacheBase<Traits>::CounterReport(GPUVAddr addr, QueryType counter_type,
                                            QueryPropertiesFlags flags, u32 payload, u32 subreport) {
@@ -256,9 +272,10 @@ void QueryCacheBase<Traits>::CounterReport(GPUVAddr addr, QueryType counter_type
     u8* pointer = impl->cpu_memory.GetPointer(cpu_addr);
     u8* pointer_timestamp = impl->cpu_memory.GetPointer(cpu_addr + 8);
     bool is_synced = !Settings::IsGPULevelHigh() && is_fence;
+    u64 adjustment = OcclusionQueryAdjustValue(impl->has_broken_occlusion_query, counter_type);
 
     std::function<void()> operation([this, is_synced, streamer, query_base = query, query_location,
-                                     pointer, pointer_timestamp] {
+                                     pointer, pointer_timestamp, adjustment] {
         if (True(query_base->flags & QueryFlagBits::IsInvalidated)) {
             if (!is_synced) [[likely]] {
                 impl->pending_unregister.push_back(query_location);
@@ -269,7 +286,7 @@ void QueryCacheBase<Traits>::CounterReport(GPUVAddr addr, QueryType counter_type
             UNREACHABLE();
             return;
         }
-        query_base->value += streamer->GetAmmendValue();
+        query_base->value += streamer->GetAmmendValue() + adjustment;
         streamer->SetAccumulationValue(query_base->value);
         if (True(query_base->flags & QueryFlagBits::HasTimestamp)) {
             u64 timestamp = impl->gpu.GetTicks();
