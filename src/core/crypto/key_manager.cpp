@@ -28,8 +28,8 @@
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/registered_cache.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/loader.h"
+#include "service/filesystem/filesystem.h"
 
 namespace Core::Crypto {
 namespace {

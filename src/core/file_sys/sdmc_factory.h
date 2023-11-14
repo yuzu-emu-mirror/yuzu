@@ -5,7 +5,7 @@
 
 #include <memory>
 #include "core/file_sys/vfs_types.h"
-#include "core/hle/result.h"
+#include "core/result.h"
 
 namespace FileSys {
 

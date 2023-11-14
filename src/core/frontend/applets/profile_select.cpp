@@ -3,7 +3,7 @@
 
 #include "common/settings.h"
 #include "core/frontend/applets/profile_select.h"
-#include "core/hle/service/acc/profile_manager.h"
+#include "service/acc/profile_manager.h"
 
 namespace Core::Frontend {
 

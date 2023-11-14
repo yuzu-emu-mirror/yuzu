@@ -8,4 +8,4 @@
 
 #include "common/common_precompiled_headers.h"
 
-#include "core/hle/kernel/k_process.h"
+#include "kernel/k_process.h"

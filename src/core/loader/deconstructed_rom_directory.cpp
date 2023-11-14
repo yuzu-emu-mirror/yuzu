@@ -8,11 +8,11 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/romfs_factory.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nso.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "service/filesystem/filesystem.h"
 
 namespace Loader {
 

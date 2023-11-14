@@ -13,12 +13,12 @@
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/file_sys/patch_manager.h"
-#include "core/hle/kernel/code_set.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_thread.h"
 #include "core/loader/nso.h"
 #include "core/memory.h"
+#include "kernel/code_set.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "kernel/k_thread.h"
 
 namespace Loader {
 namespace {

@@ -16,7 +16,7 @@
 #include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/hle/service/acc/profile_manager.h"
+#include "service/acc/profile_manager.h"
 #include "ui_configure_profile_manager.h"
 #include "yuzu/configuration/configure_profile_manager.h"
 #include "yuzu/util/limitable_input_dialog.h"

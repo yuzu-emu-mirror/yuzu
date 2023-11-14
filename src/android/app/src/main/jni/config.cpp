@@ -12,10 +12,10 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "input_common/main.h"
 #include "jni/config.h"
 #include "jni/default_ini.h"
+#include "service/acc/profile_manager.h"
 #include "uisettings.h"
 
 namespace FS = Common::FS;

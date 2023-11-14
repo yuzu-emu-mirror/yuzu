@@ -15,9 +15,9 @@
 #include "core/debugger/debugger.h"
 #include "core/debugger/debugger_interface.h"
 #include "core/debugger/gdbstub.h"
-#include "core/hle/kernel/global_scheduler_context.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_scheduler.h"
+#include "kernel/global_scheduler_context.h"
+#include "kernel/k_process.h"
+#include "kernel/k_scheduler.h"
 
 template <typename Readable, typename Buffer, typename Callback>
 static void AsyncReceiveInto(Readable& r, Buffer& buffer, Callback&& c) {

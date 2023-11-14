@@ -10,7 +10,6 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/kip.h"
 #include "core/loader/nax.h"
@@ -19,6 +18,7 @@
 #include "core/loader/nso.h"
 #include "core/loader/nsp.h"
 #include "core/loader/xci.h"
+#include "kernel/k_process.h"
 
 namespace Loader {
 

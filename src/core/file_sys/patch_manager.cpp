@@ -24,12 +24,12 @@
 #include "core/file_sys/vfs_cached.h"
 #include "core/file_sys/vfs_layered.h"
 #include "core/file_sys/vfs_vector.h"
-#include "core/hle/service/filesystem/filesystem.h"
-#include "core/hle/service/ns/language.h"
-#include "core/hle/service/set/set.h"
 #include "core/loader/loader.h"
 #include "core/loader/nso.h"
 #include "core/memory/cheat_engine.h"
+#include "service/filesystem/filesystem.h"
+#include "service/ns/language.h"
+#include "service/set/set.h"
 
 namespace FileSys {
 namespace {

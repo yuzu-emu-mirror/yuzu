@@ -9,16 +9,16 @@
 
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
-#include "core/hle/kernel/k_class_token.h"
-#include "core/hle/kernel/k_handle_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_scheduler.h"
-#include "core/hle/kernel/k_synchronization_object.h"
-#include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/svc_common.h"
-#include "core/hle/kernel/svc_types.h"
 #include "core/memory.h"
+#include "kernel/k_class_token.h"
+#include "kernel/k_handle_table.h"
+#include "kernel/k_process.h"
+#include "kernel/k_readable_event.h"
+#include "kernel/k_scheduler.h"
+#include "kernel/k_synchronization_object.h"
+#include "kernel/k_thread.h"
+#include "kernel/svc_common.h"
+#include "kernel/svc_types.h"
 
 namespace {
 

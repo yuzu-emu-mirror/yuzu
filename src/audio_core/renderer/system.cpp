@@ -31,9 +31,9 @@
 #include "common/alignment.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/kernel/k_event.h"
-#include "core/hle/kernel/k_transfer_memory.h"
 #include "core/memory.h"
+#include "kernel/k_event.h"
+#include "kernel/k_transfer_memory.h"
 
 namespace AudioCore::Renderer {
 

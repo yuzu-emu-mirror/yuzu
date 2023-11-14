@@ -7,13 +7,13 @@
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/service/hid/controllers/npad.h"
-#include "core/hle/service/hid/hid.h"
-#include "core/hle/service/sm/sm.h"
 #include "core/memory.h"
 #include "core/memory/cheat_engine.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "service/hid/controllers/npad.h"
+#include "service/hid/hid.h"
+#include "service/sm/sm.h"
 
 namespace Core::Memory {
 namespace {

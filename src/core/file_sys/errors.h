@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "core/hle/result.h"
+#include "core/result.h"
 
 namespace FileSys {
 

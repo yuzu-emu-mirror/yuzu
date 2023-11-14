@@ -16,9 +16,9 @@
 #include "core/device_memory.h"
 #include "core/gpu_dirty_memory_manager.h"
 #include "core/hardware_properties.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/memory.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
 #include "video_core/gpu.h"
 #include "video_core/rasterizer_download_area.h"
 

@@ -9,7 +9,7 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/kernel/k_event.h"
+#include "kernel/k_event.h"
 
 namespace AudioCore::AudioOut {
 

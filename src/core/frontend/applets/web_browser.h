@@ -6,7 +6,7 @@
 #include <functional>
 
 #include "core/frontend/applets/applet.h"
-#include "core/hle/service/am/applets/applet_web_browser_types.h"
+#include "service/am/applets/applet_web_browser_types.h"
 
 namespace Core::Frontend {
 

@@ -3,7 +3,7 @@
 
 #include "audio_core/audio_out_manager.h"
 #include "audio_core/out/audio_out.h"
-#include "core/hle/kernel/k_event.h"
+#include "kernel/k_event.h"
 
 namespace AudioCore::AudioOut {
 

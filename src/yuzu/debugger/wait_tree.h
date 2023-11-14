@@ -11,8 +11,8 @@
 #include <QTreeView>
 
 #include "common/common_types.h"
-#include "core/hle/kernel/k_auto_object.h"
-#include "core/hle/kernel/svc_common.h"
+#include "kernel/k_auto_object.h"
+#include "kernel/svc_common.h"
 
 class EmuThread;
 

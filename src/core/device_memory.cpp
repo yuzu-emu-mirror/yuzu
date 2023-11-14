@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/device_memory.h"
-#include "hle/kernel/board/nintendo/nx/k_system_control.h"
+#include "kernel/board/nintendo/nx/k_system_control.h"
 
 namespace Core {
 

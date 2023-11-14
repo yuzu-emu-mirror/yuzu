@@ -6,7 +6,7 @@
 #include <span>
 
 #include "common/common_types.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace AudioCore::Renderer {
 class BehaviorInfo;

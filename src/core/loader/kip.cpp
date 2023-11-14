@@ -4,11 +4,11 @@
 #include <cstring>
 #include "core/file_sys/kernel_executable.h"
 #include "core/file_sys/program_metadata.h"
-#include "core/hle/kernel/code_set.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/loader/kip.h"
 #include "core/memory.h"
+#include "kernel/code_set.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
 
 namespace Loader {
 

@@ -4,9 +4,9 @@
 #include "core/core.h"
 #include "core/hid/hid_types.h"
 #include "core/hid/input_interpreter.h"
-#include "core/hle/service/hid/controllers/npad.h"
-#include "core/hle/service/hid/hid.h"
-#include "core/hle/service/sm/sm.h"
+#include "service/hid/controllers/npad.h"
+#include "service/hid/hid.h"
+#include "service/sm/sm.h"
 
 InputInterpreter::InputInterpreter(Core::System& system)
     : npad{system.ServiceManager()

@@ -9,7 +9,7 @@
 #include "audio_core/adsp/apps/opus/opus_decoder.h"
 #include "audio_core/adsp/apps/opus/shared_memory.h"
 #include "audio_core/adsp/mailbox.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace AudioCore::OpusDecoder {
 class HardwareOpus {

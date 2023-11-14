@@ -4,9 +4,9 @@
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/xts_archive.h"
-#include "core/hle/kernel/k_process.h"
 #include "core/loader/nax.h"
 #include "core/loader/nca.h"
+#include "kernel/k_process.h"
 
 namespace Loader {
 namespace {
