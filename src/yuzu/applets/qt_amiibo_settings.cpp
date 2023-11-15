@@ -8,10 +8,10 @@
 
 #include "common/assert.h"
 #include "common/string_util.h"
-#include "core/hle/service/nfc/common/device.h"
-#include "core/hle/service/nfp/nfp_result.h"
 #include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/main.h"
+#include "service/nfc/common/device.h"
+#include "service/nfp/nfp_result.h"
 #include "ui_qt_amiibo_settings.h"
 #ifdef ENABLE_WEB_SERVICE
 #include "web_service/web_backend.h"

@@ -10,11 +10,11 @@
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nca.h"
+#include "kernel/k_process.h"
 #include "mbedtls/sha256.h"
+#include "service/filesystem/filesystem.h"
 
 namespace Loader {
 

@@ -7,7 +7,7 @@
 #include <QDialog>
 #include <QList>
 #include "core/frontend/applets/profile_select.h"
-#include "core/hle/service/acc/profile_manager.h"
+#include "service/acc/profile_manager.h"
 
 class ControllerNavigation;
 class GMainWindow;

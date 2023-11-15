@@ -17,12 +17,12 @@
 #include "common/settings.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/result.h"
-#include "core/hle/service/hle_ipc.h"
 #include "core/memory.h"
 #include "core/reporter.h"
+#include "core/result.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "service/hle_ipc.h"
 
 namespace {
 

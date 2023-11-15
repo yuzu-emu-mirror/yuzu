@@ -6,7 +6,7 @@
 #include "audio_core/opus/hardware_opus.h"
 #include "audio_core/opus/parameters.h"
 #include "common/common_types.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace Core {
 class System;

@@ -5,10 +5,10 @@
 #include "common/detached_tasks.h"
 #include "core/core.h"
 #include "core/file_sys/registered_cache.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "core/perf_stats.h"
 #include "jni/applets/software_keyboard.h"
 #include "jni/emu_window/emu_window.h"
+#include "service/acc/profile_manager.h"
 #include "video_core/rasterizer_interface.h"
 
 #pragma once

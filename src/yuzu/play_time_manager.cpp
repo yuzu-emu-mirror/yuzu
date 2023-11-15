@@ -8,7 +8,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "common/thread.h"
-#include "core/hle/service/acc/profile_manager.h"
+#include "service/acc/profile_manager.h"
 #include "yuzu/play_time_manager.h"
 
 namespace PlayTime {

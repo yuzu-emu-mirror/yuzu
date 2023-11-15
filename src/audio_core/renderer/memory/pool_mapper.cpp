@@ -3,8 +3,8 @@
 
 #include "audio_core/renderer/memory/address_info.h"
 #include "audio_core/renderer/memory/pool_mapper.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/svc.h"
+#include "kernel/k_process.h"
+#include "kernel/svc.h"
 
 namespace AudioCore::Renderer {
 

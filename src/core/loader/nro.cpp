@@ -13,14 +13,14 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/vfs_offset.h"
-#include "core/hle/kernel/code_set.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_thread.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/nro.h"
 #include "core/loader/nso.h"
 #include "core/memory.h"
+#include "kernel/code_set.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "kernel/k_thread.h"
+#include "service/filesystem/filesystem.h"
 
 namespace Loader {
 

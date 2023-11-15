@@ -11,7 +11,7 @@
 
 #include "audio_core/common/common.h"
 #include "audio_core/renderer/system_manager.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace Core {
 class System;

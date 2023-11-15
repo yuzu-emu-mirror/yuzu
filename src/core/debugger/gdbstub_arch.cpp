@@ -3,7 +3,7 @@
 
 #include "common/hex_util.h"
 #include "core/debugger/gdbstub_arch.h"
-#include "core/hle/kernel/k_thread.h"
+#include "kernel/k_thread.h"
 
 namespace Core {
 

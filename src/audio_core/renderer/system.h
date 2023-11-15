@@ -18,7 +18,7 @@
 #include "audio_core/renderer/upsampler/upsampler_manager.h"
 #include "audio_core/renderer/voice/voice_context.h"
 #include "common/thread.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace Core {
 namespace Memory {

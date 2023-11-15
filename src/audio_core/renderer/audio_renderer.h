@@ -6,7 +6,7 @@
 #include <span>
 
 #include "audio_core/renderer/system.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace Core {
 class System;

@@ -8,11 +8,11 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
-#include "core/hle/kernel/k_interrupt_manager.h"
-#include "core/hle/kernel/k_scheduler.h"
-#include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/physical_core.h"
+#include "kernel/k_interrupt_manager.h"
+#include "kernel/k_scheduler.h"
+#include "kernel/k_thread.h"
+#include "kernel/kernel.h"
+#include "kernel/physical_core.h"
 #include "video_core/gpu.h"
 
 namespace Core {

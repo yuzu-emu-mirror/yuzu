@@ -19,11 +19,11 @@
 #include "core/core.h"
 #include "core/debugger/gdbstub.h"
 #include "core/debugger/gdbstub_arch.h"
-#include "core/hle/kernel/k_page_table.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_thread.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
+#include "kernel/k_page_table.h"
+#include "kernel/k_process.h"
+#include "kernel/k_thread.h"
 
 namespace Core {
 

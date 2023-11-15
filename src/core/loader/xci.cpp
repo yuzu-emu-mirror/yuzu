@@ -11,10 +11,10 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/submission_package.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/nca.h"
 #include "core/loader/xci.h"
+#include "kernel/k_process.h"
+#include "service/filesystem/filesystem.h"
 
 namespace Loader {
 

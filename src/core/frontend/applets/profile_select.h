@@ -8,7 +8,7 @@
 
 #include "common/uuid.h"
 #include "core/frontend/applets/applet.h"
-#include "core/hle/service/am/applets/applet_profile_select.h"
+#include "service/am/applets/applet_profile_select.h"
 
 namespace Core::Frontend {
 

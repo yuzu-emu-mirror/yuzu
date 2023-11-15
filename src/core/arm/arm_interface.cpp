@@ -12,11 +12,11 @@
 #include "core/arm/symbols.h"
 #include "core/core.h"
 #include "core/debugger/debugger.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_thread.h"
-#include "core/hle/kernel/svc.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
+#include "kernel/k_process.h"
+#include "kernel/k_thread.h"
+#include "kernel/svc.h"
 
 namespace Core {
 

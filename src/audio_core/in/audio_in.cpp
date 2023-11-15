@@ -3,7 +3,7 @@
 
 #include "audio_core/audio_in_manager.h"
 #include "audio_core/in/audio_in.h"
-#include "core/hle/kernel/k_event.h"
+#include "kernel/k_event.h"
 
 namespace AudioCore::AudioIn {
 

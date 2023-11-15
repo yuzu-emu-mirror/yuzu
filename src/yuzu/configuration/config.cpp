@@ -11,10 +11,10 @@
 #include "common/settings_common.h"
 #include "common/settings_enums.h"
 #include "core/core.h"
-#include "core/hle/service/acc/profile_manager.h"
-#include "core/hle/service/hid/controllers/npad.h"
 #include "input_common/main.h"
 #include "network/network.h"
+#include "service/acc/profile_manager.h"
+#include "service/hid/controllers/npad.h"
 #include "yuzu/configuration/config.h"
 
 namespace FS = Common::FS;

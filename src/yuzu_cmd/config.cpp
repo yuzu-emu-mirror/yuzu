@@ -11,8 +11,8 @@
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "input_common/main.h"
+#include "service/acc/profile_manager.h"
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/default_ini.h"
 

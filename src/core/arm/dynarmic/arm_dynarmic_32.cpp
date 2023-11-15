@@ -17,9 +17,9 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/debugger/debugger.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/svc.h"
 #include "core/memory.h"
+#include "kernel/k_process.h"
+#include "kernel/svc.h"
 
 namespace Core {
 

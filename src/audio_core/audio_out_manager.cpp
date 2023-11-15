@@ -6,8 +6,8 @@
 #include "audio_core/audio_out_manager.h"
 #include "audio_core/out/audio_out.h"
 #include "core/core.h"
-#include "core/hle/kernel/k_event.h"
-#include "core/hle/service/audio/errors.h"
+#include "kernel/k_event.h"
+#include "service/audio/errors.h"
 
 namespace AudioCore::AudioOut {
 

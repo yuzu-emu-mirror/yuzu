@@ -8,7 +8,7 @@
 #include "audio_core/renderer/behavior/behavior_info.h"
 #include "audio_core/renderer/memory/memory_pool_info.h"
 #include "common/common_types.h"
-#include "core/hle/service/audio/errors.h"
+#include "service/audio/errors.h"
 
 namespace AudioCore::Renderer {
 class AddressInfo;

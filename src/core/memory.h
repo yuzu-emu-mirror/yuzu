@@ -12,7 +12,7 @@
 
 #include "common/scratch_buffer.h"
 #include "common/typed_address.h"
-#include "core/hle/result.h"
+#include "core/result.h"
 
 namespace Common {
 struct PageTable;
