@@ -316,8 +316,10 @@ void EmulationSession::ShutdownEmulation() {
 
     m_is_running = false;
 
-    // Unload user input.
-    m_system.HIDCore().UnloadInputDevices();
+    SCOPE_EXIT({
+        // Unload user input.
+        m_system.HIDCore().UnloadInputDevices();
+    });
 
     // Shutdown the main emulated process
     if (m_load_result == Core::SystemResultStatus::Success) {
