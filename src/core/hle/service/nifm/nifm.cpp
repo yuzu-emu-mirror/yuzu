@@ -236,19 +236,8 @@ private:
     void GetResult(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "(STUBBED) called");
 
-        const auto result = [this] {
-            const auto has_connection = Network::GetHostIPv4Address().has_value();
-            switch (state) {
-            case RequestState::NotSubmitted:
-                return has_connection ? ResultSuccess : ResultNetworkCommunicationDisabled;
-            case RequestState::Accepted:
-            default:
-                return ResultSuccess;
-            }
-        }();
-
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(result);
+        rb.Push(ResultSuccess);
     }
 
     void GetSystemEventReadableHandles(HLERequestContext& ctx) {
