@@ -221,10 +221,6 @@ private:
     void Submit(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "(STUBBED) called");
 
-        if (state == RequestState::NotSubmitted) {
-            UpdateState(RequestState::OnHold);
-        }
-
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -245,13 +241,6 @@ private:
             switch (state) {
             case RequestState::NotSubmitted:
                 return has_connection ? ResultSuccess : ResultNetworkCommunicationDisabled;
-            case RequestState::OnHold:
-                if (has_connection) {
-                    UpdateState(RequestState::Accepted);
-                } else {
-                    UpdateState(RequestState::Invalid);
-                }
-                return ResultPendingConnection;
             case RequestState::Accepted:
             default:
                 return ResultSuccess;
