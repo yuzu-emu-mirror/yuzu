@@ -581,10 +581,10 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
 
     auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
     const u32 num_storage_buffers{Shader::NumDescriptors(program.info.storage_buffers_descriptors)};
-    Shader::RuntimeInfo info{};
-    info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
-    info.max_num_cbufs = device.GetMaxUniformBuffers(program.stage);
-
+    const Shader::RuntimeInfo info{
+        .glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks(),
+        .max_num_cbufs = device.GetMaxUniformBuffers(program.stage),
+    };
     std::string code{};
     std::vector<u32> code_spirv;
     switch (device.GetShaderBackend()) {
