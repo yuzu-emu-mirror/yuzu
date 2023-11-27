@@ -62,8 +62,8 @@ struct TransformFeedbackVarying {
 
 struct RuntimeInfo {
     std::array<AttributeType, 32> generic_input_types{};
-    VaryingState previous_stage_stores;
-    std::map<IR::Attribute, IR::Attribute> previous_stage_legacy_stores_mapping;
+    VaryingState previous_stage_stores{};
+    std::map<IR::Attribute, IR::Attribute> previous_stage_legacy_stores_mapping{};
 
     bool convert_depth_mode{};
     bool force_early_z{};
@@ -74,8 +74,8 @@ struct RuntimeInfo {
 
     InputTopology input_topology{};
 
-    std::optional<float> fixed_state_point_size;
-    std::optional<CompareFunction> alpha_test_func;
+    std::optional<float> fixed_state_point_size{};
+    std::optional<CompareFunction> alpha_test_func{};
     float alpha_test_reference{};
 
     /// Static Y negate value
