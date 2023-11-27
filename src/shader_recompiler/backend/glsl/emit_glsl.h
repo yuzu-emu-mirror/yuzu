@@ -15,9 +15,10 @@ namespace Shader::Backend::GLSL {
 [[nodiscard]] std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info,
                                    IR::Program& program, Bindings& bindings);
 
-[[nodiscard]] inline std::string EmitGLSL(const Profile& profile, IR::Program& program) {
+[[nodiscard]] inline std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info,
+                                          IR::Program& program) {
     Bindings binding;
-    return EmitGLSL(profile, {}, program, binding);
+    return EmitGLSL(profile, runtime_info, program, binding);
 }
 
 } // namespace Shader::Backend::GLSL

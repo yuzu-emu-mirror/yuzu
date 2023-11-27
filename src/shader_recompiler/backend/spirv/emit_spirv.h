@@ -38,4 +38,10 @@ constexpr u32 RENDERAREA_LAYOUT_OFFSET = offsetof(RenderAreaLayout, render_area)
     return EmitSPIRV(profile, {}, program, binding);
 }
 
+[[nodiscard]] inline std::vector<u32> EmitSPIRV(const Profile& profile,
+                                                const RuntimeInfo& runtime_info,
+                                                IR::Program& program) {
+    Bindings binding;
+    return EmitSPIRV(profile, runtime_info, program, binding);
+}
 } // namespace Shader::Backend::SPIRV

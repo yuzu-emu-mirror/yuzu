@@ -278,6 +278,12 @@ void DefineConstBuffers(EmitContext& ctx, const Info& info, Id UniformDefinition
     ctx.uniform_types.*member_type = uniform_type;
 
     for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+        if (desc.index + desc.count > ctx.runtime_info.max_num_cbufs) {
+            LOG_WARNING(Shader_SPIRV, "Constant buffer binding index {} exceeds device limit of {}",
+                        desc.index, ctx.runtime_info.max_num_cbufs);
+            binding += desc.count;
+            continue;
+        }
         const Id id{ctx.AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
         ctx.Decorate(id, spv::Decoration::Binding, binding);
         ctx.Decorate(id, spv::Decoration::DescriptorSet, 0U);

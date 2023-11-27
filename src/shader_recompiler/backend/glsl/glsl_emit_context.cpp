@@ -430,6 +430,12 @@ void EmitContext::DefineConstantBuffers(Bindings& bindings) {
         return;
     }
     for (const auto& desc : info.constant_buffer_descriptors) {
+        if (bindings.uniform_buffer >= runtime_info.max_num_cbufs) {
+            LOG_WARNING(Shader_GLSL, "Constant buffer binding index {} exceeds device limit of {}",
+                        bindings.uniform_buffer, runtime_info.max_num_cbufs);
+            bindings.uniform_buffer += desc.count;
+            continue;
+        }
         const auto cbuf_type{profile.has_gl_cbuf_ftou_bug ? "uvec4" : "vec4"};
         header += fmt::format("layout(std140,binding={}) uniform {}_cbuf_{}{{{} {}_cbuf{}[{}];}};",
                               bindings.uniform_buffer, stage_name, desc.index, cbuf_type,

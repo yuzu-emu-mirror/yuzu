@@ -37,6 +37,12 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (desc.count != 1) {
             throw NotImplementedException("Constant buffer descriptor array");
         }
+        if (cbuf_index >= runtime_info.max_num_cbufs) {
+            LOG_WARNING(Shader_GLASM, "Constant buffer binding index {} exceeds device limit of {}",
+                        cbuf_index, runtime_info.max_num_cbufs);
+            ++cbuf_index;
+            continue;
+        }
         Add("CBUFFER c{}[]={{program.buffer[{}]}};", desc.index, cbuf_index);
         ++cbuf_index;
     }

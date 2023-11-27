@@ -122,25 +122,24 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
     if (!binding.IsImmediate()) {
         return ctx.OpFunctionCall(result_type, indirect_func, ctx.Def(binding), buffer_offset);
     }
-
-    const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
+    const bool is_float{UniformDefinitions::IsFloat(member_ptr)};
+    const Id zero_val{is_float ? ctx.Const(0.0f) : ctx.Const(0u)};
+    const u32 binding_index{binding.U32()};
+    const u32 max_num_cbufs{ctx.runtime_info.max_num_cbufs};
+    if (binding_index >= max_num_cbufs) {
+        // cbuf index exceeds device limit
+        return zero_val;
+    }
+    const Id cbuf{ctx.cbufs[binding_index].*member_ptr};
     const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, buffer_offset)};
-    const Id val = ctx.OpLoad(result_type, access_chain);
-
+    const Id val{ctx.OpLoad(result_type, access_chain)};
     if (offset.IsImmediate() || !ctx.profile.has_broken_robust) {
         return val;
     }
-
-    const auto is_float = UniformDefinitions::IsFloat(member_ptr);
-    const auto num_elements = UniformDefinitions::NumElements(member_ptr);
-    const std::array zero_vec{
-        is_float ? ctx.Const(0.0f) : ctx.Const(0u),
-        is_float ? ctx.Const(0.0f) : ctx.Const(0u),
-        is_float ? ctx.Const(0.0f) : ctx.Const(0u),
-        is_float ? ctx.Const(0.0f) : ctx.Const(0u),
-    };
-    const Id cond = ctx.OpULessThanEqual(ctx.TypeBool(), buffer_offset, ctx.Const(0xFFFFu));
-    const Id zero = ctx.OpCompositeConstruct(result_type, std::span(zero_vec.data(), num_elements));
+    const auto num_elements{UniformDefinitions::NumElements(member_ptr)};
+    const std::array zero_vec{zero_val, zero_val, zero_val, zero_val};
+    const Id cond{ctx.OpULessThanEqual(ctx.TypeBool(), buffer_offset, ctx.Const(0xFFFFu))};
+    const Id zero{ctx.OpCompositeConstruct(result_type, std::span(zero_vec.data(), num_elements))};
     return ctx.OpSelect(result_type, cond, val, zero);
 }
 
