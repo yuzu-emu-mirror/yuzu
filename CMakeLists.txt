@@ -366,10 +366,10 @@ endfunction(set_yuzu_qt_components)
 
 # Qt5 requires that we find components, so it doesn't fit our pretty little find package function
 if(ENABLE_QT)
-    set(QT_VERSION 5.15)
+    set(QT_VERSION 5.15.16)
     # These are used to specify minimum versions
     set(QT5_VERSION 5.15)
-    set(QT6_VERSION 6.3.1)
+    set(QT6_VERSION 6.5.3)
 
     set_yuzu_qt_components()
     if (ENABLE_QT6)
