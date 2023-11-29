@@ -386,7 +386,10 @@ if (NOT WIN32)
     target_include_directories(yuzu PRIVATE ${Qt${QT_MAJOR_VERSION}Gui_PRIVATE_INCLUDE_DIRS})
 endif()
 if (UNIX AND NOT APPLE)
-    target_link_libraries(yuzu PRIVATE Qt${QT_MAJOR_VERSION}::DBus gamemode)
+    target_link_libraries(yuzu PRIVATE Qt${QT_MAJOR_VERSION}::DBus)
+endif()
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(yuzu PRIVATE gamemode)
 endif()
 
 target_compile_definitions(yuzu PRIVATE
