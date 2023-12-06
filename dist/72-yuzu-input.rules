@@ -1,6 +1,6 @@
-#Allow systemd-login to manage user access to hidraw with this file
-#On most systems, this file should be installed to /etc/udev/rules.d/72-yuzu-input.rules
-#Consult your distro if this is not the case
+# Allow systemd-login to manage user access to hidraw with this file
+# On most systems, this file should be installed to /etc/udev/rules.d/72-yuzu-input.rules
+# Consult your distro if this is not the case
 
 #Nintendo's Switch Pro Controller and Pro Controller for Wired and Bluetooth
 KERNEL=="hidraw*", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="2009", MODE="0660", TAG+="uaccess"
