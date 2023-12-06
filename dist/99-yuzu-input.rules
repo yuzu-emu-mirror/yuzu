@@ -1,0 +1,13 @@
+#Allow systemd-login to manage user access to hidraw with this file
+#On most systems, this file should be installed to /usr/lib/udev/rule.d/99-yuzu-custominput.rules
+#Consult your distro if this is not the case
+
+#Nintendo's Switch Pro Controller and Pro Controller for Wired and Bluetooth
+KERNEL=="hidraw*", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="2009", MODE="0660", TAG+="uaccess"
+KERNEL=="hidraw*", KERNELS=="*057e:2009*", MODE="0660", TAG+="uaccess"
+#Nintendo's Left Joy-Con for Wired and Bluetooth
+KERNEL=="hidraw*", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="2006", MODE="0600", TAG+="uaccess"
+KERNEL=="hidraw*", KERNELS=="*057e:2006*", MODE="0600", TAG+="uaccess"
+#Nintendo's Right Joy-Con for Wired and Bluetooth
+KERNEL=="hidraw*", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="2007", MODE="0600", TAG+="uaccess"
+KERNEL=="hidraw*", KERNELS=="*057e:2007*", MODE="0600", TAG+="uaccess"
