@@ -1,4 +1,4 @@
-# Allow systemd-login to manage user access to hidraw with this file
+# Allow systemd-logind to manage user access to hidraw with this file
 # On most systems, this file should be installed to /etc/udev/rules.d/72-yuzu-input.rules
 # Consult your distro if this is not the case
 
