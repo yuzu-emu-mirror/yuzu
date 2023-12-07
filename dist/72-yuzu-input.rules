@@ -11,6 +11,7 @@ KERNEL=="hidraw*", KERNELS=="*057e:2009*", MODE="0660", TAG+="uaccess"
 
 # Joy-Con L (Bluetooth)
 KERNEL=="hidraw*", KERNELS=="*057e:2006*", MODE="0660", TAG+="uaccess"
+
 # Joy-Con R (Bluetooth)
 KERNEL=="hidraw*", KERNELS=="*057e:2007*", MODE="0660", TAG+="uaccess"
 
