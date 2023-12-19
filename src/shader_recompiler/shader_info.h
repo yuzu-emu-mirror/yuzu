@@ -42,6 +42,7 @@ enum class TexturePixelFormat : u32 {
     R16G16B16A16_SNORM,
     R16G16_SNORM,
     R16_SNORM,
+    B10G11R11_FLOAT,
     OTHER
 };
 
@@ -129,6 +130,7 @@ struct ImageDescriptor {
     ImageFormat format;
     bool is_written;
     bool is_read;
+    bool is_float;
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;

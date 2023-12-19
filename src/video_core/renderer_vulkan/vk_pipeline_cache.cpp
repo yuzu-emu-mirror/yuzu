@@ -388,6 +388,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
         .min_ssbo_alignment = static_cast<u32>(device.GetStorageBufferAlignment()),
         .support_geometry_shader_passthrough = device.IsNvGeometryShaderPassthroughSupported(),
         .support_conditional_barrier = device.SupportsConditionalBarriers(),
+        .support_ufloat_write_as_uint =
+            driver_id != VK_DRIVER_ID_QUALCOMM_PROPRIETARY && driver_id != VK_DRIVER_ID_MESA_TURNIP,
     };
 
     if (device.GetMaxVertexInputAttributes() < Maxwell::NumVertexAttributes) {

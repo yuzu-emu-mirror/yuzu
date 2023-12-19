@@ -372,6 +372,10 @@ TexturePixelFormat ReadTexturePixelFormat(Environment& env, const ConstBufferAdd
     return env.ReadTexturePixelFormat(GetTextureHandle(env, cbuf));
 }
 
+bool TexturePixelFormatIsFloat(Environment& env, const ConstBufferAddr& cbuf) {
+    return ReadTexturePixelFormat(env, cbuf) == TexturePixelFormat::B10G11R11_FLOAT;
+}
+
 class Descriptors {
 public:
     explicit Descriptors(TextureBufferDescriptors& texture_buffer_descriptors_,
@@ -428,8 +432,9 @@ public:
             return desc.type == existing.type && desc.format == existing.format &&
                    desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset && desc.count == existing.count &&
-                   desc.size_shift == existing.size_shift;
+                   desc.size_shift == existing.size_shift && desc.is_float == existing.is_float;
         })};
+        // TODO: handle is_float?
         image_descriptors[index].is_written |= desc.is_written;
         image_descriptors[index].is_read |= desc.is_read;
         return index;
@@ -500,6 +505,19 @@ void PatchTexelFetch(IR::Block& block, IR::Inst& inst, TexturePixelFormat pixel_
                               ir.FPMul(ir.ConvertSToF(32, 32, ir.BitCast<IR::U32>(w)), max_value));
     inst.ReplaceUsesWith(converted);
 }
+
+void PatchSmallFloatImageWrite(IR::Block& block, IR::Inst& inst) {
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+
+    const IR::Value old_value{inst.Arg(2)};
+    const IR::F32 x(ir.BitCast<IR::F32>(IR::U32(ir.CompositeExtract(old_value, 0))));
+    const IR::F32 y(ir.BitCast<IR::F32>(IR::U32(ir.CompositeExtract(old_value, 1))));
+    const IR::F32 z(ir.BitCast<IR::F32>(IR::U32(ir.CompositeExtract(old_value, 2))));
+    const IR::F32 w(ir.BitCast<IR::F32>(IR::U32(ir.CompositeExtract(old_value, 3))));
+    const IR::Value converted = ir.CompositeConstruct(x, y, z, w);
+    inst.SetArg(2, converted);
+}
+
 } // Anonymous namespace
 
 void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo& host_info) {
@@ -531,6 +549,9 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
         inst->ReplaceOpcode(IndexedInstruction(*inst));
 
         const auto& cbuf{texture_inst.cbuf};
+        const bool is_float_write{!host_info.support_ufloat_write_as_uint &&
+                                  inst->GetOpcode() == IR::Opcode::ImageWrite &&
+                                  TexturePixelFormatIsFloat(env, cbuf)};
         auto flags{inst->Flags<IR::TextureInstInfo>()};
         bool is_multisample{false};
         switch (inst->GetOpcode()) {
@@ -603,6 +624,7 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
                     .format = flags.image_format,
                     .is_written = is_written,
                     .is_read = is_read,
+                    .is_float = is_float_write,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
                     .count = cbuf.count,
@@ -661,6 +683,10 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
             if (pixel_format != TexturePixelFormat::OTHER) {
                 PatchTexelFetch(*texture_inst.block, *texture_inst.inst, pixel_format);
             }
+        }
+
+        if (is_float_write) {
+            PatchSmallFloatImageWrite(*texture_inst.block, *inst);
         }
     }
 }

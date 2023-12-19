@@ -19,8 +19,10 @@ struct HostTranslateInfo {
     u32 min_ssbo_alignment{};            ///< Minimum alignment supported by the device for SSBOs
     bool support_geometry_shader_passthrough{}; ///< True when the device supports geometry
                                                 ///< passthrough shaders
-    bool support_conditional_barrier{}; ///< True when the device supports barriers in conditional
-                                        ///< control flow
+    bool support_conditional_barrier{};  ///< True when the device supports barriers in conditional
+                                         ///< control flow
+    bool support_ufloat_write_as_uint{}; ///< True when the device supports writing float images
+                                         ///< as bitcasts to uint
 };
 
 } // namespace Shader

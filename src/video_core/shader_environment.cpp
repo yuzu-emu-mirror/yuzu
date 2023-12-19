@@ -76,6 +76,8 @@ static Shader::TexturePixelFormat ConvertTexturePixelFormat(const Tegra::Texture
         return Shader::TexturePixelFormat::R16G16_SNORM;
     case VideoCore::Surface::PixelFormat::R16_SNORM:
         return Shader::TexturePixelFormat::R16_SNORM;
+    case VideoCore::Surface::PixelFormat::B10G11R11_FLOAT:
+        return Shader::TexturePixelFormat::B10G11R11_FLOAT;
     default:
         return Shader::TexturePixelFormat::OTHER;
     }

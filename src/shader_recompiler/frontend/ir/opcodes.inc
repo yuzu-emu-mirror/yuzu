@@ -512,7 +512,7 @@ OPCODE(ImageQueryDimensions,                                U32x4,          Opaq
 OPCODE(ImageQueryLod,                                       F32x4,          Opaque,         Opaque,                                                         )
 OPCODE(ImageGradient,                                       F32x4,          Opaque,         Opaque,         Opaque,         Opaque,         Opaque,         )
 OPCODE(ImageRead,                                           U32x4,          Opaque,         Opaque,                                                         )
-OPCODE(ImageWrite,                                          Void,           Opaque,         Opaque,         U32x4,                                          )
+OPCODE(ImageWrite,                                          Void,           Opaque,         Opaque,         Opaque,                                         )
 
 OPCODE(IsTextureScaled,                                     U1,             U32,                                                                            )
 OPCODE(IsImageScaled,                                       U1,             U32,                                                                            )

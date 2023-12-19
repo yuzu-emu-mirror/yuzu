@@ -74,9 +74,17 @@ spv::ImageFormat GetImageFormat(ImageFormat format) {
     throw InvalidArgument("Invalid image format {}", format);
 }
 
+Id GetImageSampledType(EmitContext& ctx, const ImageDescriptor& desc) {
+    if (desc.is_float) {
+        return ctx.F32[1];
+    } else {
+        return ctx.U32[1];
+    }
+}
+
 Id ImageType(EmitContext& ctx, const ImageDescriptor& desc) {
     const spv::ImageFormat format{GetImageFormat(desc.format)};
-    const Id type{ctx.U32[1]};
+    const Id type{GetImageSampledType(ctx, desc)};
     switch (desc.type) {
     case TextureType::Color1D:
         return ctx.TypeImage(type, spv::Dim::Dim1D, false, false, false, 2, format);

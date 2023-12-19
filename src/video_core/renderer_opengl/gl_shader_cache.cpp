@@ -245,6 +245,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .min_ssbo_alignment = static_cast<u32>(device.GetShaderStorageBufferAlignment()),
           .support_geometry_shader_passthrough = device.HasGeometryShaderPassthrough(),
           .support_conditional_barrier = device.SupportsConditionalBarriers(),
+          .support_ufloat_write_as_uint = true,
       } {
     if (use_asynchronous_shaders) {
         workers = CreateWorkers();
