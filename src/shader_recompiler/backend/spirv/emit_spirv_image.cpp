@@ -196,34 +196,42 @@ Id Texture(EmitContext& ctx, IR::TextureInstInfo info, [[maybe_unused]] const IR
 }
 
 Id TextureImage(EmitContext& ctx, IR::TextureInstInfo info, const IR::Value& index) {
-    if (!index.IsImmediate() || index.U32() != 0) {
-        throw NotImplementedException("Indirect image indexing");
-    }
     if (info.type == TextureType::Buffer) {
         const TextureBufferDefinition& def{ctx.texture_buffers.at(info.descriptor_index)};
         if (def.count > 1) {
-            throw NotImplementedException("Indirect texture sample");
+            const Id buffer_pointer{ctx.OpAccessChain(def.pointer_type, def.id, ctx.Def(index))};
+            return ctx.OpLoad(ctx.image_buffer_type, buffer_pointer);
+        } else {
+            return ctx.OpLoad(ctx.image_buffer_type, def.id);
         }
-        return ctx.OpLoad(ctx.image_buffer_type, def.id);
     } else {
         const TextureDefinition& def{ctx.textures.at(info.descriptor_index)};
         if (def.count > 1) {
-            throw NotImplementedException("Indirect texture sample");
+            const Id texture_pointer{ctx.OpAccessChain(def.pointer_type, def.id, ctx.Def(index))};
+            return ctx.OpImage(def.image_type, ctx.OpLoad(def.sampled_type, texture_pointer));
+        } else {
+            return ctx.OpImage(def.image_type, ctx.OpLoad(def.sampled_type, def.id));
         }
-        return ctx.OpImage(def.image_type, ctx.OpLoad(def.sampled_type, def.id));
     }
 }
 
 Id Image(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
-    if (!index.IsImmediate() || index.U32() != 0) {
-        throw NotImplementedException("Indirect image indexing");
-    }
     if (info.type == TextureType::Buffer) {
         const ImageBufferDefinition def{ctx.image_buffers.at(info.descriptor_index)};
-        return ctx.OpLoad(def.image_type, def.id);
+        if (def.count > 1) {
+            const Id image_pointer{ctx.OpAccessChain(def.pointer_type, def.id, ctx.Def(index))};
+            return ctx.OpLoad(def.image_type, image_pointer);
+        } else {
+            return ctx.OpLoad(def.image_type, def.id);
+        }
     } else {
         const ImageDefinition def{ctx.images.at(info.descriptor_index)};
-        return ctx.OpLoad(def.image_type, def.id);
+        if (def.count > 1) {
+            const Id image_pointer{ctx.OpAccessChain(def.pointer_type, def.id, ctx.Def(index))};
+            return ctx.OpLoad(def.image_type, image_pointer);
+        } else {
+            return ctx.OpLoad(def.image_type, def.id);
+        }
     }
 }
 

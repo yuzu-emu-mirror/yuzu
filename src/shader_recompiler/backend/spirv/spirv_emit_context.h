@@ -40,18 +40,21 @@ struct TextureDefinition {
 
 struct TextureBufferDefinition {
     Id id;
+    Id pointer_type;
     u32 count;
 };
 
 struct ImageBufferDefinition {
     Id id;
     Id image_type;
+    Id pointer_type;
     u32 count;
 };
 
 struct ImageDefinition {
     Id id;
     Id image_type;
+    Id pointer_type;
     u32 count;
 };
 

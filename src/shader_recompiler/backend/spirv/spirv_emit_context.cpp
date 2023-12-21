@@ -1245,18 +1245,20 @@ void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
     const spv::ImageFormat format{spv::ImageFormat::Unknown};
     image_buffer_type = TypeImage(F32[1], spv::Dim::Buffer, 0U, false, false, 1, format);
 
-    const Id type{TypePointer(spv::StorageClass::UniformConstant, image_buffer_type)};
+    const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_buffer_type)};
     texture_buffers.reserve(info.texture_buffer_descriptors.size());
     for (const TextureBufferDescriptor& desc : info.texture_buffer_descriptors) {
         if (desc.count != 1) {
-            throw NotImplementedException("Array of texture buffers");
+            LOG_WARNING(Shader_SPIRV, "Array of texture buffers");
         }
-        const Id id{AddGlobalVariable(type, spv::StorageClass::UniformConstant)};
+        const Id desc_type{DescType(*this, image_buffer_type, pointer_type, desc.count)};
+        const Id id{AddGlobalVariable(desc_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, NameOf(stage, desc, "texbuf"));
         texture_buffers.push_back({
             .id = id,
+            .pointer_type = pointer_type,
             .count = desc.count,
         });
         if (profile.supported_spirv >= 0x00010400) {
@@ -1270,7 +1272,7 @@ void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
     image_buffers.reserve(info.image_buffer_descriptors.size());
     for (const ImageBufferDescriptor& desc : info.image_buffer_descriptors) {
         if (desc.count != 1) {
-            throw NotImplementedException("Array of image buffers");
+            LOG_WARNING(Shader_SPIRV, "Array of image buffers");
         }
         const spv::ImageFormat format{GetImageFormat(desc.format)};
         const Id image_type{TypeImage(U32[1], spv::Dim::Buffer, false, false, false, 2, format)};
@@ -1282,6 +1284,7 @@ void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
         image_buffers.push_back({
             .id = id,
             .image_type = image_type,
+            .pointer_type = pointer_type,
             .count = desc.count,
         });
         if (profile.supported_spirv >= 0x00010400) {
@@ -1325,17 +1328,19 @@ void EmitContext::DefineImages(const Info& info, u32& binding, u32& scaling_inde
     images.reserve(info.image_descriptors.size());
     for (const ImageDescriptor& desc : info.image_descriptors) {
         if (desc.count != 1) {
-            throw NotImplementedException("Array of images");
+            LOG_WARNING(Shader_SPIRV, "Array of images");
         }
         const Id image_type{ImageType(*this, desc)};
         const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
-        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
+        const Id desc_type{DescType(*this, image_type, pointer_type, desc.count)};
+        const Id id{AddGlobalVariable(desc_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, NameOf(stage, desc, "img"));
         images.push_back({
             .id = id,
             .image_type = image_type,
+            .pointer_type = pointer_type,
             .count = desc.count,
         });
         if (profile.supported_spirv >= 0x00010400) {
