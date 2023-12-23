@@ -81,6 +81,7 @@ public:
     std::vector<ImageViewId> compute_image_view_ids;
 
     std::unordered_map<TICEntry, ImageViewId> image_views;
+    std::unordered_map<ImageViewId, TICEntry> image_views_inv;
     std::unordered_map<TSCEntry, SamplerId> samplers;
 
     TextureCacheGPUMap* gpu_page_table;

@@ -1084,6 +1084,7 @@ ImageViewId TextureCache<P>::FindImageView(const TICEntry& config) {
     ImageViewId& image_view_id = pair->second;
     if (is_new) {
         image_view_id = CreateImageView(config);
+        channel_state->image_views_inv[image_view_id] = config;
     }
     return image_view_id;
 }
@@ -2218,14 +2219,17 @@ template <class P>
 void TextureCache<P>::RemoveImageViewReferences(std::span<const ImageViewId> removed_views) {
     for (size_t c : active_channel_ids) {
         auto& channel_info = channel_storage[c];
-        auto it = channel_info.image_views.begin();
-        while (it != channel_info.image_views.end()) {
-            const auto found = std::ranges::find(removed_views, it->second);
-            if (found != removed_views.end()) {
-                it = channel_info.image_views.erase(it);
-            } else {
-                ++it;
+        for (auto image_view_id : removed_views) {
+            auto it_v = channel_info.image_views_inv.find(image_view_id);
+            if (it_v == channel_info.image_views_inv.end()) {
+                continue;
             }
+            auto it = channel_info.image_views.find(it_v->second);
+            channel_info.image_views_inv.erase(it_v);
+            if (it == channel_info.image_views.end()) {
+                continue;
+            }
+            channel_info.image_views.erase(it);
         }
     }
 }
