@@ -45,7 +45,7 @@ private:
 
     const Core::System& system;
 
-    const ConfigurationShared::ComboboxTranslationMap& combobox_translations;
+    const ConfigurationShared::TranslationShared::ComboboxTranslationMap& combobox_translations;
     std::vector<std::function<void(bool)>> apply_funcs{};
 
     QComboBox* accuracy_combobox;

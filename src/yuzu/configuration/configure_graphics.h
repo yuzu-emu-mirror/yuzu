@@ -97,7 +97,7 @@ private:
     const std::function<void(Settings::AspectRatio, Settings::ResolutionSetup)> update_aspect_ratio;
 
     const Core::System& system;
-    const ConfigurationShared::ComboboxTranslationMap& combobox_translations;
+    const ConfigurationShared::TranslationShared::ComboboxTranslationMap& combobox_translations;
     const std::vector<std::pair<u32, QString>>& shader_mapping;
 
     QPushButton* api_restore_global_button;
