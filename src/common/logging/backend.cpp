@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <climits>
+#include <mutex>
 #include <thread>
 
 #include <fmt/format.h>
@@ -227,8 +228,15 @@ public:
         if (!filter.CheckMessage(log_class, log_level)) {
             return;
         }
-        message_queue.EmplaceWait(
-            CreateEntry(log_class, log_level, filename, line_num, function, std::move(message)));
+
+        auto entry =
+            CreateEntry(log_class, log_level, filename, line_num, function, std::move(message));
+        if (Settings::values.log_async) {
+            message_queue.EmplaceWait(entry);
+        } else {
+            std::scoped_lock l{sync_mutex};
+            ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
+        }
     }
 
 private:
@@ -300,6 +308,7 @@ private:
 #endif
 
     MPSCQueue<Entry> message_queue{};
+    std::mutex sync_mutex;
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
     std::jthread backend_thread;
 };
@@ -328,9 +337,11 @@ void SetColorConsoleBackendEnabled(bool enabled) {
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
                        unsigned int line_num, const char* function, const char* format,
                        const fmt::format_args& args) {
-    if (!initialization_in_progress_suppress_logging) {
-        Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function,
-                                   fmt::vformat(format, args));
+    if (initialization_in_progress_suppress_logging) {
+        return;
     }
+
+    Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function,
+                               fmt::vformat(format, args));
 }
 } // namespace Common::Log
