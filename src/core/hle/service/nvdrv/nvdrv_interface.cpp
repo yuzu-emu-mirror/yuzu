@@ -15,7 +15,7 @@ namespace Service::Nvidia {
 
 void NVDRV::Open(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 
     if (!is_initialized) {
@@ -44,7 +44,7 @@ void NVDRV::Open(HLERequestContext& ctx) {
 }
 
 void NVDRV::ServiceError(HLERequestContext& ctx, NvResult result) {
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(result);
 }
@@ -70,7 +70,7 @@ void NVDRV::Ioctl1(HLERequestContext& ctx) {
         ctx.WriteBuffer(output_buffer);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(nv_result);
 }
@@ -97,7 +97,7 @@ void NVDRV::Ioctl2(HLERequestContext& ctx) {
         ctx.WriteBuffer(output_buffer);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(nv_result);
 }
@@ -125,7 +125,7 @@ void NVDRV::Ioctl3(HLERequestContext& ctx) {
         ctx.WriteBuffer(inline_output_buffer, 1);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(nv_result);
 }
@@ -143,7 +143,7 @@ void NVDRV::Close(HLERequestContext& ctx) {
     const auto fd = rp.Pop<DeviceFD>();
     const auto result = nvdrv->Close(fd);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(result);
 }
@@ -153,7 +153,7 @@ void NVDRV::Initialize(HLERequestContext& ctx) {
 
     is_initialized = true;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(NvResult::Success);
 }
@@ -173,14 +173,14 @@ void NVDRV::QueryEvent(HLERequestContext& ctx) {
     NvResult result = nvdrv->QueryEvent(fd, event_id, event);
 
     if (result == NvResult::Success) {
-        IPC::ResponseBuilder rb{ctx, 3, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         auto& readable_event = event->GetReadableEvent();
         rb.PushCopyObjects(readable_event);
         rb.PushEnum(NvResult::Success);
     } else {
         LOG_ERROR(Service_NVDRV, "Invalid event request!");
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(result);
     }
@@ -191,7 +191,7 @@ void NVDRV::SetAruid(HLERequestContext& ctx) {
     pid = rp.Pop<u64>();
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(NvResult::Success);
 }
@@ -199,14 +199,14 @@ void NVDRV::SetAruid(HLERequestContext& ctx) {
 void NVDRV::SetGraphicsFirmwareMemoryMarginEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void NVDRV::GetStatus(HLERequestContext& ctx) {
     LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(NvResult::Success);
 }
@@ -216,7 +216,7 @@ void NVDRV::DumpGraphicsMemoryInfo(HLERequestContext& ctx) {
     // retail hardware.
     LOG_DEBUG(Service_NVDRV, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 

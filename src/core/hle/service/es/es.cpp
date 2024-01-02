@@ -113,7 +113,7 @@ private:
     bool CheckRightsId(HLERequestContext& ctx, const u128& rights_id) {
         if (rights_id == u128{}) {
             LOG_ERROR(Service_ETicket, "The rights ID was invalid!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_RIGHTS_ID);
             return false;
         }
@@ -127,7 +127,7 @@ private:
 
         if (raw_ticket.size() < sizeof(Core::Crypto::Ticket)) {
             LOG_ERROR(Service_ETicket, "The input buffer is not large enough!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_ARGUMENT);
             return;
         }
@@ -135,12 +135,12 @@ private:
         Core::Crypto::Ticket ticket = Core::Crypto::Ticket::Read(raw_ticket);
         if (!keys.AddTicket(ticket)) {
             LOG_ERROR(Service_ETicket, "The ticket could not be imported!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_ARGUMENT);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -159,14 +159,14 @@ private:
         if (key == Core::Crypto::Key128{}) {
             LOG_ERROR(Service_ETicket,
                       "The titlekey doesn't exist in the KeyManager or the rights ID was invalid!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_RIGHTS_ID);
             return;
         }
 
         ctx.WriteBuffer(key);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -175,7 +175,7 @@ private:
 
         const u32 count = static_cast<u32>(keys.GetCommonTickets().size());
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(count);
     }
@@ -185,7 +185,7 @@ private:
 
         const u32 count = static_cast<u32>(keys.GetPersonalizedTickets().size());
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(count);
     }
@@ -206,7 +206,7 @@ private:
         out_entries = std::min(ids.size(), out_entries);
         ctx.WriteBuffer(ids.data(), out_entries * sizeof(u128));
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(static_cast<u32>(out_entries));
     }
@@ -228,7 +228,7 @@ private:
         out_entries = std::min(ids.size(), out_entries);
         ctx.WriteBuffer(ids.data(), out_entries * sizeof(u128));
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(static_cast<u32>(out_entries));
     }
@@ -244,7 +244,7 @@ private:
 
         const auto ticket = keys.GetCommonTickets().at(rights_id);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(ticket.GetSize());
     }
@@ -260,7 +260,7 @@ private:
 
         const auto ticket = keys.GetPersonalizedTickets().at(rights_id);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(ticket.GetSize());
     }
@@ -279,7 +279,7 @@ private:
         const auto write_size = std::min<u64>(ticket.GetSize(), ctx.GetWriteBufferSize());
         ctx.WriteBuffer(&ticket, write_size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(write_size);
     }
@@ -298,7 +298,7 @@ private:
         const auto write_size = std::min<u64>(ticket.GetSize(), ctx.GetWriteBufferSize());
         ctx.WriteBuffer(&ticket, write_size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(write_size);
     }

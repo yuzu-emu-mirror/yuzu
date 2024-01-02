@@ -111,7 +111,7 @@ public:
 private:
     void CheckAvailability(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -331,13 +331,13 @@ protected:
         UserData data{};
         if (profile_manager.GetProfileBaseAndData(user_id, profile_base, data)) {
             ctx.WriteBuffer(data);
-            IPC::ResponseBuilder rb{ctx, 16};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.PushRaw(profile_base);
         } else {
             LOG_ERROR(Service_ACC, "Failed to get profile base and data for user=0x{}",
                       user_id.RawString());
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
         }
     }
@@ -346,12 +346,12 @@ protected:
         LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
         if (profile_manager.GetProfileBase(user_id, profile_base)) {
-            IPC::ResponseBuilder rb{ctx, 16};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.PushRaw(profile_base);
         } else {
             LOG_ERROR(Service_ACC, "Failed to get profile base for user=0x{}", user_id.RawString());
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown); // TODO(ogniK): Get actual error code
         }
     }
@@ -359,7 +359,7 @@ protected:
     void LoadImage(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         const Common::FS::IOFile image(GetImagePath(user_id), Common::FS::FileAccessMode::Read,
@@ -386,7 +386,7 @@ protected:
 
     void GetImageSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         const Common::FS::IOFile image(GetImagePath(user_id), Common::FS::FileAccessMode::Read,
@@ -422,7 +422,7 @@ protected:
 
         if (user_data.size() < sizeof(UserData)) {
             LOG_ERROR(Service_ACC, "UserData buffer too small!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Account::ResultInvalidArrayLength);
             return;
         }
@@ -432,12 +432,12 @@ protected:
 
         if (!profile_manager.SetProfileBaseAndData(user_id, base, data)) {
             LOG_ERROR(Service_ACC, "Failed to update user data and base!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Account::ResultAccountUpdateFailed);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -455,7 +455,7 @@ protected:
 
         if (user_data.size() < sizeof(UserData)) {
             LOG_ERROR(Service_ACC, "UserData buffer too small!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Account::ResultInvalidArrayLength);
             return;
         }
@@ -470,12 +470,12 @@ protected:
             image.Write(image_data) != image_data.size() ||
             !profile_manager.SetProfileBaseAndData(user_id, base, data)) {
             LOG_ERROR(Service_ACC, "Failed to update profile data, base, and image!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Account::ResultAccountUpdateFailed);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -541,7 +541,7 @@ public:
     void LoadIdTokenCache(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(0);
     }
@@ -584,7 +584,7 @@ public:
 private:
     void CheckAvailability(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(false); // TODO: Check when this is supposed to return true and when not
     }
@@ -592,7 +592,7 @@ private:
     void GetAccountId(HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
@@ -600,7 +600,7 @@ private:
     void EnsureIdTokenCacheAsync(HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface(ensure_token_id);
     }
@@ -622,7 +622,7 @@ private:
             ctx.WriteBuffer(unknown_out_buffer, 1);
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<u64>(profile_manager->GetLastOpenedUser().Hash());
     }
@@ -632,7 +632,7 @@ private:
 
         profile_manager->StoreOpenedUsers();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -731,7 +731,7 @@ public:
 
 void Module::Interface::GetUserCount(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(static_cast<u32>(profile_manager->GetUserCount()));
 }
@@ -741,7 +741,7 @@ void Module::Interface::GetUserExistence(HLERequestContext& ctx) {
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
     LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(profile_manager->UserExists(user_id));
 }
@@ -749,20 +749,20 @@ void Module::Interface::GetUserExistence(HLERequestContext& ctx) {
 void Module::Interface::ListAllUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     ctx.WriteBuffer(profile_manager->GetAllUsers());
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void Module::Interface::ListOpenUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     ctx.WriteBuffer(profile_manager->GetOpenUsers());
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void Module::Interface::GetLastOpenedUser(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw<Common::UUID>(profile_manager->GetLastOpenedUser());
 }
@@ -772,21 +772,21 @@ void Module::Interface::GetProfile(HLERequestContext& ctx) {
     Common::UUID user_id = rp.PopRaw<Common::UUID>();
     LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IProfile>(system, user_id, *profile_manager);
 }
 
 void Module::Interface::IsUserRegistrationRequestPermitted(HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(profile_manager->CanSystemRegisterUser());
 }
 
 void Module::Interface::InitializeApplicationInfo(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(InitializeApplicationInfoBase());
 }
 
@@ -797,7 +797,7 @@ void Module::Interface::InitializeApplicationInfoRestricted(HLERequestContext& c
     // currently, we assume the user owns the title. InitializeApplicationInfoBase SHOULD be called
     // first then we do extra checks if the game is a digital copy.
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(InitializeApplicationInfoBase());
 }
 
@@ -843,7 +843,7 @@ Result Module::Interface::InitializeApplicationInfoBase() {
 
 void Module::Interface::GetBaasAccountManagerForApplication(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IManagerForApplication>(system, profile_manager);
 }
@@ -870,7 +870,7 @@ void Module::Interface::IsUserAccountSwitchLocked(HLERequestContext& ctx) {
         is_locked = nacp.GetUserAccountSwitchLock();
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(is_locked);
 }
@@ -878,7 +878,7 @@ void Module::Interface::IsUserAccountSwitchLocked(HLERequestContext& ctx) {
 void Module::Interface::InitializeApplicationInfoV2(HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -888,7 +888,7 @@ void Module::Interface::BeginUserRegistration(HLERequestContext& ctx) {
 
     LOG_INFO(Service_ACC, "called, uuid={}", user_id.FormattedString());
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(user_id);
 }
@@ -901,7 +901,7 @@ void Module::Interface::CompleteUserRegistration(HLERequestContext& ctx) {
 
     profile_manager->WriteUserSaveFile();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -911,7 +911,7 @@ void Module::Interface::GetProfileEditor(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_ACC, "called, user_id=0x{}", user_id.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IProfileEditor>(system, user_id, *profile_manager);
 }
@@ -923,7 +923,7 @@ void Module::Interface::ListQualifiedUsers(HLERequestContext& ctx) {
     // nintendo online currently. We're just going to assume the user running the game has access to
     // the game regardless of parental control settings.
     ctx.WriteBuffer(profile_manager->GetAllUsers());
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -931,7 +931,7 @@ void Module::Interface::ListOpenContextStoredUsers(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
     ctx.WriteBuffer(profile_manager->GetStoredOpenedUsers());
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -954,7 +954,7 @@ void Module::Interface::GetBaasAccountManagerForSystemService(HLERequestContext&
 
     LOG_INFO(Service_ACC, "called, uuid=0x{}", uuid.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IManagerForSystemService>(system, uuid);
 }
@@ -970,7 +970,7 @@ void Module::Interface::StoreSaveDataThumbnailSystem(HLERequestContext& ctx) {
 
 void Module::Interface::StoreSaveDataThumbnail(HLERequestContext& ctx, const Common::UUID& uuid,
                                                const u64 tid) {
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
 
     if (tid == 0) {
         LOG_ERROR(Service_ACC, "TitleID is not valid!");
@@ -999,7 +999,7 @@ void Module::Interface::TrySelectUserWithoutInteraction(HLERequestContext& ctx) 
     LOG_DEBUG(Service_ACC, "called");
     // A u8 is passed into this function which we can safely ignore. It's to determine if we have
     // access to use the network or not by the looks of it
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     if (profile_manager->GetUserCount() != 1) {
         rb.Push(ResultSuccess);
         rb.PushRaw(Common::InvalidUUID);

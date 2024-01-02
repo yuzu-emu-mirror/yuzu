@@ -79,7 +79,7 @@ void AudCtl::GetTargetVolumeMin(HLERequestContext& ctx) {
     // actual console to this value (as of 8.0.0).
     constexpr s32 target_min_volume = 0;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(target_min_volume);
 }
@@ -91,7 +91,7 @@ void AudCtl::GetTargetVolumeMax(HLERequestContext& ctx) {
     // actual console to this value (as of 8.0.0).
     constexpr s32 target_max_volume = 15;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(target_max_volume);
 }
@@ -99,7 +99,7 @@ void AudCtl::GetTargetVolumeMax(HLERequestContext& ctx) {
 void AudCtl::GetForceMutePolicy(HLERequestContext& ctx) {
     LOG_WARNING(Audio, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(ForceMutePolicy::Disable);
 }
@@ -110,7 +110,7 @@ void AudCtl::GetOutputModeSetting(HLERequestContext& ctx) {
 
     LOG_WARNING(Audio, "(STUBBED) called, value={}", value);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(AudioOutputMode::PcmAuto);
 }
@@ -118,7 +118,7 @@ void AudCtl::GetOutputModeSetting(HLERequestContext& ctx) {
 void AudCtl::GetHeadphoneOutputLevelMode(HLERequestContext& ctx) {
     LOG_WARNING(Audio, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(HeadphoneOutputLevelMode::Normal);
 }
@@ -129,7 +129,7 @@ void AudCtl::IsSpeakerAutoMuteEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Audio, "(STUBBED) called, is_speaker_auto_mute_enabled={}",
                 is_speaker_auto_mute_enabled);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u8>(is_speaker_auto_mute_enabled);
 }

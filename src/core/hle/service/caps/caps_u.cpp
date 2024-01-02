@@ -44,7 +44,7 @@ void IAlbumApplicationService::SetShimLibraryVersion(HLERequestContext& ctx) {
     LOG_WARNING(Service_Capture, "(STUBBED) called. library_version={}, applet_resource_user_id={}",
                 library_version, applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -84,7 +84,7 @@ void IAlbumApplicationService::GetAlbumFileList0AafeAruidDeprecated(HLERequestCo
         ctx.WriteBuffer(entries);
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u64>(entries.size());
 }
@@ -128,7 +128,7 @@ void IAlbumApplicationService::GetAlbumFileList3AaeAruid(HLERequestContext& ctx)
         ctx.WriteBuffer(entries);
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u64>(entries.size());
 }

@@ -32,7 +32,7 @@ private:
     void GetTemperature(HLERequestContext& ctx) {
         constexpr f32 temperature = 35;
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(temperature);
     }
@@ -60,7 +60,7 @@ void TS::GetTemperature(HLERequestContext& ctx) {
 
     const s32 temperature = location == Location::Internal ? 35 : 20;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(temperature);
 }
@@ -71,7 +71,7 @@ void TS::GetTemperatureMilliC(HLERequestContext& ctx) {
 
     const s32 temperature = location == Location::Internal ? 35000 : 20000;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(temperature);
 }
@@ -80,7 +80,7 @@ void TS::OpenSession(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     [[maybe_unused]] const u32 device_code = rp.Pop<u32>();
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISession>(system);
 }

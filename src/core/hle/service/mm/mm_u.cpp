@@ -32,14 +32,14 @@ private:
     void InitializeOld(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void FinalizeOld(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -50,14 +50,14 @@ private:
         LOG_DEBUG(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
 
         current = min;
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetOld(HLERequestContext& ctx) {
         LOG_DEBUG(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(current);
     }
@@ -65,7 +65,7 @@ private:
     void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(id); // Any non zero value
     }
@@ -73,7 +73,7 @@ private:
     void Finalize(HLERequestContext& ctx) {
         LOG_WARNING(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -86,14 +86,14 @@ private:
                   min, max);
 
         current = min;
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void Get(HLERequestContext& ctx) {
         LOG_DEBUG(Service_MM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(current);
     }

@@ -84,7 +84,7 @@ void NSD::Resolve(HLERequestContext& ctx) {
     const Result res = ResolveCommon(fqdn_in, fqdn_out);
 
     ctx.WriteBuffer(fqdn_out);
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -95,13 +95,13 @@ void NSD::ResolveEx(HLERequestContext& ctx) {
     const Result res = ResolveCommon(fqdn_in, fqdn_out);
 
     if (res.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         return;
     }
 
     ctx.WriteBuffer(fqdn_out);
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(ResultSuccess);
 }
@@ -111,12 +111,12 @@ void NSD::GetEnvironmentIdentifier(HLERequestContext& ctx) {
         .identifier = {'l', 'p', '1', '\0', '\0', '\0', '\0', '\0'}};
     ctx.WriteBuffer(lp1);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void NSD::GetApplicationServerEnvironmentType(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(ServerEnvironmentType::Lp));
 }

@@ -64,7 +64,7 @@ void IRS::ActivateIrsensor(HLERequestContext& ctx) {
     LOG_WARNING(Service_IRS, "(STUBBED) called, applet_resource_user_id={}",
                 applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -75,7 +75,7 @@ void IRS::DeactivateIrsensor(HLERequestContext& ctx) {
     LOG_WARNING(Service_IRS, "(STUBBED) called, applet_resource_user_id={}",
                 applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -85,7 +85,7 @@ void IRS::GetIrsensorSharedMemoryHandle(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_IRS, "called, applet_resource_user_id={}", applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(&system.Kernel().GetIrsSharedMem());
 }
@@ -114,7 +114,7 @@ void IRS::StopImageProcessor(HLERequestContext& ctx) {
         result = ResultSuccess;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -146,7 +146,7 @@ void IRS::RunMomentProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -179,7 +179,7 @@ void IRS::RunClusteringProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -201,7 +201,7 @@ void IRS::RunImageTransferProcessor(HLERequestContext& ctx) {
 
     if (t_mem.IsNull()) {
         LOG_ERROR(Service_IRS, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
@@ -227,7 +227,7 @@ void IRS::RunImageTransferProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -248,7 +248,7 @@ void IRS::GetImageTransferProcessorState(HLERequestContext& ctx) {
 
     const auto result = IsIrCameraHandleValid(parameters.camera_handle);
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -256,7 +256,7 @@ void IRS::GetImageTransferProcessorState(HLERequestContext& ctx) {
     const auto& device = GetIrCameraSharedMemoryDeviceEntry(parameters.camera_handle);
 
     if (device.mode != Core::IrSensor::IrSensorMode::ImageTransferProcessor) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(InvalidProcessorState);
         return;
     }
@@ -267,7 +267,7 @@ void IRS::GetImageTransferProcessorState(HLERequestContext& ctx) {
     const auto& state = image_transfer_processor.GetState(data);
 
     ctx.WriteBuffer(data);
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(state);
 }
@@ -304,7 +304,7 @@ void IRS::RunTeraPluginProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -314,7 +314,7 @@ void IRS::GetNpadIrCameraHandle(HLERequestContext& ctx) {
 
     if (npad_id > Core::HID::NpadIdType::Player8 && npad_id != Core::HID::NpadIdType::Invalid &&
         npad_id != Core::HID::NpadIdType::Handheld) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(Service::HID::InvalidNpadId);
         return;
     }
@@ -327,7 +327,7 @@ void IRS::GetNpadIrCameraHandle(HLERequestContext& ctx) {
     LOG_INFO(Service_IRS, "called, npad_id={}, camera_npad_id={}, camera_npad_type={}", npad_id,
              camera_handle.npad_id, camera_handle.npad_type);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(camera_handle);
 }
@@ -355,7 +355,7 @@ void IRS::RunPointingProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -381,7 +381,7 @@ void IRS::SuspendImageProcessor(HLERequestContext& ctx) {
         result = ResultSuccess;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -403,7 +403,7 @@ void IRS::CheckFirmwareVersion(HLERequestContext& ctx) {
         result = ResultSuccess;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -425,7 +425,7 @@ void IRS::SetFunctionLevel(HLERequestContext& ctx) {
         result = ResultSuccess;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -464,7 +464,7 @@ void IRS::RunImageTransferExProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -492,7 +492,7 @@ void IRS::RunIrLedProcessor(HLERequestContext& ctx) {
                                     Common::Input::PollingMode::IR);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -520,7 +520,7 @@ void IRS::StopImageProcessorAsync(HLERequestContext& ctx) {
         result = ResultSuccess;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -538,7 +538,7 @@ void IRS::ActivateIrsensorWithFunctionLevel(HLERequestContext& ctx) {
     LOG_WARNING(Service_IRS, "(STUBBED) called, function_level={}, applet_resource_user_id={}",
                 parameters.function_level.function_level, parameters.applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 

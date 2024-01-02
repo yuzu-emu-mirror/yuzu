@@ -123,12 +123,12 @@ public:
                     },
             };
 
-            IPC::ResponseBuilder rb{ctx, 8};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.PushRaw(out);
         } else {
             LOG_WARNING(Service_JIT, "plugin GenerateCode callback failed");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
         }
     };
@@ -168,12 +168,12 @@ public:
                 ctx.WriteBuffer(output_buffer.data(), output_buffer.size());
             }
 
-            IPC::ResponseBuilder rb{ctx, 3};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.Push(return_value);
         } else {
             LOG_WARNING(Service_JIT, "plugin Control callback failed");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
         }
     }
@@ -188,7 +188,7 @@ public:
 
         if (tmem_size == 0) {
             LOG_ERROR(Service_JIT, "attempted to load plugin with empty transfer memory");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -196,7 +196,7 @@ public:
         auto tmem{ctx.GetObjectFromHandle<Kernel::KTransferMemory>(tmem_handle)};
         if (tmem.IsNull()) {
             LOG_ERROR(Service_JIT, "attempted to load plugin with invalid transfer memory handle");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -223,14 +223,14 @@ public:
         if (callbacks.GetVersion == 0 || callbacks.Configure == 0 || callbacks.GenerateCode == 0 ||
             callbacks.OnPrepared == 0) {
             LOG_ERROR(Service_JIT, "plugin does not implement all necessary functionality");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
 
         if (!context.LoadNRO(nro_plugin)) {
             LOG_ERROR(Service_JIT, "failed to load plugin");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -252,7 +252,7 @@ public:
         const auto version{context.CallFunction(callbacks.GetVersion)};
         if (version != 1) {
             LOG_ERROR(Service_JIT, "unknown plugin version {}", version);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -280,14 +280,14 @@ public:
         const auto configuration_ptr{context.AddHeap(configuration)};
         context.CallFunction(callbacks.OnPrepared, configuration_ptr);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetCodeAddress(HLERequestContext& ctx) {
         LOG_DEBUG(Service_JIT, "called");
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(configuration.user_rx_memory.offset);
         rb.Push(configuration.user_ro_memory.offset);
@@ -359,7 +359,7 @@ private:
 
         if (parameters.rx_size == 0 || parameters.ro_size == 0) {
             LOG_ERROR(Service_JIT, "attempted to init with empty code regions");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -367,7 +367,7 @@ private:
         auto process{ctx.GetObjectFromHandle<Kernel::KProcess>(process_handle)};
         if (process.IsNull()) {
             LOG_ERROR(Service_JIT, "process is null for handle=0x{:08X}", process_handle);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -375,7 +375,7 @@ private:
         auto rx_mem{ctx.GetObjectFromHandle<Kernel::KCodeMemory>(rx_mem_handle)};
         if (rx_mem.IsNull()) {
             LOG_ERROR(Service_JIT, "rx_mem is null for handle=0x{:08X}", rx_mem_handle);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -383,7 +383,7 @@ private:
         auto ro_mem{ctx.GetObjectFromHandle<Kernel::KCodeMemory>(ro_mem_handle)};
         if (ro_mem.IsNull()) {
             LOG_ERROR(Service_JIT, "ro_mem is null for handle=0x{:08X}", ro_mem_handle);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -395,7 +395,7 @@ private:
                             Kernel::Svc::MemoryPermission::ReadExecute, generate_random);
         if (R_FAILED(res)) {
             LOG_ERROR(Service_JIT, "rx_mem could not be mapped for handle=0x{:08X}", rx_mem_handle);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(res);
             return;
         }
@@ -404,12 +404,12 @@ private:
                             Kernel::Svc::MemoryPermission::Read, generate_random);
         if (R_FAILED(res)) {
             LOG_ERROR(Service_JIT, "ro_mem could not be mapped for handle=0x{:08X}", ro_mem_handle);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(res);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IJitEnvironment>(system, std::move(process), std::move(rx),
                                              std::move(ro));

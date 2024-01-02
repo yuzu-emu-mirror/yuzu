@@ -72,7 +72,7 @@ void IAlbumAccessorService::DeleteAlbumFile(HLERequestContext& ctx) {
     Result result = manager->DeleteAlbumFile(file_id);
     result = TranslateResult(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -86,7 +86,7 @@ void IAlbumAccessorService::IsAlbumMounted(HLERequestContext& ctx) {
     const bool is_mounted = result.IsSuccess();
     result = TranslateResult(result);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u8>(is_mounted);
 }
@@ -105,7 +105,7 @@ void IAlbumAccessorService::Unknown18(HLERequestContext& ctx) {
         ctx.WriteBuffer(buffer);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(buffer.size()));
 }
@@ -128,7 +128,7 @@ void IAlbumAccessorService::GetAlbumFileListEx0(HLERequestContext& ctx) {
         ctx.WriteBuffer(entries);
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u64>(entries.size());
 }
@@ -140,7 +140,7 @@ void IAlbumAccessorService::GetAutoSavingStorage(HLERequestContext& ctx) {
     Result result = manager->GetAutoSavingStorage(is_autosaving);
     result = TranslateResult(result);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u8>(is_autosaving);
 }
@@ -169,7 +169,7 @@ void IAlbumAccessorService::LoadAlbumScreenShotImageEx1(HLERequestContext& ctx) 
         ctx.WriteBuffer(image, 1);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -192,7 +192,7 @@ void IAlbumAccessorService::LoadAlbumScreenShotThumbnailImageEx1(HLERequestConte
         ctx.WriteBuffer(image, 1);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 

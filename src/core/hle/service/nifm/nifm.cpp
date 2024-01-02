@@ -225,14 +225,14 @@ private:
             UpdateState(RequestState::OnHold);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetRequestState(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(state);
     }
@@ -258,14 +258,14 @@ private:
             }
         }();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
     void GetSystemEventReadableHandles(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(event1->GetReadableEvent(), event2->GetReadableEvent());
     }
@@ -273,14 +273,14 @@ private:
     void Cancel(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void SetConnectionConfirmationOption(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -291,7 +291,7 @@ private:
 
         ctx.WriteBuffer(out_buffer);
 
-        IPC::ResponseBuilder rb{ctx, 5};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(0);
         rb.Push<u32>(0);
@@ -327,7 +327,7 @@ void IGeneralService::GetClientId(HLERequestContext& ctx) {
     static constexpr u32 client_id = 1;
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
 }
@@ -335,7 +335,7 @@ void IGeneralService::GetClientId(HLERequestContext& ctx) {
 void IGeneralService::CreateScanRequest(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NIFM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IScanRequest>(system);
@@ -344,7 +344,7 @@ void IGeneralService::CreateScanRequest(HLERequestContext& ctx) {
 void IGeneralService::CreateRequest(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NIFM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IRequest>(system);
@@ -405,14 +405,14 @@ void IGeneralService::GetCurrentNetworkProfile(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(network_profile_data);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IGeneralService::RemoveNetworkProfile(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -432,7 +432,7 @@ void IGeneralService::GetCurrentIpAddress(HLERequestContext& ctx) {
         }
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(*ipv4);
 }
@@ -445,7 +445,7 @@ void IGeneralService::CreateTemporaryNetworkProfile(HLERequestContext& ctx) {
     auto buffer = ctx.ReadBuffer();
     std::memcpy(&uuid, buffer.data() + 8, sizeof(u128));
 
-    IPC::ResponseBuilder rb{ctx, 6, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<INetworkProfile>(system);
@@ -491,7 +491,7 @@ void IGeneralService::GetCurrentIpConfigInfo(HLERequestContext& ctx) {
         }
     }
 
-    IPC::ResponseBuilder rb{ctx, 2 + (sizeof(IpConfigInfo) + 3) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw<IpConfigInfo>(ip_config_info);
 }
@@ -499,7 +499,7 @@ void IGeneralService::GetCurrentIpConfigInfo(HLERequestContext& ctx) {
 void IGeneralService::IsWirelessCommunicationEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u8>(1);
 }
@@ -516,7 +516,7 @@ void IGeneralService::GetInternetConnectionStatus(HLERequestContext& ctx) {
 
     constexpr Output out{};
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(out);
 }
@@ -524,7 +524,7 @@ void IGeneralService::GetInternetConnectionStatus(HLERequestContext& ctx) {
 void IGeneralService::IsEthernetCommunicationEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     if (Network::GetHostIPv4Address().has_value()) {
         rb.Push<u8>(1);
@@ -536,7 +536,7 @@ void IGeneralService::IsEthernetCommunicationEnabled(HLERequestContext& ctx) {
 void IGeneralService::IsAnyInternetRequestAccepted(HLERequestContext& ctx) {
     LOG_ERROR(Service_NIFM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     if (Network::GetHostIPv4Address().has_value()) {
         rb.Push<u8>(1);
@@ -550,7 +550,7 @@ void IGeneralService::IsAnyForegroundRequestAccepted(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_NIFM, "(STUBBED) called, is_accepted={}", is_accepted);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u8>(is_accepted);
 }
@@ -624,7 +624,7 @@ private:
     void CreateGeneralServiceOld(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IGeneralService>(system);
     }
@@ -632,7 +632,7 @@ private:
     void CreateGeneralService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IGeneralService>(system);
     }

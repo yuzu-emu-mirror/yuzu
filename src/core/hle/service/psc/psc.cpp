@@ -65,7 +65,7 @@ private:
     void GetPmModule(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PSC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IPmModule>(system);
     }

@@ -54,7 +54,7 @@ void IScreenShotService::SaveScreenShotEx0(HLERequestContext& ctx) {
         manager->SaveScreenShot(entry, parameters.attribute, parameters.report_option,
                                 image_data_buffer, parameters.applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 10};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushRaw(entry);
 }
@@ -90,7 +90,7 @@ void IScreenShotService::SaveEditedScreenShotEx1(HLERequestContext& ctx) {
     const auto result = manager->SaveEditedScreenShot(entry, parameters.attribute,
                                                       parameters.file_id, image_data_buffer);
 
-    IPC::ResponseBuilder rb{ctx, 10};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushRaw(entry);
 }

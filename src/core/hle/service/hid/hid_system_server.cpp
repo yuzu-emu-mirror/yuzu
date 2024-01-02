@@ -244,28 +244,28 @@ void IHidSystemServer::ApplyNpadSystemCommonPolicy(HLERequestContext& ctx) {
 
     GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicy();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IHidSystemServer::EnableAssigningSingleOnSlSrPress(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IHidSystemServer::DisableAssigningSingleOnSlSrPress(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IHidSystemServer::GetLastActiveNpad(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "(STUBBED) called"); // Spams a lot when controller applet is running
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(system.HIDCore().GetLastActiveController());
 }
@@ -275,7 +275,7 @@ void IHidSystemServer::ApplyNpadSystemCommonPolicyFull(HLERequestContext& ctx) {
 
     GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicy();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -290,7 +290,7 @@ void IHidSystemServer::GetNpadFullKeyGripColor(HLERequestContext& ctx) {
     Core::HID::NpadColor right_color{};
     // TODO: Get colors from Npad
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(left_color);
     rb.PushRaw(right_color);
@@ -304,7 +304,7 @@ void IHidSystemServer::GetMaskedSupportedNpadStyleSet(HLERequestContext& ctx) {
     Core::HID::NpadStyleSet supported_styleset =
         GetResourceManager()->GetNpad()->GetSupportedStyleSet().raw;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(supported_styleset);
 }
@@ -317,7 +317,7 @@ void IHidSystemServer::SetSupportedNpadStyleSetAll(HLERequestContext& ctx) {
     Core::HID::NpadStyleSet supported_styleset =
         GetResourceManager()->GetNpad()->GetSupportedStyleSet().raw;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(supported_styleset);
 }
@@ -332,7 +332,7 @@ void IHidSystemServer::GetAppletDetailedUiType(HLERequestContext& ctx) {
     const AppletDetailedUiType detailed_ui_type =
         GetResourceManager()->GetNpad()->GetAppletDetailedUiType(npad_id_type);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(detailed_ui_type);
 }
@@ -344,7 +344,7 @@ void IHidSystemServer::GetNpadInterfaceType(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "(STUBBED) called, npad_id_type={}",
               npad_id_type); // Spams a lot when controller applet is running
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(Core::HID::NpadInterfaceType::Bluetooth);
 }
@@ -356,7 +356,7 @@ void IHidSystemServer::GetNpadLeftRightInterfaceType(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "(STUBBED) called, npad_id_type={}",
               npad_id_type); // Spams a lot when controller applet is running
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(Core::HID::NpadInterfaceType::Bluetooth);
     rb.PushEnum(Core::HID::NpadInterfaceType::Bluetooth);
@@ -369,7 +369,7 @@ void IHidSystemServer::HasBattery(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "(STUBBED) called, npad_id_type={}",
               npad_id_type); // Spams a lot when controller applet is running
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(false);
 }
@@ -391,7 +391,7 @@ void IHidSystemServer::HasLeftRightBattery(HLERequestContext& ctx) {
         .right = false,
     };
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(left_right_battery);
 }
@@ -409,7 +409,7 @@ void IHidSystemServer::GetUniquePadsFromNpad(HLERequestContext& ctx) {
         ctx.WriteBuffer(unique_pads);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(unique_pads.size()));
 }
@@ -419,7 +419,7 @@ void IHidSystemServer::GetIrSensorState(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 void IHidSystemServer::RegisterAppletResourceUserId(HLERequestContext& ctx) {
@@ -444,7 +444,7 @@ void IHidSystemServer::RegisterAppletResourceUserId(HLERequestContext& ctx) {
         //     parameters.applet_resource_user_id);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -458,7 +458,7 @@ void IHidSystemServer::UnregisterAppletResourceUserId(HLERequestContext& ctx) {
     // GetResourceManager()->GetNpad()->UnregisterAppletResourceUserId(applet_resource_user_id);
     // GetResourceManager()->GetPalma()->UnregisterAppletResourceUserId(applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -479,7 +479,7 @@ void IHidSystemServer::EnableAppletToGetInput(HLERequestContext& ctx) {
     GetResourceManager()->EnableInput(parameters.applet_resource_user_id, parameters.is_enabled);
     // GetResourceManager()->GetNpad()->EnableInput(parameters.applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -500,7 +500,7 @@ void IHidSystemServer::EnableAppletToGetSixAxisSensor(HLERequestContext& ctx) {
     GetResourceManager()->EnableTouchScreen(parameters.applet_resource_user_id,
                                             parameters.is_enabled);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -521,7 +521,7 @@ void IHidSystemServer::EnableAppletToGetPadInput(HLERequestContext& ctx) {
     GetResourceManager()->EnablePadInput(parameters.applet_resource_user_id, parameters.is_enabled);
     // GetResourceManager()->GetNpad()->EnableInput(parameters.applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -542,14 +542,14 @@ void IHidSystemServer::EnableAppletToGetTouchScreen(HLERequestContext& ctx) {
     GetResourceManager()->EnableTouchScreen(parameters.applet_resource_user_id,
                                             parameters.is_enabled);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IHidSystemServer::AcquireConnectionTriggerTimeoutEvent(HLERequestContext& ctx) {
     LOG_INFO(Service_AM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(acquire_device_registered_event->GetReadableEvent());
 }
@@ -557,7 +557,7 @@ void IHidSystemServer::AcquireConnectionTriggerTimeoutEvent(HLERequestContext& c
 void IHidSystemServer::AcquireDeviceRegisteredEventForControllerSupport(HLERequestContext& ctx) {
     LOG_INFO(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(acquire_device_registered_event->GetReadableEvent());
 }
@@ -575,7 +575,7 @@ void IHidSystemServer::GetRegisteredDevices(HLERequestContext& ctx) {
         ctx.WriteBuffer(registered_devices);
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u64>(registered_devices.size());
 }
@@ -583,7 +583,7 @@ void IHidSystemServer::GetRegisteredDevices(HLERequestContext& ctx) {
 void IHidSystemServer::AcquireUniquePadConnectionEventHandle(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.PushCopyObjects(unique_pad_connection_event->GetReadableEvent());
     rb.Push(ResultSuccess);
 }
@@ -591,7 +591,7 @@ void IHidSystemServer::AcquireUniquePadConnectionEventHandle(HLERequestContext& 
 void IHidSystemServer::GetUniquePadIds(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u64>(0);
 }
@@ -599,7 +599,7 @@ void IHidSystemServer::GetUniquePadIds(HLERequestContext& ctx) {
 void IHidSystemServer::AcquireJoyDetachOnBluetoothOffEventHandle(HLERequestContext& ctx) {
     LOG_INFO(Service_AM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(joy_detach_event->GetReadableEvent());
 }
@@ -609,7 +609,7 @@ void IHidSystemServer::IsUsbFullKeyControllerEnabled(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_HID, "(STUBBED) called, is_enabled={}", is_enabled);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(is_enabled);
 }
@@ -620,7 +620,7 @@ void IHidSystemServer::IsHandheldButtonPressedOnConsoleMode(HLERequestContext& c
     LOG_DEBUG(Service_HID, "(STUBBED) called, is_enabled={}",
               button_pressed); // Spams a lot when controller applet is open
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(button_pressed);
 }
@@ -628,14 +628,14 @@ void IHidSystemServer::IsHandheldButtonPressedOnConsoleMode(HLERequestContext& c
 void IHidSystemServer::InitializeFirmwareUpdate(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void IHidSystemServer::InitializeUsbFirmwareUpdateWithoutMemory(HLERequestContext& ctx) {
     LOG_WARNING(Service_HID, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -651,7 +651,7 @@ void IHidSystemServer::GetTouchScreenDefaultConfiguration(HLERequestContext& ctx
         touchscreen_config.mode = Core::HID::TouchScreenModeForNx::UseSystemSetting;
     }
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(touchscreen_config);
 }

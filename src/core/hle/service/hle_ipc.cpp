@@ -79,7 +79,7 @@ Result SessionRequestManager::CompleteSyncRequest(Kernel::KServerSession* server
         }
     } else {
         ASSERT_MSG(false, "Session handler is invalid, stubbing response!");
-        IPC::ResponseBuilder rb(context, 2);
+        IPC::ResponseBuilder rb{context};
         rb.Push(ResultSuccess);
     }
 
@@ -126,7 +126,7 @@ Result SessionRequestManager::HandleDomainSyncRequest(Kernel::KServerSession* se
 
         this->CloseDomainHandler(object_id - 1);
 
-        IPC::ResponseBuilder rb{context, 2};
+        IPC::ResponseBuilder rb{context};
         rb.Push(ResultSuccess);
         return ResultSuccess;
     }
@@ -309,7 +309,7 @@ Result HLERequestContext::WriteToOutgoingCommandBuffer() {
     // TODO(Subv): This completely ignores C buffers.
 
     if (GetManager()->IsDomain()) {
-        current_offset = domain_offset - static_cast<u32>(outgoing_domain_objects.size());
+        current_offset = domain_offset;
         for (auto& object : outgoing_domain_objects) {
             GetManager()->AppendDomainHandler(std::move(object));
             cmd_buf[current_offset++] = static_cast<u32_le>(GetManager()->DomainHandlerCount());

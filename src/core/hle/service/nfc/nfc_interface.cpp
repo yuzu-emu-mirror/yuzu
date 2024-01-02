@@ -36,7 +36,7 @@ void NfcInterface::Initialize(HLERequestContext& ctx) {
         manager->Finalize();
     }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -51,14 +51,14 @@ void NfcInterface::Finalize(HLERequestContext& ctx) {
         state = State::NonInitialized;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void NfcInterface::GetState(HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFC, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(state);
 }
@@ -69,7 +69,7 @@ void NfcInterface::IsNfcEnabled(HLERequestContext& ctx) {
     // TODO: This calls nn::settings::detail::GetNfcEnableFlag
     const bool is_enabled = true;
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(is_enabled);
 }
@@ -83,14 +83,14 @@ void NfcInterface::ListDevices(HLERequestContext& ctx) {
     result = TranslateResultToServiceError(result);
 
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(nfp_devices);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<s32>(nfp_devices.size()));
 }
@@ -106,7 +106,7 @@ void NfcInterface::GetDeviceState(HLERequestContext& ctx) {
         ASSERT_MSG(false, "Invalid device state");
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(device_state);
 }
@@ -121,12 +121,12 @@ void NfcInterface::GetNpadId(HLERequestContext& ctx) {
     result = TranslateResultToServiceError(result);
 
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(npad_id);
 }
@@ -134,7 +134,7 @@ void NfcInterface::GetNpadId(HLERequestContext& ctx) {
 void NfcInterface::AttachAvailabilityChangeEvent(HLERequestContext& ctx) {
     LOG_INFO(Service_NFC, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(GetManager()->AttachAvailabilityChangeEvent());
 }
@@ -152,7 +152,7 @@ void NfcInterface::StartDetection(HLERequestContext& ctx) {
     auto result = GetManager()->StartDetection(device_handle, tag_protocol);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -164,7 +164,7 @@ void NfcInterface::StopDetection(HLERequestContext& ctx) {
     auto result = GetManager()->StopDetection(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -181,7 +181,7 @@ void NfcInterface::GetTagInfo(HLERequestContext& ctx) {
         ctx.WriteBuffer(tag_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -194,7 +194,7 @@ void NfcInterface::AttachActivateEvent(HLERequestContext& ctx) {
     auto result = GetManager()->AttachActivateEvent(&out_event, device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushCopyObjects(out_event);
 }
@@ -208,7 +208,7 @@ void NfcInterface::AttachDeactivateEvent(HLERequestContext& ctx) {
     auto result = GetManager()->AttachDeactivateEvent(&out_event, device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushCopyObjects(out_event);
 }
@@ -234,7 +234,7 @@ void NfcInterface::ReadMifare(HLERequestContext& ctx) {
         ctx.WriteBuffer(out_data);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -254,7 +254,7 @@ void NfcInterface::WriteMifare(HLERequestContext& ctx) {
     auto result = GetManager()->WriteMifare(device_handle, write_commands);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -272,14 +272,14 @@ void NfcInterface::SendCommandByPassThrough(HLERequestContext& ctx) {
     result = TranslateResultToServiceError(result);
 
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(out_data);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(out_data.size()));
 }

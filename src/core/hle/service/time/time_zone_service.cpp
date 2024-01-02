@@ -35,12 +35,12 @@ void ITimeZoneService::GetDeviceLocationName(HLERequestContext& ctx) {
     if (const Result result{
             time_zone_content_manager.GetTimeZoneManager().GetDeviceLocationName(location_name)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, (sizeof(location_name) / 4) + 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(location_name);
 }
@@ -52,12 +52,12 @@ void ITimeZoneService::GetTotalLocationNameCount(HLERequestContext& ctx) {
     if (const Result result{
             time_zone_content_manager.GetTimeZoneManager().GetTotalLocationNameCount(count)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(count);
 }
@@ -69,13 +69,13 @@ void ITimeZoneService::LoadLocationNameList(HLERequestContext& ctx) {
     if (const Result result{
             time_zone_content_manager.GetTimeZoneManager().LoadLocationNameList(location_names)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(location_names);
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<s32>(location_names.size()));
 }
@@ -86,12 +86,12 @@ void ITimeZoneService::GetTimeZoneRuleVersion(HLERequestContext& ctx) {
     if (const Result result{
             time_zone_content_manager.GetTimeZoneManager().GetTimeZoneRuleVersion(rule_version)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(rule_version);
 }
@@ -118,7 +118,7 @@ void ITimeZoneService::LoadTimeZoneRule(HLERequestContext& ctx) {
     std::memcpy(time_zone_rule_outbuffer.data(), &time_zone_rule, sizeof(TimeZone::TimeZoneRule));
     ctx.WriteBuffer(time_zone_rule_outbuffer);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -136,12 +136,12 @@ void ITimeZoneService::ToCalendarTime(HLERequestContext& ctx) {
     if (const Result result{time_zone_content_manager.GetTimeZoneManager().ToCalendarTime(
             time_zone_rule, posix_time, calendar_info)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2 + (sizeof(TimeZone::CalendarInfo) / 4)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(calendar_info);
 }
@@ -157,12 +157,12 @@ void ITimeZoneService::ToCalendarTimeWithMyRule(HLERequestContext& ctx) {
             time_zone_content_manager.GetTimeZoneManager().ToCalendarTimeWithMyRules(
                 posix_time, calendar_info)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2 + (sizeof(TimeZone::CalendarInfo) / 4)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(calendar_info);
 }
@@ -179,7 +179,7 @@ void ITimeZoneService::ToPosixTime(HLERequestContext& ctx) {
     if (const Result result{time_zone_content_manager.GetTimeZoneManager().ToPosixTime(
             time_zone_rule, calendar_time, posix_time)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -187,7 +187,7 @@ void ITimeZoneService::ToPosixTime(HLERequestContext& ctx) {
     ctx.WriteBuffer(posix_time);
 
     // TODO(bunnei): Handle multiple times
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw<u32>(1); // Number of times we're returning
 }
@@ -202,14 +202,14 @@ void ITimeZoneService::ToPosixTimeWithMyRule(HLERequestContext& ctx) {
     if (const Result result{time_zone_content_manager.GetTimeZoneManager().ToPosixTimeWithMyRule(
             calendar_time, posix_time)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(posix_time);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw<u32>(1); // Number of times we're returning
 }

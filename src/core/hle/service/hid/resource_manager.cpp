@@ -350,7 +350,7 @@ void IAppletResource::GetSharedMemoryHandle(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_HID, "called, applet_resource_user_id={}, result=0x{:X}", aruid, result.raw);
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushCopyObjects(handle);
 }

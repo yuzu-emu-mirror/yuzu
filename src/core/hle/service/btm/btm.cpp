@@ -73,7 +73,7 @@ private:
     void AcquireBleScanEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
         rb.PushCopyObjects(scan_event->GetReadableEvent());
@@ -82,7 +82,7 @@ private:
     void AcquireBleConnectionEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
         rb.PushCopyObjects(connection_event->GetReadableEvent());
@@ -91,7 +91,7 @@ private:
     void AcquireBleServiceDiscoveryEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
         rb.PushCopyObjects(service_discovery_event->GetReadableEvent());
@@ -100,7 +100,7 @@ private:
     void AcquireBleMtuConfigEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
         rb.PushCopyObjects(config_event->GetReadableEvent());
@@ -129,7 +129,7 @@ private:
     void GetCore(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IBtmUserCore>(system);
     }
@@ -297,39 +297,39 @@ private:
     void IsRadioEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BTM, "(STUBBED) called"); // Spams a lot when controller applet is running
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
     }
 
     void StartGamepadPairing(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void CancelGamepadPairing(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void CancelAudioDeviceConnectionRejection(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetConnectedAudioDevices(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(0);
     }
 
     void RequestAudioDeviceConnectionRejection(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -350,7 +350,7 @@ private:
     void GetCore(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IBtmSystemCore>(system);
     }

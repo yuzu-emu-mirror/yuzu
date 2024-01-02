@@ -48,7 +48,7 @@ private:
 
         initialized = true;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -58,7 +58,7 @@ private:
         // backup_setting is set to 0 since real value is unknown
         constexpr u64 backup_setting = 0;
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(backup_setting);
     }
@@ -66,7 +66,7 @@ private:
     void SetSaveDataBackupSettingEnabled(HLERequestContext& ctx) {
         LOG_WARNING(Service_OLSC, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -129,7 +129,7 @@ private:
     void GetNativeHandleHolder(HLERequestContext& ctx) {
         LOG_INFO(Service_OLSC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<INativeHandleHolder>(system);
     }
@@ -208,7 +208,7 @@ private:
     void OpenTransferTaskListController(HLERequestContext& ctx) {
         LOG_INFO(Service_OLSC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ITransferTaskListController>(system);
     }

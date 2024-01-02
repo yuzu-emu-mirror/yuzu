@@ -41,7 +41,7 @@ private:
     void GetCommonStateGetter(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ICommonStateGetter>(system, msg_queue);
     }
@@ -49,7 +49,7 @@ private:
     void GetSelfController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISelfController>(system, nvnflinger);
     }
@@ -57,7 +57,7 @@ private:
     void GetWindowController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IWindowController>(system);
     }
@@ -65,7 +65,7 @@ private:
     void GetAudioController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAudioController>(system);
     }
@@ -73,7 +73,7 @@ private:
     void GetDisplayController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDisplayController>(system);
     }
@@ -81,7 +81,7 @@ private:
     void GetProcessWindingController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IProcessWindingController>(system);
     }
@@ -89,7 +89,7 @@ private:
     void GetLibraryAppletCreator(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ILibraryAppletCreator>(system);
     }
@@ -97,7 +97,7 @@ private:
     void OpenLibraryAppletSelfAccessor(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ILibraryAppletSelfAccessor>(system);
     }
@@ -105,7 +105,7 @@ private:
     void GetAppletCommonFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAppletCommonFunctions>(system);
     }
@@ -113,7 +113,7 @@ private:
     void GetHomeMenuFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IHomeMenuFunctions>(system);
     }
@@ -121,7 +121,7 @@ private:
     void GetGlobalStateController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IGlobalStateController>(system);
     }
@@ -129,7 +129,7 @@ private:
     void GetDebugFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDebugFunctions>(system);
     }
@@ -169,7 +169,7 @@ private:
     void GetCommonStateGetter(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ICommonStateGetter>(system, msg_queue);
     }
@@ -177,7 +177,7 @@ private:
     void GetSelfController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISelfController>(system, nvnflinger);
     }
@@ -185,7 +185,7 @@ private:
     void GetWindowController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IWindowController>(system);
     }
@@ -193,7 +193,7 @@ private:
     void GetAudioController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAudioController>(system);
     }
@@ -201,7 +201,7 @@ private:
     void GetDisplayController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDisplayController>(system);
     }
@@ -209,7 +209,7 @@ private:
     void GetLibraryAppletCreator(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ILibraryAppletCreator>(system);
     }
@@ -217,7 +217,7 @@ private:
     void GetHomeMenuFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IHomeMenuFunctions>(system);
     }
@@ -225,7 +225,7 @@ private:
     void GetGlobalStateController(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IGlobalStateController>(system);
     }
@@ -233,7 +233,7 @@ private:
     void GetApplicationCreator(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IApplicationCreator>(system);
     }
@@ -241,7 +241,7 @@ private:
     void GetAppletCommonFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAppletCommonFunctions>(system);
     }
@@ -249,7 +249,7 @@ private:
     void GetDebugFunctions(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDebugFunctions>(system);
     }
@@ -261,7 +261,7 @@ private:
 void AppletAE::OpenSystemAppletProxy(HLERequestContext& ctx) {
     LOG_DEBUG(Service_AM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISystemAppletProxy>(nvnflinger, msg_queue, system);
 }
@@ -269,7 +269,7 @@ void AppletAE::OpenSystemAppletProxy(HLERequestContext& ctx) {
 void AppletAE::OpenLibraryAppletProxy(HLERequestContext& ctx) {
     LOG_DEBUG(Service_AM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ILibraryAppletProxy>(nvnflinger, msg_queue, system);
 }
@@ -277,7 +277,7 @@ void AppletAE::OpenLibraryAppletProxy(HLERequestContext& ctx) {
 void AppletAE::OpenLibraryAppletProxyOld(HLERequestContext& ctx) {
     LOG_DEBUG(Service_AM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ILibraryAppletProxy>(nvnflinger, msg_queue, system);
 }

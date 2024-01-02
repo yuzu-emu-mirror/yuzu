@@ -79,7 +79,7 @@ private:
 
         LOG_WARNING(Service_AOC, "(STUBBED) called, unknown_1={}", unknown_1);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -91,14 +91,14 @@ private:
 
         LOG_WARNING(Service_AOC, "(STUBBED) called, unknown_1={}", unknown_1);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetPurchasedEventReadableHandle(HLERequestContext& ctx) {
         LOG_WARNING(Service_AOC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(purchased_event->GetReadableEvent());
     }
@@ -106,14 +106,14 @@ private:
     void PopPurchasedProductInfo(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AOC, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultNoPurchasedProductInfoAvailable);
     }
 
     void PopPurchasedProductInfoWithUid(HLERequestContext& ctx) {
         LOG_DEBUG(Service_AOC, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultNoPurchasedProductInfoAvailable);
     }
 
@@ -172,7 +172,7 @@ void AOC_U::CountAddOnContent(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_AOC, "called. process_id={}", params.process_id);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 
     const auto current = system.GetApplicationProcessProgramID();
@@ -217,7 +217,7 @@ void AOC_U::ListAddOnContent(HLERequestContext& ctx) {
     }
 
     if (out.size() < offset) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         // TODO(DarkLordZach): Find the correct error code.
         rb.Push(ResultUnknown);
         return;
@@ -229,7 +229,7 @@ void AOC_U::ListAddOnContent(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(out);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(out_count);
 }
@@ -245,7 +245,7 @@ void AOC_U::GetAddOnContentBaseId(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_AOC, "called. process_id={}", params.process_id);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 
     const auto title_id = system.GetApplicationProcessProgramID();
@@ -274,14 +274,14 @@ void AOC_U::PrepareAddOnContent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called with addon_index={}, process_id={}", addon_index,
                 process_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void AOC_U::GetAddOnContentListChangedEvent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(aoc_change_event->GetReadableEvent());
 }
@@ -289,7 +289,7 @@ void AOC_U::GetAddOnContentListChangedEvent(HLERequestContext& ctx) {
 void AOC_U::GetAddOnContentListChangedEventWithProcessId(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(aoc_change_event->GetReadableEvent());
 }
@@ -297,28 +297,28 @@ void AOC_U::GetAddOnContentListChangedEventWithProcessId(HLERequestContext& ctx)
 void AOC_U::NotifyMountAddOnContent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void AOC_U::NotifyUnmountAddOnContent(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void AOC_U::CheckAddOnContentMountStatus(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void AOC_U::CreateEcPurchasedEventManager(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IPurchaseEventManager>(system);
 }
@@ -326,7 +326,7 @@ void AOC_U::CreateEcPurchasedEventManager(HLERequestContext& ctx) {
 void AOC_U::CreatePermanentEcPurchasedEventManager(HLERequestContext& ctx) {
     LOG_WARNING(Service_AOC, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IPurchaseEventManager>(system);
 }

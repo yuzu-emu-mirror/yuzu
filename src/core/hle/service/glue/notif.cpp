@@ -43,7 +43,7 @@ void NOTIF_A::RegisterAlarmSetting(HLERequestContext& ctx) {
     // TODO: Count alarms per game id
     if (alarms.size() >= max_alarms) {
         LOG_ERROR(Service_NOTIF, "Alarm limit reached");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
@@ -58,7 +58,7 @@ void NOTIF_A::RegisterAlarmSetting(HLERequestContext& ctx) {
                 application_parameter_size, new_alarm.alarm_setting_id, new_alarm.kind,
                 new_alarm.muted);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(new_alarm.alarm_setting_id);
 }
@@ -87,7 +87,7 @@ void NOTIF_A::UpdateAlarmSetting(HLERequestContext& ctx) {
                 application_parameter_size, alarm_setting.alarm_setting_id, alarm_setting.kind,
                 alarm_setting.muted);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -97,7 +97,7 @@ void NOTIF_A::ListAlarmSettings(HLERequestContext& ctx) {
     // TODO: Only return alarms of this game id
     ctx.WriteBuffer(alarms);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(alarms.size()));
 }
@@ -109,7 +109,7 @@ void NOTIF_A::LoadApplicationParameter(HLERequestContext& ctx) {
     const auto alarm_it = GetAlarmFromId(alarm_setting_id);
     if (alarm_it == alarms.end()) {
         LOG_ERROR(Service_NOTIF, "Invalid alarm setting id={}", alarm_setting_id);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
@@ -121,7 +121,7 @@ void NOTIF_A::LoadApplicationParameter(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(application_parameter);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(application_parameter.size()));
 }
@@ -136,7 +136,7 @@ void NOTIF_A::DeleteAlarmSetting(HLERequestContext& ctx) {
 
     LOG_INFO(Service_NOTIF, "called, alarm_setting_id={}", alarm_setting_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -144,7 +144,7 @@ void NOTIF_A::Initialize(HLERequestContext& ctx) {
     // TODO: Load previous alarms from config
 
     LOG_WARNING(Service_NOTIF, "(STUBBED) called");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 

@@ -74,7 +74,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Sample rate {}", sample_rate);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(sample_rate);
     }
@@ -84,7 +84,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Sample count {}", sample_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(sample_count);
     }
@@ -94,7 +94,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called, state {}", state);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(state);
     }
@@ -104,7 +104,7 @@ private:
 
         const auto buffer_count{impl->GetSystem().GetMixBufferCount()};
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(buffer_count);
     }
@@ -142,7 +142,7 @@ private:
             LOG_ERROR(Service_Audio, "RequestUpdate failed error 0x{:02X}!", result.description);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -151,7 +151,7 @@ private:
 
         impl->Start();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -160,7 +160,7 @@ private:
 
         impl->Stop();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -168,12 +168,12 @@ private:
         LOG_DEBUG(Service_Audio, "called");
 
         if (impl->GetSystem().GetExecutionMode() == AudioCore::ExecutionMode::Manual) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Audio::ResultNotSupported);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(rendered_event->GetReadableEvent());
     }
@@ -187,7 +187,7 @@ private:
         auto& system_ = impl->GetSystem();
         system_.SetRenderingTimeLimit(limit);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -197,7 +197,7 @@ private:
         auto& system_ = impl->GetSystem();
         auto time = system_.GetRenderingTimeLimit();
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(time);
     }
@@ -215,7 +215,7 @@ private:
         auto& system_ = impl->GetSystem();
         system_.SetVoiceDropParameter(voice_drop_param);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -225,7 +225,7 @@ private:
         auto& system_ = impl->GetSystem();
         auto voice_drop_param{system_.GetVoiceDropParameter()};
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(voice_drop_param);
     }
@@ -292,7 +292,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called.\nNames={}", out);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
 
         ctx.WriteBuffer(out_names);
 
@@ -313,7 +313,7 @@ private:
             impl->SetDeviceVolumes(volume);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -328,7 +328,7 @@ private:
             volume = impl->GetDeviceVolume(name);
         }
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(volume);
     }
@@ -343,7 +343,7 @@ private:
 
         ctx.WriteBuffer(out_name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -352,7 +352,7 @@ private:
 
         event->Signal();
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(event->GetReadableEvent());
     }
@@ -363,7 +363,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "(STUBBED) called. Channels={}", channel_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
 
         rb.Push(ResultSuccess);
         rb.Push<u32>(channel_count);
@@ -372,7 +372,7 @@ private:
     void QueryAudioDeviceInputEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(event->GetReadableEvent());
     }
@@ -380,7 +380,7 @@ private:
     void QueryAudioDeviceOutputEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(event->GetReadableEvent());
     }
@@ -405,7 +405,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called.\nNames={}", out);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
 
         ctx.WriteBuffer(out_names);
 
@@ -449,7 +449,7 @@ void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
 
     if (impl->GetSessionCount() + 1 > AudioCore::MaxRendererSessions) {
         LOG_ERROR(Service_Audio, "Too many AudioRenderer sessions open!");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(Audio::ResultOutOfSessions);
         return;
     }
@@ -460,7 +460,7 @@ void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
     const auto session_id{impl->GetSessionId()};
     if (session_id == -1) {
         LOG_ERROR(Service_Audio, "Tried to open a session that's already in use!");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(Audio::ResultOutOfSessions);
         return;
     }
@@ -468,7 +468,7 @@ void AudRenU::OpenAudioRenderer(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "Opened new AudioRenderer session {} sessions open {}", session_id,
               impl->GetSessionCount());
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IAudioRenderer>(system, *impl, params, transfer_memory.GetPointerUnsafe(),
                                         transfer_memory_size, process_handle,
@@ -501,7 +501,7 @@ void AudRenU::GetWorkBufferSize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called.\nInput params:\n{}\nOutput params:\n\tWorkbuffer size {:08X}",
               output_info, size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push<u64>(size);
 }
@@ -513,7 +513,7 @@ void AudRenU::GetAudioDeviceService(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Audio, "called. Applet resource id {}", applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IAudioDevice>(system, applet_resource_user_id,
@@ -537,7 +537,7 @@ void AudRenU::GetAudioDeviceServiceWithRevisionInfo(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called. Revision {} Applet resource id {}",
               AudioCore::GetRevisionNum(revision), applet_resource_user_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IAudioDevice>(system, applet_resource_user_id, revision,

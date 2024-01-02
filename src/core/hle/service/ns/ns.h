@@ -100,7 +100,7 @@ private:
     void PushInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<T>(system);
     }
@@ -108,7 +108,7 @@ private:
     void PushIApplicationManagerInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IApplicationManagerInterface>(system);
     }

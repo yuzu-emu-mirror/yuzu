@@ -68,7 +68,7 @@ private:
 
         const bool is_updated = manager->IsUpdated(metadata, source_flag);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u8>(is_updated);
     }
@@ -78,7 +78,7 @@ private:
 
         const bool is_full_database = manager->IsFullDatabase();
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u8>(is_full_database);
     }
@@ -91,7 +91,7 @@ private:
 
         LOG_DEBUG(Service_Mii, "called with source_flag={}, mii_count={}", source_flag, mii_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(mii_count);
     }
@@ -112,7 +112,7 @@ private:
         LOG_INFO(Service_Mii, "called with source_flag={}, out_size={}, mii_count={}", source_flag,
                  output_size, mii_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(mii_count);
     }
@@ -133,7 +133,7 @@ private:
         LOG_INFO(Service_Mii, "called with source_flag={}, out_size={}, mii_count={}", source_flag,
                  output_size, mii_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(mii_count);
     }
@@ -148,12 +148,12 @@ private:
         CharInfo new_char_info{};
         const auto result = manager->UpdateLatest(metadata, new_char_info, char_info, source_flag);
         if (result.IsFailure()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(new_char_info);
     }
@@ -167,19 +167,19 @@ private:
         LOG_DEBUG(Service_Mii, "called with age={}, gender={}, race={}", age, gender, race);
 
         if (age > Age::All) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultInvalidArgument);
             return;
         }
 
         if (gender > Gender::All) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultInvalidArgument);
             return;
         }
 
         if (race > Race::All) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultInvalidArgument);
             return;
         }
@@ -187,7 +187,7 @@ private:
         CharInfo char_info{};
         manager->BuildRandom(char_info, age, gender, race);
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(char_info);
     }
@@ -199,7 +199,7 @@ private:
         LOG_DEBUG(Service_Mii, "called with index={}", index);
 
         if (index > 5) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultInvalidArgument);
             return;
         }
@@ -207,7 +207,7 @@ private:
         CharInfo char_info{};
         manager->BuildDefault(char_info, index);
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(char_info);
     }
@@ -228,7 +228,7 @@ private:
         LOG_INFO(Service_Mii, "called with source_flag={}, out_size={}, mii_count={}", source_flag,
                  output_size, mii_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(mii_count);
     }
@@ -249,7 +249,7 @@ private:
         LOG_INFO(Service_Mii, "called with source_flag={}, out_size={}, mii_count={}", source_flag,
                  output_size, mii_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(mii_count);
     }
@@ -272,12 +272,12 @@ private:
         }
 
         if (result.IsFailure()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(StoreData) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<StoreData>(new_store_data);
     }
@@ -292,7 +292,7 @@ private:
 
         const s32 index = manager->FindIndex(create_id, is_special);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(index);
     }
@@ -321,7 +321,7 @@ private:
             result = manager->Move(metadata, new_index, create_id);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -341,7 +341,7 @@ private:
             result = manager->AddOrReplace(metadata, store_data);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -361,7 +361,7 @@ private:
             result = manager->Delete(metadata, create_id);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -381,7 +381,7 @@ private:
             result = manager->DestroyFile(metadata);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -401,7 +401,7 @@ private:
             result = manager->DeleteFile();
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -421,7 +421,7 @@ private:
             result = manager->Format(metadata);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -439,7 +439,7 @@ private:
             is_broken_with_clear_flag = manager->IsBrokenWithClearFlag(metadata);
         }
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push<u8>(is_broken_with_clear_flag);
     }
@@ -453,7 +453,7 @@ private:
         s32 index{};
         const auto result = manager->GetIndex(metadata, info, index);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(index);
     }
@@ -466,7 +466,7 @@ private:
 
         manager->SetInterfaceVersion(metadata, interface_version);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -479,7 +479,7 @@ private:
         CharInfo char_info{};
         const auto result = manager->ConvertV3ToCharInfo(char_info, mii_v3);
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushRaw<CharInfo>(char_info);
     }
@@ -493,7 +493,7 @@ private:
         CharInfo char_info{};
         const auto result = manager->ConvertCoreDataToCharInfo(char_info, core_data);
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CharInfo) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushRaw<CharInfo>(char_info);
     }
@@ -507,7 +507,7 @@ private:
         CoreData core_data{};
         const auto result = manager->ConvertCharInfoToCoreData(core_data, char_info);
 
-        IPC::ResponseBuilder rb{ctx, 2 + sizeof(CoreData) / sizeof(u32)};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushRaw<CoreData>(core_data);
     }
@@ -520,7 +520,7 @@ private:
 
         const auto result = manager->Append(metadata, char_info);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -548,7 +548,7 @@ MiiDBModule::MiiDBModule(Core::System& system_, const char* name_,
 MiiDBModule::~MiiDBModule() = default;
 
 void MiiDBModule::GetDatabaseService(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IDatabaseService>(system, manager, is_system);
 
@@ -588,14 +588,14 @@ private:
     void Initialize(HLERequestContext& ctx) {
         LOG_INFO(Service_Mii, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetCount(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Mii, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(0);
     }

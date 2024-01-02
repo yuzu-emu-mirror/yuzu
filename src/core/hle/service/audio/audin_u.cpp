@@ -67,7 +67,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. State={}", state);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(state);
     }
@@ -77,7 +77,7 @@ private:
 
         auto result = impl->StartSystem();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -86,7 +86,7 @@ private:
 
         auto result = impl->StopSystem();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -108,7 +108,7 @@ private:
 
         auto result = impl->AppendBuffer(buffer, tag);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -117,7 +117,7 @@ private:
 
         auto& buffer_event = impl->GetBufferEvent();
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(buffer_event);
     }
@@ -134,7 +134,7 @@ private:
 
         ctx.WriteBuffer(released_buffer);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(count);
     }
@@ -147,7 +147,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Is buffer {:08X} registered? {}", tag, buffer_queued);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(buffer_queued);
     }
@@ -157,7 +157,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Buffer count={}", buffer_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(buffer_count);
     }
@@ -170,7 +170,7 @@ private:
 
         impl->SetVolume(volume);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -179,7 +179,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Gain {}", volume);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(volume);
     }
@@ -189,7 +189,7 @@ private:
 
         LOG_DEBUG(Service_Audio, "called. Were any buffers flushed? {}", flushed);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(flushed);
     }
@@ -234,7 +234,7 @@ void AudInU::ListAudioIns(HLERequestContext& ctx) {
         ctx.WriteBuffer(device_names);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(out_count);
 }
@@ -254,7 +254,7 @@ void AudInU::ListAudioInsAutoFiltered(HLERequestContext& ctx) {
         ctx.WriteBuffer(device_names);
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(out_count);
 }
@@ -271,7 +271,7 @@ void AudInU::OpenAudioIn(HLERequestContext& ctx) {
     auto link{impl->LinkToManager()};
     if (link.IsError()) {
         LOG_ERROR(Service_Audio, "Failed to link Audio In to Audio Manager");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(link);
         return;
     }
@@ -279,7 +279,7 @@ void AudInU::OpenAudioIn(HLERequestContext& ctx) {
     size_t new_session_id{};
     auto result{impl->AcquireSessionId(new_session_id)};
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -299,7 +299,7 @@ void AudInU::OpenAudioIn(HLERequestContext& ctx) {
                                             static_cast<u32>(out_system.GetSampleFormat()),
                                         .state = static_cast<u32>(out_system.GetState())};
 
-    IPC::ResponseBuilder rb{ctx, 6, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     std::string out_name{out_system.GetName()};
     ctx.WriteBuffer(out_name);
@@ -322,7 +322,7 @@ void AudInU::OpenAudioInProtocolSpecified(HLERequestContext& ctx) {
     auto link{impl->LinkToManager()};
     if (link.IsError()) {
         LOG_ERROR(Service_Audio, "Failed to link Audio In to Audio Manager");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(link);
         return;
     }
@@ -330,7 +330,7 @@ void AudInU::OpenAudioInProtocolSpecified(HLERequestContext& ctx) {
     size_t new_session_id{};
     auto result{impl->AcquireSessionId(new_session_id)};
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -350,7 +350,7 @@ void AudInU::OpenAudioInProtocolSpecified(HLERequestContext& ctx) {
                                             static_cast<u32>(out_system.GetSampleFormat()),
                                         .state = static_cast<u32>(out_system.GetState())};
 
-    IPC::ResponseBuilder rb{ctx, 6, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
 
     std::string out_name{out_system.GetName()};
     if (protocol_specified == 0) {

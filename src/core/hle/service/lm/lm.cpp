@@ -98,7 +98,7 @@ private:
         const auto data = ctx.ReadBuffer();
 
         // This function only succeeds - Get that out of the way
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         if (data.size() < sizeof(LogPacketHeader)) {
@@ -155,7 +155,7 @@ private:
         LOG_DEBUG(Service_LM, "called, destination={}", DestinationToString(log_destination));
         destination = log_destination;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -346,7 +346,7 @@ private:
     void OpenLogger(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ILogger>(system);
     }

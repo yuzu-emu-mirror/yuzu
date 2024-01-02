@@ -48,7 +48,7 @@ public:
 private:
     void CreateAsyncInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IShopServiceAsync>(system);
     }
@@ -70,7 +70,7 @@ public:
 private:
     void CreateAccessorInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IShopServiceAccessor>(system);
     }
@@ -241,7 +241,7 @@ public:
 private:
     void CreateServerInterface(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IShopServiceAccessServer>(system);
     }
@@ -253,7 +253,7 @@ private:
 
         LOG_INFO(Service_NIM, "(STUBBED) called, unknown={}", unknown);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(false);
     }
@@ -329,14 +329,14 @@ private:
         // No need to connect to the internet, just finish the task straight away.
         LOG_DEBUG(Service_NIM, "called");
         finished_event->Signal();
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetFinishNotificationEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(finished_event->GetReadableEvent());
     }
@@ -344,21 +344,21 @@ private:
     void GetResult(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void Cancel(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
         finished_event->Clear();
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void IsProcessing(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<u32>(0); // We instantly process the request
     }
@@ -369,7 +369,7 @@ private:
         const s64 server_time{std::chrono::duration_cast<std::chrono::seconds>(
                                   std::chrono::system_clock::now().time_since_epoch())
                                   .count()};
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<s64>(server_time);
     }
@@ -397,7 +397,7 @@ private:
     void OpenEnsureNetworkClockAvailabilityService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IEnsureNetworkClockAvailabilityService>(system);
     }
@@ -406,14 +406,14 @@ private:
     void SuspendAutonomicTimeCorrection(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void ResumeAutonomicTimeCorrection(HLERequestContext& ctx) {
         LOG_WARNING(Service_NIM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };

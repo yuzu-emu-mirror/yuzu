@@ -59,7 +59,7 @@ private:
 
         should_signal = true;
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(state_change_event->GetReadableEvent());
     }
@@ -69,7 +69,7 @@ private:
 
         should_signal = false;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -80,7 +80,7 @@ private:
 
         should_signal_charger_type = state;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -91,7 +91,7 @@ private:
 
         should_signal_power_supply = state;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -102,7 +102,7 @@ private:
 
         should_signal_battery_voltage = state;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -148,7 +148,7 @@ PSM::~PSM() = default;
 void PSM::GetBatteryChargePercentage(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(battery_charge_percentage);
 }
@@ -156,7 +156,7 @@ void PSM::GetBatteryChargePercentage(HLERequestContext& ctx) {
 void PSM::GetChargerType(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(charger_type);
 }
@@ -164,7 +164,7 @@ void PSM::GetChargerType(HLERequestContext& ctx) {
 void PSM::OpenSession(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PTM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IPsmSession>(system);
 }

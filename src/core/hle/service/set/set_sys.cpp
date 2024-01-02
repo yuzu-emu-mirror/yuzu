@@ -202,7 +202,7 @@ void SET_SYS::SetLanguageCode(HLERequestContext& ctx) {
 
     LOG_INFO(Service_SET, "called, language_code={}", m_system_settings.language_code);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -217,7 +217,7 @@ void SET_SYS::GetFirmwareVersion(HLERequestContext& ctx) {
         ctx.WriteBuffer(firmware_data);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -232,7 +232,7 @@ void SET_SYS::GetFirmwareVersion2(HLERequestContext& ctx) {
         ctx.WriteBuffer(firmware_data);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -242,7 +242,7 @@ void SET_SYS::GetExternalSteadyClockSourceId(HLERequestContext& ctx) {
     Common::UUID id{};
     auto res = GetExternalSteadyClockSourceId(id);
 
-    IPC::ResponseBuilder rb{ctx, 2 + sizeof(Common::UUID) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw(id);
 }
@@ -255,7 +255,7 @@ void SET_SYS::SetExternalSteadyClockSourceId(HLERequestContext& ctx) {
 
     auto res = SetExternalSteadyClockSourceId(id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -265,8 +265,7 @@ void SET_SYS::GetUserSystemClockContext(HLERequestContext& ctx) {
     Service::Time::Clock::SystemClockContext context{};
     auto res = GetUserSystemClockContext(context);
 
-    IPC::ResponseBuilder rb{ctx,
-                            2 + sizeof(Service::Time::Clock::SystemClockContext) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw(context);
 }
@@ -279,14 +278,14 @@ void SET_SYS::SetUserSystemClockContext(HLERequestContext& ctx) {
 
     auto res = SetUserSystemClockContext(context);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
 void SET_SYS::GetAccountSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(m_system_settings.account_settings);
 }
@@ -299,7 +298,7 @@ void SET_SYS::SetAccountSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called, account_settings_flags={}",
              m_system_settings.account_settings.flags);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -308,7 +307,7 @@ void SET_SYS::GetEulaVersions(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(m_system_settings.eula_versions);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(m_system_settings.eula_version_count);
 }
@@ -325,14 +324,14 @@ void SET_SYS::SetEulaVersions(HLERequestContext& ctx) {
                 sizeof(EulaVersion) * elements);
     SetSaveNeeded();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void SET_SYS::GetColorSetId(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(m_system_settings.color_set_id);
 }
@@ -344,14 +343,14 @@ void SET_SYS::SetColorSetId(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_SET, "called, color_set={}", m_system_settings.color_set_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void SET_SYS::GetNotificationSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 8};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(m_system_settings.notification_settings);
 }
@@ -369,7 +368,7 @@ void SET_SYS::SetNotificationSettings(HLERequestContext& ctx) {
              m_system_settings.notification_settings.stop_time.hour,
              m_system_settings.notification_settings.stop_time.minute);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -378,7 +377,7 @@ void SET_SYS::GetAccountNotificationSettings(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(m_system_settings.account_notification_settings);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(m_system_settings.account_notification_settings_count);
 }
@@ -396,7 +395,7 @@ void SET_SYS::SetAccountNotificationSettings(HLERequestContext& ctx) {
                 elements * sizeof(AccountNotificationSettings));
     SetSaveNeeded();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -452,7 +451,7 @@ void SET_SYS::GetSettingsItemValueSize(HLERequestContext& ctx) {
         response_size = settings[setting_category][setting_name].size();
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(response_size == 0 ? ResultUnknown : ResultSuccess);
     rb.Push(response_size);
 }
@@ -476,14 +475,14 @@ void SET_SYS::GetSettingsItemValue(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(value.data(), value.size());
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(response);
 }
 
 void SET_SYS::GetTvSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 10};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(m_system_settings.tv_settings);
 }
@@ -503,14 +502,14 @@ void SET_SYS::SetTvSettings(HLERequestContext& ctx) {
              m_system_settings.tv_settings.tv_resolution,
              m_system_settings.tv_settings.tv_underscan);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void SET_SYS::GetDebugModeFlag(HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(0);
 }
@@ -518,7 +517,7 @@ void SET_SYS::GetDebugModeFlag(HLERequestContext& ctx) {
 void SET_SYS::GetQuestFlag(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(QuestFlag::Retail);
 }
@@ -529,7 +528,7 @@ void SET_SYS::GetDeviceTimeZoneLocationName(HLERequestContext& ctx) {
     Service::Time::TimeZone::LocationName name{};
     auto res = GetDeviceTimeZoneLocationName(name);
 
-    IPC::ResponseBuilder rb{ctx, 2 + sizeof(Service::Time::TimeZone::LocationName) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw<Service::Time::TimeZone::LocationName>(name);
 }
@@ -542,7 +541,7 @@ void SET_SYS::SetDeviceTimeZoneLocationName(HLERequestContext& ctx) {
 
     auto res = SetDeviceTimeZoneLocationName(name);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -553,7 +552,7 @@ void SET_SYS::SetRegionCode(HLERequestContext& ctx) {
 
     LOG_INFO(Service_SET, "called, region_code={}", m_system_settings.region_code);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -563,8 +562,7 @@ void SET_SYS::GetNetworkSystemClockContext(HLERequestContext& ctx) {
     Service::Time::Clock::SystemClockContext context{};
     auto res = GetNetworkSystemClockContext(context);
 
-    IPC::ResponseBuilder rb{ctx,
-                            2 + sizeof(Service::Time::Clock::SystemClockContext) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw(context);
 }
@@ -577,7 +575,7 @@ void SET_SYS::SetNetworkSystemClockContext(HLERequestContext& ctx) {
 
     auto res = SetNetworkSystemClockContext(context);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -587,7 +585,7 @@ void SET_SYS::IsUserSystemClockAutomaticCorrectionEnabled(HLERequestContext& ctx
     bool enabled{};
     auto res = IsUserSystemClockAutomaticCorrectionEnabled(enabled);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw(enabled);
 }
@@ -600,14 +598,14 @@ void SET_SYS::SetUserSystemClockAutomaticCorrectionEnabled(HLERequestContext& ct
 
     auto res = SetUserSystemClockAutomaticCorrectionEnabled(enabled);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
 void SET_SYS::GetPrimaryAlbumStorage(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(PrimaryAlbumStorage::SdCard);
 }
@@ -615,7 +613,7 @@ void SET_SYS::GetPrimaryAlbumStorage(HLERequestContext& ctx) {
 void SET_SYS::GetSleepSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called");
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(m_system_settings.sleep_settings);
 }
@@ -630,13 +628,13 @@ void SET_SYS::SetSleepSettings(HLERequestContext& ctx) {
              m_system_settings.sleep_settings.handheld_sleep_plan,
              m_system_settings.sleep_settings.console_sleep_plan);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void SET_SYS::GetInitialLaunchSettings(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called");
-    IPC::ResponseBuilder rb{ctx, 10};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(m_system_settings.initial_launch_settings_packed);
 }
@@ -653,7 +651,7 @@ void SET_SYS::SetInitialLaunchSettings(HLERequestContext& ctx) {
              m_system_settings.initial_launch_settings_packed.flags.raw,
              m_system_settings.initial_launch_settings_packed.timestamp.time_point);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -662,7 +660,7 @@ void SET_SYS::GetDeviceNickName(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(::Settings::values.device_name.GetValue());
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -673,7 +671,7 @@ void SET_SYS::SetDeviceNickName(HLERequestContext& ctx) {
 
     ::Settings::values.device_name = device_name;
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -681,7 +679,7 @@ void SET_SYS::GetProductModel(HLERequestContext& ctx) {
     const u32 product_model = 1;
 
     LOG_WARNING(Service_SET, "(STUBBED) called, product_model={}", product_model);
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(product_model);
 }
@@ -691,7 +689,7 @@ void SET_SYS::GetMiiAuthorId(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_SET, "(STUBBED) called, author_id={}", author_id.FormattedString());
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(author_id);
 }
@@ -701,7 +699,7 @@ void SET_SYS::GetAutoUpdateEnableFlag(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_SET, "(STUBBED) called, auto_update_flag={}", auto_update_flag);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(auto_update_flag);
 }
@@ -712,7 +710,7 @@ void SET_SYS::GetBatteryPercentageFlag(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called, battery_percentage_flag={}",
                 battery_percentage_flag);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(battery_percentage_flag);
 }
@@ -725,7 +723,7 @@ void SET_SYS::SetExternalSteadyClockInternalOffset(HLERequestContext& ctx) {
 
     auto res = SetExternalSteadyClockInternalOffset(offset);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -735,7 +733,7 @@ void SET_SYS::GetExternalSteadyClockInternalOffset(HLERequestContext& ctx) {
     s64 offset{};
     auto res = GetExternalSteadyClockInternalOffset(offset);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.Push(offset);
 }
@@ -743,7 +741,7 @@ void SET_SYS::GetExternalSteadyClockInternalOffset(HLERequestContext& ctx) {
 void SET_SYS::GetErrorReportSharePermission(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(ErrorReportSharePermission::Denied);
 }
@@ -751,7 +749,7 @@ void SET_SYS::GetErrorReportSharePermission(HLERequestContext& ctx) {
 void SET_SYS::GetAppletLaunchFlags(HLERequestContext& ctx) {
     LOG_INFO(Service_SET, "called, applet_launch_flag={}", m_system_settings.applet_launch_flag);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(m_system_settings.applet_launch_flag);
 }
@@ -763,7 +761,7 @@ void SET_SYS::SetAppletLaunchFlags(HLERequestContext& ctx) {
 
     LOG_INFO(Service_SET, "called, applet_launch_flag={}", m_system_settings.applet_launch_flag);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -781,7 +779,7 @@ void SET_SYS::GetKeyboardLayout(HLERequestContext& ctx) {
 
     LOG_INFO(Service_SET, "called, selected_keyboard_layout={}", selected_keyboard_layout);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(static_cast<u32>(selected_keyboard_layout));
 }
@@ -792,7 +790,7 @@ void SET_SYS::GetDeviceTimeZoneLocationUpdatedTime(HLERequestContext& ctx) {
     Service::Time::Clock::SteadyClockTimePoint time_point{};
     auto res = GetDeviceTimeZoneLocationUpdatedTime(time_point);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw<Service::Time::Clock::SteadyClockTimePoint>(time_point);
 }
@@ -805,7 +803,7 @@ void SET_SYS::SetDeviceTimeZoneLocationUpdatedTime(HLERequestContext& ctx) {
 
     auto res = SetDeviceTimeZoneLocationUpdatedTime(time_point);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
@@ -815,7 +813,7 @@ void SET_SYS::GetUserSystemClockAutomaticCorrectionUpdatedTime(HLERequestContext
     Service::Time::Clock::SteadyClockTimePoint time_point{};
     auto res = GetUserSystemClockAutomaticCorrectionUpdatedTime(time_point);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
     rb.PushRaw<Service::Time::Clock::SteadyClockTimePoint>(time_point);
 }
@@ -828,14 +826,14 @@ void SET_SYS::SetUserSystemClockAutomaticCorrectionUpdatedTime(HLERequestContext
 
     auto res = SetUserSystemClockAutomaticCorrectionUpdatedTime(time_point);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(res);
 }
 
 void SET_SYS::GetChineseTraditionalInputMethod(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(ChineseTraditionalInputMethod::Unknown0);
 }
@@ -851,7 +849,7 @@ void SET_SYS::GetHomeMenuScheme(HLERequestContext& ctx) {
         .extra = 0xFF000000,
     };
 
-    IPC::ResponseBuilder rb{ctx, 2 + sizeof(HomeMenuScheme) / sizeof(u32)};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(default_color);
 }
@@ -859,7 +857,7 @@ void SET_SYS::GetHomeMenuScheme(HLERequestContext& ctx) {
 void SET_SYS::GetHomeMenuSchemeModel(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(0);
 }
@@ -867,7 +865,7 @@ void SET_SYS::GetHomeMenuSchemeModel(HLERequestContext& ctx) {
 void SET_SYS::GetFieldTestingFlag(HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u8>(false);
 }

@@ -26,11 +26,50 @@ protected:
     Service::HLERequestContext* context = nullptr;
     u32* cmdbuf;
     u32 index = 0;
+    std::array<u32, IPC::COMMAND_BUFFER_LENGTH> tmp_cmdbuf;
 
 public:
     explicit RequestHelperBase(u32* command_buffer) : cmdbuf(command_buffer) {}
 
     explicit RequestHelperBase(Service::HLERequestContext& ctx)
+        : context(&ctx), cmdbuf(ctx.CommandBuffer()) {}
+
+protected:
+    void SkipInternal(u32 size_in_words, bool set_to_null) {
+        if (set_to_null) {
+            memset(cmdbuf + index, 0, size_in_words * sizeof(u32));
+        }
+        index += size_in_words;
+    }
+
+    /**
+     * Aligns the current position forward to a 16-byte boundary, padding with zeros.
+     */
+    void AlignWithPaddingInternal() {
+        if (index & 3) {
+            SkipInternal(static_cast<u32>(4 - (index & 3)), true);
+        }
+    }
+
+    u32 GetCurrentOffset() const {
+        return index;
+    }
+
+    void SetCurrentOffset(u32 offset) {
+        index = offset;
+    }
+};
+
+class RequestHelperBaseReq {
+protected:
+    Service::HLERequestContext* context = nullptr;
+    u32* cmdbuf;
+    u32 index = 0;
+
+public:
+    explicit RequestHelperBaseReq(u32* command_buffer) : cmdbuf(command_buffer) {}
+
+    explicit RequestHelperBaseReq(Service::HLERequestContext& ctx)
         : context(&ctx), cmdbuf(ctx.CommandBuffer()) {}
 
     void Skip(u32 size_in_words, bool set_to_null) {
@@ -68,12 +107,17 @@ public:
         AlwaysMoveHandles = 1,
     };
 
-    explicit ResponseBuilder(Service::HLERequestContext& ctx, u32 normal_params_size_,
-                             u32 num_handles_to_copy_ = 0, u32 num_objects_to_move_ = 0,
-                             Flags flags = Flags::None)
-        : RequestHelperBase(ctx), normal_params_size(normal_params_size_),
-          num_handles_to_copy(num_handles_to_copy_),
-          num_objects_to_move(num_objects_to_move_), kernel{ctx.kernel} {
+    explicit ResponseBuilder(Service::HLERequestContext& ctx, Flags flags_ = Flags::None)
+        : RequestHelperBase(ctx), kernel{ctx.kernel}, flags{flags_} {}
+
+    ~ResponseBuilder() {
+        if (!context) {
+            if (normal_params_size > 0 || num_handles_to_copy > 0 || num_objects_to_move > 0) {
+                LOG_ERROR(Service,
+                          "Context was not set but objects were added, they will not be written.");
+            }
+            return;
+        }
 
         memset(cmdbuf, 0, sizeof(u32) * IPC::COMMAND_BUFFER_LENGTH);
 
@@ -81,28 +125,28 @@ public:
 
         // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory
         // padding.
-        u32 raw_data_size = ctx.write_size =
-            ctx.IsTipc() ? normal_params_size - 1 : normal_params_size;
+        u32 raw_data_size = context->write_size =
+            context->IsTipc() ? normal_params_size - 1 : normal_params_size;
         u32 num_handles_to_move{};
         u32 num_domain_objects{};
         const bool always_move_handles{
             (static_cast<u32>(flags) & static_cast<u32>(Flags::AlwaysMoveHandles)) != 0};
-        if (!ctx.GetManager()->IsDomain() || always_move_handles) {
+        if (!context->GetManager()->IsDomain() || always_move_handles) {
             num_handles_to_move = num_objects_to_move;
         } else {
             num_domain_objects = num_objects_to_move;
         }
 
-        if (ctx.GetManager()->IsDomain()) {
+        if (context->GetManager()->IsDomain()) {
             raw_data_size +=
                 static_cast<u32>(sizeof(DomainMessageHeader) / sizeof(u32) + num_domain_objects);
-            ctx.write_size += num_domain_objects;
+            context->write_size += num_domain_objects;
         }
 
-        if (ctx.IsTipc()) {
-            header.type.Assign(ctx.GetCommandType());
+        if (context->IsTipc()) {
+            header.type.Assign(context->GetCommandType());
         } else {
-            raw_data_size += static_cast<u32>(sizeof(IPC::DataPayloadHeader) / sizeof(u32) + 4 +
+            raw_data_size += static_cast<u32>(sizeof(IPC::DataPayloadHeader) / sizeof(u32) + 1 +
                                               normal_params_size);
         }
 
@@ -110,38 +154,39 @@ public:
         if (num_handles_to_copy || num_handles_to_move) {
             header.enable_handle_descriptor.Assign(1);
         }
-        PushRaw(header);
+        PushRawInternal(header);
 
         if (header.enable_handle_descriptor) {
             IPC::HandleDescriptorHeader handle_descriptor_header{};
-            handle_descriptor_header.num_handles_to_copy.Assign(num_handles_to_copy_);
+            handle_descriptor_header.num_handles_to_copy.Assign(num_handles_to_copy);
             handle_descriptor_header.num_handles_to_move.Assign(num_handles_to_move);
-            PushRaw(handle_descriptor_header);
+            PushRawInternal(handle_descriptor_header);
 
-            ctx.handles_offset = index;
+            context->handles_offset = index;
 
-            Skip(num_handles_to_copy + num_handles_to_move, true);
+            SkipInternal(num_handles_to_copy + num_handles_to_move, true);
         }
 
-        if (!ctx.IsTipc()) {
-            AlignWithPadding();
+        if (!context->IsTipc()) {
+            AlignWithPaddingInternal();
 
-            if (ctx.GetManager()->IsDomain() && ctx.HasDomainMessageHeader()) {
+            if (context->GetManager()->IsDomain() && context->HasDomainMessageHeader()) {
                 IPC::DomainMessageHeader domain_header{};
                 domain_header.num_objects = num_domain_objects;
-                PushRaw(domain_header);
+                PushRawInternal(domain_header);
             }
 
             IPC::DataPayloadHeader data_payload_header{};
             data_payload_header.magic = Common::MakeMagic('S', 'F', 'C', 'O');
-            PushRaw(data_payload_header);
+            PushRawInternal(data_payload_header);
         }
 
-        data_payload_index = index;
+        std::memcpy(cmdbuf + index, tmp_cmdbuf.data(), normal_params_size * sizeof(u32));
+        index += normal_params_size;
 
-        ctx.data_payload_offset = index;
-        ctx.write_size += index;
-        ctx.domain_offset = static_cast<u32>(index + raw_data_size / sizeof(u32));
+        context->data_payload_offset = index;
+        context->write_size += index;
+        context->domain_offset = index;
     }
 
     template <class T>
@@ -165,6 +210,7 @@ public:
 
             context->AddMoveObject(&session->GetClientSession());
         }
+        num_objects_to_move++;
     }
 
     template <class T, class... Args>
@@ -233,25 +279,36 @@ public:
     void PushCopyObjects(O&... pointers);
 
 private:
+    template <typename T>
+    void PushRawInternal(const T& value);
+
     u32 normal_params_size{};
     u32 num_handles_to_copy{};
     u32 num_objects_to_move{}; ///< Domain objects or move handles, context dependent
-    u32 data_payload_index{};
     Kernel::KernelCore& kernel;
+    Flags flags;
 };
 
 /// Push ///
 
 inline void ResponseBuilder::PushImpl(s32 value) {
-    cmdbuf[index++] = value;
+    tmp_cmdbuf[normal_params_size++] = value;
 }
 
 inline void ResponseBuilder::PushImpl(u32 value) {
-    cmdbuf[index++] = value;
+    tmp_cmdbuf[normal_params_size++] = value;
 }
 
 template <typename T>
 void ResponseBuilder::PushRaw(const T& value) {
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "It's undefined behavior to use memcpy with non-trivially copyable objects");
+    std::memcpy(tmp_cmdbuf.data() + normal_params_size, &value, sizeof(T));
+    normal_params_size += (sizeof(T) + 3) / 4;
+}
+
+template <typename T>
+void ResponseBuilder::PushRawInternal(const T& value) {
     static_assert(std::is_trivially_copyable_v<T>,
                   "It's undefined behavior to use memcpy with non-trivially copyable objects");
     std::memcpy(cmdbuf + index, &value, sizeof(T));
@@ -317,6 +374,7 @@ inline void ResponseBuilder::PushCopyObjects(O*... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddCopyObject(object);
+        num_handles_to_copy++;
     }
 }
 
@@ -325,6 +383,7 @@ inline void ResponseBuilder::PushCopyObjects(O&... pointers) {
     auto objects = {&pointers...};
     for (auto& object : objects) {
         context->AddCopyObject(object);
+        num_handles_to_copy++;
     }
 }
 
@@ -333,6 +392,7 @@ inline void ResponseBuilder::PushMoveObjects(O*... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddMoveObject(object);
+        num_objects_to_move++;
     }
 }
 
@@ -341,14 +401,15 @@ inline void ResponseBuilder::PushMoveObjects(O&... pointers) {
     auto objects = {&pointers...};
     for (auto& object : objects) {
         context->AddMoveObject(object);
+        num_objects_to_move++;
     }
 }
 
-class RequestParser : public RequestHelperBase {
+class RequestParser : public RequestHelperBaseReq {
 public:
-    explicit RequestParser(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+    explicit RequestParser(u32* command_buffer) : RequestHelperBaseReq(command_buffer) {}
 
-    explicit RequestParser(Service::HLERequestContext& ctx) : RequestHelperBase(ctx) {
+    explicit RequestParser(Service::HLERequestContext& ctx) : RequestHelperBaseReq(ctx) {
         // TIPC does not have data payload offset
         if (!ctx.IsTipc()) {
             ASSERT_MSG(ctx.GetDataPayloadOffset(), "context is incomplete");

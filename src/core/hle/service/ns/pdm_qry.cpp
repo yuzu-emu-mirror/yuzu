@@ -59,7 +59,7 @@ void PDM_QRY::QueryPlayStatisticsByApplicationIdAndUserAccountId(HLERequestConte
                 "(STUBBED) called. unknown={}. application_id=0x{:016X}, user_account_uid=0x{}",
                 unknown, application_id, user_account_uid.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 12};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(statistics);
 }

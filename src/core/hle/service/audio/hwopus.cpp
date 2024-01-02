@@ -65,7 +65,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -79,7 +79,7 @@ private:
         auto input_data{ctx.ReadBuffer(0)};
         auto result = impl->SetContext(input_data);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -98,7 +98,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -112,7 +112,7 @@ private:
         auto input_data{ctx.ReadBuffer(0)};
         auto result = impl->SetContext(input_data);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -133,7 +133,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -157,7 +157,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -183,7 +183,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -209,7 +209,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -235,7 +235,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -261,7 +261,7 @@ private:
 
         ctx.WriteBuffer(output_data);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(size);
         rb.Push(sample_count);
@@ -292,7 +292,7 @@ void HwOpus::OpenHardwareOpusDecoder(HLERequestContext& ctx) {
     };
     auto result = decoder->Initialize(ex, transfer_memory.GetPointerUnsafe(), transfer_memory_size);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushIpcInterface(decoder);
 }
@@ -307,7 +307,7 @@ void HwOpus::GetWorkBufferSize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "sample_rate {} channel_count {} -- returned size 0x{:X}",
               params.sample_rate, params.channel_count, size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }
@@ -342,7 +342,7 @@ void HwOpus::OpenHardwareOpusDecoderForMultiStream(HLERequestContext& ctx) {
     std::memcpy(ex.mappings.data(), params.mappings.data(), sizeof(params.mappings));
     auto result = decoder->Initialize(ex, transfer_memory.GetPointerUnsafe(), transfer_memory_size);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushIpcInterface(decoder);
 }
@@ -359,7 +359,7 @@ void HwOpus::GetWorkBufferSizeForMultiStream(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Audio, "size 0x{:X}", size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }
@@ -380,7 +380,7 @@ void HwOpus::OpenHardwareOpusDecoderEx(HLERequestContext& ctx) {
     auto result =
         decoder->Initialize(params, transfer_memory.GetPointerUnsafe(), transfer_memory_size);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushIpcInterface(decoder);
 }
@@ -394,7 +394,7 @@ void HwOpus::GetWorkBufferSizeEx(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Audio, "size 0x{:X}", size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }
@@ -422,7 +422,7 @@ void HwOpus::OpenHardwareOpusDecoderForMultiStreamEx(HLERequestContext& ctx) {
     auto result =
         decoder->Initialize(params, transfer_memory.GetPointerUnsafe(), transfer_memory_size);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.PushIpcInterface(decoder);
 }
@@ -443,7 +443,7 @@ void HwOpus::GetWorkBufferSizeForMultiStreamEx(HLERequestContext& ctx) {
               params.sample_rate, params.channel_count, params.total_stream_count,
               params.stereo_stream_count, params.use_large_frame_size, size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }
@@ -457,7 +457,7 @@ void HwOpus::GetWorkBufferSizeExEx(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Audio, "size 0x{:X}", size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }
@@ -474,7 +474,7 @@ void HwOpus::GetWorkBufferSizeForMultiStreamExEx(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Audio, "size 0x{:X}", size);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(size);
 }

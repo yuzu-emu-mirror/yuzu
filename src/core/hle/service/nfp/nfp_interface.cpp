@@ -47,7 +47,7 @@ void Interface::Mount(HLERequestContext& ctx) {
     auto result = GetManager()->Mount(device_handle, model_type, mount_target);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -59,7 +59,7 @@ void Interface::Unmount(HLERequestContext& ctx) {
     auto result = GetManager()->Unmount(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -72,7 +72,7 @@ void Interface::OpenApplicationArea(HLERequestContext& ctx) {
     auto result = GetManager()->OpenApplicationArea(device_handle, access_id);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -87,13 +87,13 @@ void Interface::GetApplicationArea(HLERequestContext& ctx) {
     result = TranslateResultToServiceError(result);
 
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(data);
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(static_cast<u32>(data_size));
 }
@@ -107,7 +107,7 @@ void Interface::SetApplicationArea(HLERequestContext& ctx) {
     auto result = GetManager()->SetApplicationArea(device_handle, data);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -119,7 +119,7 @@ void Interface::Flush(HLERequestContext& ctx) {
     auto result = GetManager()->Flush(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -131,7 +131,7 @@ void Interface::Restore(HLERequestContext& ctx) {
     auto result = GetManager()->Restore(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -146,7 +146,7 @@ void Interface::CreateApplicationArea(HLERequestContext& ctx) {
     auto result = GetManager()->CreateApplicationArea(device_handle, access_id, data);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -163,7 +163,7 @@ void Interface::GetRegisterInfo(HLERequestContext& ctx) {
         ctx.WriteBuffer(register_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -180,7 +180,7 @@ void Interface::GetCommonInfo(HLERequestContext& ctx) {
         ctx.WriteBuffer(common_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -197,7 +197,7 @@ void Interface::GetModelInfo(HLERequestContext& ctx) {
         ctx.WriteBuffer(model_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -206,7 +206,7 @@ void Interface::GetApplicationAreaSize(HLERequestContext& ctx) {
     const auto device_handle{rp.Pop<u64>()};
     LOG_DEBUG(Service_NFP, "called, device_handle={}", device_handle);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(GetManager()->GetApplicationAreaSize());
 }
@@ -222,7 +222,7 @@ void Interface::RecreateApplicationArea(HLERequestContext& ctx) {
     auto result = GetManager()->RecreateApplicationArea(device_handle, access_id, data);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -234,7 +234,7 @@ void Interface::Format(HLERequestContext& ctx) {
     auto result = GetManager()->Format(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -251,7 +251,7 @@ void Interface::GetAdminInfo(HLERequestContext& ctx) {
         ctx.WriteBuffer(admin_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -268,7 +268,7 @@ void Interface::GetRegisterInfoPrivate(HLERequestContext& ctx) {
         ctx.WriteBuffer(register_info);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -284,7 +284,7 @@ void Interface::SetRegisterInfoPrivate(HLERequestContext& ctx) {
     auto result = GetManager()->SetRegisterInfoPrivate(device_handle, register_info);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -296,7 +296,7 @@ void Interface::DeleteRegisterInfo(HLERequestContext& ctx) {
     auto result = GetManager()->DeleteRegisterInfo(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -308,7 +308,7 @@ void Interface::DeleteApplicationArea(HLERequestContext& ctx) {
     auto result = GetManager()->DeleteApplicationArea(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -322,12 +322,12 @@ void Interface::ExistsApplicationArea(HLERequestContext& ctx) {
     result = TranslateResultToServiceError(result);
 
     if (result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
     rb.Push(has_application_area);
 }
@@ -345,7 +345,7 @@ void Interface::GetAll(HLERequestContext& ctx) {
         ctx.WriteBuffer(nfp_data);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -361,7 +361,7 @@ void Interface::SetAll(HLERequestContext& ctx) {
     auto result = GetManager()->SetAll(device_handle, nfp_data);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -373,7 +373,7 @@ void Interface::FlushDebug(HLERequestContext& ctx) {
     auto result = GetManager()->FlushDebug(device_handle);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -387,7 +387,7 @@ void Interface::BreakTag(HLERequestContext& ctx) {
     auto result = GetManager()->BreakTag(device_handle, break_type);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -404,7 +404,7 @@ void Interface::ReadBackupData(HLERequestContext& ctx) {
         ctx.WriteBuffer(backup_data);
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -417,7 +417,7 @@ void Interface::WriteBackupData(HLERequestContext& ctx) {
     auto result = GetManager()->WriteBackupData(device_handle, backup_data_buffer);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -431,7 +431,7 @@ void Interface::WriteNtf(HLERequestContext& ctx) {
     auto result = GetManager()->WriteNtf(device_handle, write_type, ntf_data_buffer);
     result = TranslateResultToServiceError(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 

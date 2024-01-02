@@ -159,7 +159,7 @@ void HidBus::GetBusHandle(HLERequestContext& ctx) {
         .handle = devices[handle_index].handle,
     };
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(out_data);
 }
@@ -180,14 +180,14 @@ void HidBus::IsExternalDeviceConnected(HLERequestContext& ctx) {
         const auto& device = devices[device_index.value()].device;
         const bool is_attached = device->IsDeviceActivated();
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(is_attached);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -233,13 +233,13 @@ void HidBus::Initialize(HLERequestContext& ctx) {
         std::memcpy(system.Kernel().GetHidBusSharedMem().GetPointer(), &hidbus_status,
                     sizeof(hidbus_status));
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -272,13 +272,13 @@ void HidBus::Finalize(HLERequestContext& ctx) {
         std::memcpy(system.Kernel().GetHidBusSharedMem().GetPointer(), &hidbus_status,
                     sizeof(hidbus_status));
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -310,13 +310,13 @@ void HidBus::EnableExternalDevice(HLERequestContext& ctx) {
         auto& device = devices[device_index.value()].device;
         device->Enable(parameters.enable);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -336,14 +336,14 @@ void HidBus::GetExternalDeviceId(HLERequestContext& ctx) {
     if (device_index) {
         const auto& device = devices[device_index.value()].device;
         u32 device_id = device->GetDeviceId();
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(device_id);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -365,13 +365,13 @@ void HidBus::SendCommandAsync(HLERequestContext& ctx) {
         auto& device = devices[device_index.value()].device;
         device->SetCommand(data);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 };
@@ -393,14 +393,14 @@ void HidBus::GetSendCommandAsynceResult(HLERequestContext& ctx) {
         const std::vector<u8> data = device->GetReply();
         const u64 data_size = ctx.WriteBuffer(data);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(data_size);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 };
@@ -419,14 +419,14 @@ void HidBus::SetEventForSendCommandAsycResult(HLERequestContext& ctx) {
 
     if (device_index) {
         const auto& device = devices[device_index.value()].device;
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(device->GetSendCommandAsycEvent());
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 };
@@ -434,7 +434,7 @@ void HidBus::SetEventForSendCommandAsycResult(HLERequestContext& ctx) {
 void HidBus::GetSharedMemoryHandle(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(&system.Kernel().GetHidBusSharedMem());
 }
@@ -452,7 +452,7 @@ void HidBus::EnableJoyPollingReceiveMode(HLERequestContext& ctx) {
 
     if (t_mem.IsNull()) {
         LOG_ERROR(Service_HID, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
@@ -472,13 +472,13 @@ void HidBus::EnableJoyPollingReceiveMode(HLERequestContext& ctx) {
         device->SetPollingMode(polling_mode_);
         device->SetTransferMemoryAddress(t_mem->GetSourceAddress());
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -499,13 +499,13 @@ void HidBus::DisableJoyPollingReceiveMode(HLERequestContext& ctx) {
         auto& device = devices[device_index.value()].device;
         device->DisablePollingMode();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         return;
     }
 
     LOG_ERROR(Service_HID, "Invalid handle");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
     return;
 }
@@ -516,7 +516,7 @@ void HidBus::SetStatusManagerType(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_HID, "(STUBBED) called, manager_type={}", manager_type);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 };
 } // namespace Service::HID

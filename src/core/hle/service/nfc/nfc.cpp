@@ -146,7 +146,7 @@ private:
     void CreateAmNfcInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IAm>(system);
     }
@@ -168,7 +168,7 @@ private:
     void CreateUserNfcInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<MFIUser>(system);
     }
@@ -190,7 +190,7 @@ private:
     void CreateUserNfcInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IUser>(system);
     }
@@ -212,7 +212,7 @@ private:
     void CreateSystemNfcInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFC, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISystem>(system);
     }

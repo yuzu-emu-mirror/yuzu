@@ -132,7 +132,7 @@ void Module::Interface::ThrowFatal(HLERequestContext& ctx) {
     const auto error_code = rp.Pop<Result>();
 
     ThrowFatalError(system, error_code, FatalType::ErrorScreen, {});
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -144,7 +144,7 @@ void Module::Interface::ThrowFatalWithPolicy(HLERequestContext& ctx) {
 
     ThrowFatalError(system, error_code, fatal_type,
                     {}); // No info is passed with ThrowFatalWithPolicy
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -160,7 +160,7 @@ void Module::Interface::ThrowFatalWithCpuContext(HLERequestContext& ctx) {
     std::memcpy(&info, fatal_info.data(), sizeof(FatalInfo));
 
     ThrowFatalError(system, error_code, fatal_type, info);
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 

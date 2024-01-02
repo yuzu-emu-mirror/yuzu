@@ -136,7 +136,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(HLERequestContext& ctx,
     UNIMPLEMENTED_MSG("Unknown / unimplemented {}", fmt::to_string(buf));
     if (Settings::values.use_auto_stub) {
         LOG_WARNING(Service, "Using auto stub fallback!");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 }
@@ -175,7 +175,7 @@ Result ServiceFrameworkBase::HandleSyncRequest(Kernel::KServerSession& session,
     switch (ctx.GetCommandType()) {
     case IPC::CommandType::Close:
     case IPC::CommandType::TIPC_Close: {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         result = IPC::ResultSessionClosed;
         break;

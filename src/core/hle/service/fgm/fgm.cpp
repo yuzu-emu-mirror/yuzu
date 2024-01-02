@@ -43,7 +43,7 @@ private:
     void Initialize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FGM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IRequest>(system);
     }

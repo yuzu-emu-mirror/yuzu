@@ -44,7 +44,7 @@ private:
     void RegisterBleEvent(HLERequestContext& ctx) {
         LOG_WARNING(Service_BTM, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(register_event->GetReadableEvent());
     }

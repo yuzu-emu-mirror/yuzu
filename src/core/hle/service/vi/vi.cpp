@@ -99,7 +99,7 @@ private:
 
         server.TryGetProducer(id)->Transact(ctx, transaction, flags);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -112,7 +112,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, addval={:08X}, type={:08X}", id, addval,
                     type);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -123,7 +123,7 @@ private:
 
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(server.TryGetProducer(id)->GetNativeHandle());
     }
@@ -209,7 +209,7 @@ private:
 
         ctx.WriteBuffer(&layout, sizeof(layout));
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushRaw(out);
     }
@@ -220,7 +220,7 @@ private:
 
         LOG_INFO(Service_VI, "(STUBBED) called. layer_id={:#x}", layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -230,7 +230,7 @@ private:
 
         LOG_INFO(Service_VI, "(STUBBED) called. layer_id={:#x}", layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -244,7 +244,7 @@ private:
         const auto result = nvnflinger.GetSystemBufferManager().GetSharedFrameBufferAcquirableEvent(
             &event, layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushCopyObjects(event);
     }
@@ -266,7 +266,7 @@ private:
         const auto result = nvnflinger.GetSystemBufferManager().AcquireSharedFrameBuffer(
             &out.fence, out.slots, &out.target_slot, layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 18};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.PushRaw(out);
     }
@@ -290,7 +290,7 @@ private:
         const auto result = nvnflinger.GetSystemBufferManager().PresentSharedFrameBuffer(
             input.fence, input.crop_region, input.window_transform, input.swap_interval,
             input.layer_id, input.surface_id);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -302,7 +302,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called. layer_id=0x{:016X}, z_value=0x{:016X}", layer_id,
                     z_value);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -315,14 +315,14 @@ private:
 
         LOG_DEBUG(Service_VI, "called, layer_id=0x{:08X}, visibility={}", layer_id, visibility);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetDisplayMode(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         if (Settings::IsDockedMode()) {
@@ -442,7 +442,7 @@ private:
 
         const Result rc = nv_flinger.CloseDisplay(display) ? ResultSuccess : ResultUnknown;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
     }
 
@@ -460,12 +460,12 @@ private:
         const auto layer_id = nv_flinger.CreateLayer(display);
         if (!layer_id) {
             LOG_ERROR(Service_VI, "Layer not found! display=0x{:016X}", display);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(*layer_id);
     }
@@ -478,7 +478,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called. stack=0x{:08X}, layer_id=0x{:016X}", stack,
                     layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -490,7 +490,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
                     visibility);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -554,7 +554,7 @@ private:
     void GetRelayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
@@ -562,7 +562,7 @@ private:
     void GetSystemDisplayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISystemDisplayService>(system, nv_flinger);
     }
@@ -570,7 +570,7 @@ private:
     void GetManagerDisplayService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IManagerDisplayService>(system, nv_flinger);
     }
@@ -578,7 +578,7 @@ private:
     void GetIndirectDisplayTransactionService(HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IHOSBinderDriver>(system, hos_binder_driver_server);
     }
@@ -610,12 +610,12 @@ private:
         const auto display_id = nv_flinger.OpenDisplay(name);
         if (!display_id) {
             LOG_ERROR(Service_VI, "Display not found! display_name={}", name);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(*display_id);
     }
@@ -626,7 +626,7 @@ private:
 
         const Result rc = nv_flinger.CloseDisplay(display_id) ? ResultSuccess : ResultUnknown;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
     }
 
@@ -635,7 +635,7 @@ private:
     void SetDisplayEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_VI, "called.");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -645,7 +645,7 @@ private:
 
         LOG_DEBUG(Service_VI, "called. display_id=0x{:016X}", display_id);
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         // This only returns the fixed values of 1280x720 and makes no distinguishing
@@ -663,7 +663,7 @@ private:
         LOG_DEBUG(Service_VI, "called. scaling_mode=0x{:08X}, unknown=0x{:016X}", scaling_mode,
                   unknown);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
 
         if (scaling_mode > NintendoScaleMode::PreserveAspectRatio) {
             LOG_ERROR(Service_VI, "Invalid scaling mode provided.");
@@ -686,7 +686,7 @@ private:
 
         const DisplayInfo display_info;
         ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(1);
     }
@@ -706,7 +706,7 @@ private:
         const auto display_id = nv_flinger.OpenDisplay(display_name);
         if (!display_id) {
             LOG_ERROR(Service_VI, "Layer not found! layer_id={}", layer_id);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
@@ -714,7 +714,7 @@ private:
         const auto buffer_queue_id = nv_flinger.FindBufferQueueId(*display_id, layer_id);
         if (!buffer_queue_id) {
             LOG_ERROR(Service_VI, "Buffer queue id not found! display_id={}", *display_id);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
@@ -726,7 +726,7 @@ private:
 
         const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(buffer_size);
     }
@@ -739,7 +739,7 @@ private:
 
         nv_flinger.CloseLayer(layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -756,7 +756,7 @@ private:
         const auto layer_id = nv_flinger.CreateLayer(display_id);
         if (!layer_id) {
             LOG_ERROR(Service_VI, "Layer not found! display_id={}", display_id);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
@@ -764,7 +764,7 @@ private:
         const auto buffer_queue_id = nv_flinger.FindBufferQueueId(display_id, *layer_id);
         if (!buffer_queue_id) {
             LOG_ERROR(Service_VI, "Buffer queue id not found! display_id={}", display_id);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNotFound);
             return;
         }
@@ -774,7 +774,7 @@ private:
 
         const auto buffer_size = ctx.WriteBuffer(parcel.Serialize());
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(*layer_id);
         rb.Push<u64>(buffer_size);
@@ -787,7 +787,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called. layer_id=0x{:016X}", layer_id);
         nv_flinger.DestroyLayer(layer_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -804,12 +804,12 @@ private:
                 LOG_ERROR(Service_VI, "Vsync event was not found for display_id={}", display_id);
             }
 
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(vsync_event);
     }
@@ -823,11 +823,11 @@ private:
         const auto result = ConvertScalingModeImpl(&converted_mode, mode);
 
         if (result == ResultSuccess) {
-            IPC::ResponseBuilder rb{ctx, 4};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.PushEnum(converted_mode);
         } else {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
         }
     }
@@ -852,7 +852,7 @@ private:
         constexpr s64 unknown_result_1 = 0;
         constexpr s64 unknown_result_2 = 0;
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(unknown_result_1);
         rb.Push(unknown_result_2);
         rb.Push(ResultSuccess);
@@ -869,7 +869,7 @@ private:
         const auto texture_size = width * height * 4;
         const auto out_size = (texture_size + base_size - 1) / base_size * base_size;
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(out_size);
         rb.Push(alignment);
@@ -924,12 +924,12 @@ void detail::GetDisplayServiceImpl(HLERequestContext& ctx, Core::System& system,
 
     if (!IsValidServiceAccess(permission, policy)) {
         LOG_ERROR(Service_VI, "Permission denied for policy {}", policy);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultPermissionDenied);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IApplicationDisplayService>(system, nv_flinger, hos_binder_driver_server);
 }

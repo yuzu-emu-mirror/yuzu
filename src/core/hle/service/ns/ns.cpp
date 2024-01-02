@@ -349,7 +349,7 @@ void IApplicationManagerInterface::GetApplicationControlData(HLERequestContext& 
         if (size < 0x4000) {
             LOG_ERROR(Service_NS,
                       "output buffer is too small! (actual={:016X}, expected_min=0x4000)", size);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             // TODO(DarkLordZach): Find a better error code for this.
             rb.Push(ResultUnknown);
             return;
@@ -369,7 +369,7 @@ void IApplicationManagerInterface::GetApplicationControlData(HLERequestContext& 
             LOG_ERROR(Service_NS,
                       "output buffer is too small! (actual={:016X}, expected_min={:016X})", size,
                       0x4000 + control.second->GetSize());
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             // TODO(DarkLordZach): Find a better error code for this.
             rb.Push(ResultUnknown);
             return;
@@ -384,7 +384,7 @@ void IApplicationManagerInterface::GetApplicationControlData(HLERequestContext& 
 
     ctx.WriteBuffer(out);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(static_cast<u32>(out.size()));
 }
@@ -396,11 +396,11 @@ void IApplicationManagerInterface::GetApplicationDesiredLanguage(HLERequestConte
     u8 desired_language{};
     const auto res = GetApplicationDesiredLanguage(&desired_language, supported_languages);
     if (res == ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(desired_language);
     } else {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 }
@@ -450,11 +450,11 @@ void IApplicationManagerInterface::ConvertApplicationLanguageToLanguageCode(
     u64 language_code{};
     const auto res = ConvertApplicationLanguageToLanguageCode(&language_code, application_language);
     if (res == ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(language_code);
     } else {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 }
@@ -523,7 +523,7 @@ void IContentManagementInterface::GetTotalSpaceSize(HLERequestContext& ctx) {
 
     LOG_INFO(Service_Capture, "called, storage={}", storage);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u64>(system.GetFileSystemController().GetTotalSpaceSize(storage));
 }
@@ -534,7 +534,7 @@ void IContentManagementInterface::GetFreeSpaceSize(HLERequestContext& ctx) {
 
     LOG_INFO(Service_Capture, "called, storage={}", storage);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u64>(system.GetFileSystemController().GetFreeSpaceSize(storage));
 }
@@ -654,7 +654,7 @@ void IReadOnlyApplicationControlDataInterface::GetApplicationControlData(HLERequ
         ctx.WriteBuffer(nacp_data.data(), nacp_data.size());
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result);
 }
 
@@ -783,7 +783,7 @@ private:
     void OpenSystemUpdateControl(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NS, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISystemUpdateControl>(system);
     }
@@ -807,7 +807,7 @@ private:
     void NeedsUpdateVulnerability(HLERequestContext& ctx) {
         LOG_WARNING(Service_NS, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(false);
     }

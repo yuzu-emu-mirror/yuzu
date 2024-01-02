@@ -178,7 +178,7 @@ void SFDNSRES::GetHostByNameRequest(HLERequestContext& ctx) {
     };
     static_assert(sizeof(OutputParameters) == 0xc);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(OutputParameters{
         .netdb_error = GetAddrInfoErrorToNetDbError(emu_gai_err),
@@ -197,7 +197,7 @@ void SFDNSRES::GetHostByNameRequestWithOptions(HLERequestContext& ctx) {
     };
     static_assert(sizeof(OutputParameters) == 0xc);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(OutputParameters{
         .data_size = data_size,
@@ -303,7 +303,7 @@ void SFDNSRES::GetAddrInfoRequest(HLERequestContext& ctx) {
     };
     static_assert(sizeof(OutputParameters) == 0xc);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(OutputParameters{
         .bsd_errno = GetAddrInfoErrorToErrno(emu_gai_err),
@@ -322,7 +322,7 @@ void SFDNSRES::GetGaiStringErrorRequest(HLERequestContext& ctx) {
     const std::string result = Translate(input.gai_errno);
     ctx.WriteBuffer(result);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -338,7 +338,7 @@ void SFDNSRES::GetAddrInfoRequestWithOptions(HLERequestContext& ctx) {
     };
     static_assert(sizeof(OutputParameters) == 0x10);
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(OutputParameters{
         .data_size = data_size,
@@ -351,7 +351,7 @@ void SFDNSRES::GetAddrInfoRequestWithOptions(HLERequestContext& ctx) {
 void SFDNSRES::ResolverSetOptionRequest(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.Push<s32>(0); // bsd errno

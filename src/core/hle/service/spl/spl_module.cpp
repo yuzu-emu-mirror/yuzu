@@ -37,14 +37,14 @@ void Module::Interface::GetConfig(HLERequestContext& ctx) {
         LOG_ERROR(Service_SPL, "called, config_item={}, result_code={}", config_item,
                   result_code.raw);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result_code);
     }
 
     LOG_DEBUG(Service_SPL, "called, config_item={}, result_code={}, smc_result={}", config_item,
               result_code.raw, smc_result);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(result_code);
     rb.Push(smc_result);
 }
@@ -52,14 +52,14 @@ void Module::Interface::GetConfig(HLERequestContext& ctx) {
 void Module::Interface::ModularExponentiate(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("ModularExponentiate is not implemented!");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
 void Module::Interface::SetConfig(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("SetConfig is not implemented!");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
@@ -74,28 +74,28 @@ void Module::Interface::GenerateRandomBytes(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(data);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void Module::Interface::IsDevelopment(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("IsDevelopment is not implemented!");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
 void Module::Interface::SetBootReason(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("SetBootReason is not implemented!");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 
 void Module::Interface::GetBootReason(HLERequestContext& ctx) {
     UNIMPLEMENTED_MSG("GetBootReason is not implemented!");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSecureMonitorNotImplemented);
 }
 

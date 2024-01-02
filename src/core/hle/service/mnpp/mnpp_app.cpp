@@ -26,14 +26,14 @@ private:
     void Unknown0(HLERequestContext& ctx) {
         LOG_WARNING(Service_MNPP, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void Unknown1(HLERequestContext& ctx) {
         LOG_WARNING(Service_MNPP, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };

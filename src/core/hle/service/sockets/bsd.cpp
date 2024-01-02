@@ -62,7 +62,7 @@ void BSD::PollWork::Response(HLERequestContext& ctx) {
         ctx.WriteBuffer(write_buffer);
     }
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -77,7 +77,7 @@ void BSD::AcceptWork::Response(HLERequestContext& ctx) {
         ctx.WriteBuffer(write_buffer);
     }
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -89,7 +89,7 @@ void BSD::ConnectWork::Execute(BSD* bsd) {
 }
 
 void BSD::ConnectWork::Response(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(bsd_errno == Errno::SUCCESS ? 0 : -1);
     rb.PushEnum(bsd_errno);
@@ -102,7 +102,7 @@ void BSD::RecvWork::Execute(BSD* bsd) {
 void BSD::RecvWork::Response(HLERequestContext& ctx) {
     ctx.WriteBuffer(message);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -118,7 +118,7 @@ void BSD::RecvFromWork::Response(HLERequestContext& ctx) {
         ctx.WriteBuffer(addr, 1);
     }
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -130,7 +130,7 @@ void BSD::SendWork::Execute(BSD* bsd) {
 }
 
 void BSD::SendWork::Response(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -141,7 +141,7 @@ void BSD::SendToWork::Execute(BSD* bsd) {
 }
 
 void BSD::SendToWork::Response(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -150,7 +150,7 @@ void BSD::SendToWork::Response(HLERequestContext& ctx) {
 void BSD::RegisterClient(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.Push<s32>(0); // bsd errno
@@ -159,7 +159,7 @@ void BSD::RegisterClient(HLERequestContext& ctx) {
 void BSD::StartMonitoring(HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
 }
@@ -175,7 +175,7 @@ void BSD::Socket(HLERequestContext& ctx) {
     const auto [fd, bsd_errno] = SocketImpl(static_cast<Domain>(domain), static_cast<Type>(type),
                                             static_cast<Protocol>(protocol));
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(fd);
     rb.PushEnum(bsd_errno);
@@ -184,7 +184,7 @@ void BSD::Socket(HLERequestContext& ctx) {
 void BSD::Select(HLERequestContext& ctx) {
     LOG_DEBUG(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.Push<u32>(0); // ret
@@ -249,7 +249,7 @@ void BSD::GetPeerName(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(write_buffer);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(bsd_errno != Errno::SUCCESS ? -1 : 0);
     rb.PushEnum(bsd_errno);
@@ -267,7 +267,7 @@ void BSD::GetSockName(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(write_buffer);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(bsd_errno != Errno::SUCCESS ? -1 : 0);
     rb.PushEnum(bsd_errno);
@@ -289,7 +289,7 @@ void BSD::GetSockOpt(HLERequestContext& ctx) {
 
     ctx.WriteBuffer(optval);
 
-    IPC::ResponseBuilder rb{ctx, 5};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(err == Errno::SUCCESS ? 0 : -1);
     rb.PushEnum(err);
@@ -316,7 +316,7 @@ void BSD::Fcntl(HLERequestContext& ctx) {
 
     const auto [ret, bsd_errno] = FcntlImpl(fd, static_cast<FcntlCmd>(cmd), arg);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<s32>(ret);
     rb.PushEnum(bsd_errno);
@@ -429,7 +429,7 @@ void BSD::Read(HLERequestContext& ctx) {
 
     LOG_WARNING(Service, "(STUBBED) called. fd={} len={}", fd, ctx.GetWriteBufferSize());
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(0); // ret
     rb.Push<u32>(0); // bsd errno
@@ -461,7 +461,7 @@ void BSD::DuplicateSocket(HLERequestContext& ctx) {
     auto input = rp.PopRaw<InputParameters>();
 
     Expected<s32, Errno> res = DuplicateSocketImpl(input.fd);
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(OutputParameters{
         .ret = res.value_or(0),
@@ -952,7 +952,7 @@ bool BSD::IsFileDescriptorValid(s32 fd) const noexcept {
 }
 
 void BSD::BuildErrnoResponse(HLERequestContext& ctx, Errno bsd_errno) const noexcept {
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
 
     rb.Push(ResultSuccess);
     rb.Push<s32>(bsd_errno == Errno::SUCCESS ? 0 : -1);

@@ -121,7 +121,7 @@ void SM::Initialize(HLERequestContext& ctx) {
 
     ctx.GetManager()->SetIsInitializedForSm();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -134,11 +134,11 @@ void SM::GetServiceCmif(HLERequestContext& ctx) {
     }
 
     if (result == ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
+        IPC::ResponseBuilder rb{ctx, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
         rb.Push(result);
         rb.PushMoveObjects(client_session);
     } else {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 }
@@ -151,7 +151,7 @@ void SM::GetServiceTipc(HLERequestContext& ctx) {
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
+    IPC::ResponseBuilder rb{ctx, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(result);
     rb.PushMoveObjects(result == ResultSuccess ? client_session : nullptr);
 }
@@ -230,12 +230,12 @@ void SM::RegisterServiceImpl(HLERequestContext& ctx, std::string name, u32 max_s
                                                             max_session_count, nullptr);
         result.IsError()) {
         LOG_ERROR(Service_SM, "failed to register service with error_code={:08X}", result.raw);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
+    IPC::ResponseBuilder rb{ctx, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(ResultSuccess);
     rb.PushMoveObjects(server_port);
 }
@@ -246,7 +246,7 @@ void SM::UnregisterService(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_SM, "called with name={}", name);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(service_manager.UnregisterService(name));
 }
 

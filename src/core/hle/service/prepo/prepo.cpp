@@ -69,7 +69,7 @@ private:
         reporter.SavePlayReport(Type, system.GetApplicationProcessProgramID(), {data1, data2},
                                 process_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -91,14 +91,14 @@ private:
         reporter.SavePlayReport(Type, system.GetApplicationProcessProgramID(), {data1, data2},
                                 process_id, user_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void RequestImmediateTransmission(HLERequestContext& ctx) {
         LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -107,7 +107,7 @@ private:
 
         constexpr s32 status = 0;
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(status);
     }
@@ -116,7 +116,7 @@ private:
         LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
         constexpr u64 system_session_id = 0;
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(system_session_id);
     }
@@ -134,7 +134,7 @@ private:
         const auto& reporter{system.GetReporter()};
         reporter.SavePlayReport(Core::Reporter::PlayReportType::System, title_id, {data1, data2});
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -155,7 +155,7 @@ private:
         reporter.SavePlayReport(Core::Reporter::PlayReportType::System, title_id, {data1, data2},
                                 std::nullopt, user_id);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };

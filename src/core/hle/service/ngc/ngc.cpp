@@ -31,7 +31,7 @@ private:
 
         LOG_WARNING(Service_NGC, "(STUBBED) called, text={}", text);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         // Return false since we don't censor anything
         rb.Push(false);
@@ -47,7 +47,7 @@ private:
         // Return the same string since we don't censor anything
         ctx.WriteBuffer(buffer);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -83,7 +83,7 @@ private:
         // This calls nn::ngc::ProfanityFilter::GetContentVersion
         const u32 version = NgcContentVersion;
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(version);
     }
@@ -103,7 +103,7 @@ private:
         // This calls nn::ngc::ProfanityFilter::CheckProfanityWords
         const u32 out_flags = 0;
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(out_flags);
     }
@@ -124,7 +124,7 @@ private:
         const u32 out_flags = 0;
         ctx.WriteBuffer(input);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(out_flags);
     }
@@ -134,7 +134,7 @@ private:
 
         // This reloads the database.
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };

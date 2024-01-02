@@ -152,7 +152,7 @@ private:
     void CreateUserInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IUser>(system);
     }
@@ -174,7 +174,7 @@ private:
     void CreateSystemInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISystem>(system);
     }
@@ -196,7 +196,7 @@ private:
     void CreateDebugInterface(HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDebug>(system);
     }

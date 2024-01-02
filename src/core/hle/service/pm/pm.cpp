@@ -40,7 +40,7 @@ void GetApplicationPidGeneric(HLERequestContext& ctx,
         return proc->GetProcessId() == Kernel::KProcess::ProcessIdMin;
     });
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(process.has_value() ? (*process)->GetProcessId() : NO_PROCESS_FOUND_PID);
 }
@@ -61,7 +61,7 @@ private:
     void GetBootMode(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PM, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(boot_mode);
     }
@@ -71,7 +71,7 @@ private:
 
         boot_mode = SystemBootMode::Maintenance;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -112,12 +112,12 @@ private:
             });
 
         if (!process.has_value()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultProcessNotFound);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push((*process)->GetProcessId());
     }
@@ -140,7 +140,7 @@ private:
         });
 
         if (!process.has_value()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultProcessNotFound);
             return;
         }
@@ -163,7 +163,7 @@ private:
             .storage_id = 0,
         };
 
-        IPC::ResponseBuilder rb{ctx, 10, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(*process);
         rb.PushRaw(program_location);
@@ -198,12 +198,12 @@ private:
         });
 
         if (!process.has_value()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultProcessNotFound);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push((*process)->GetProgramId());
     }
@@ -219,12 +219,12 @@ private:
         });
 
         if (!process.has_value()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultProcessNotFound);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push((*process)->GetProcessId());
     }

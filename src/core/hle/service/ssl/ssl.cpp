@@ -267,7 +267,7 @@ private:
         const s32 in_fd = rp.Pop<s32>();
         s32 out_fd{-1};
         const Result res = SetSocketDescriptorImpl(&out_fd, in_fd);
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         rb.Push<s32>(out_fd);
     }
@@ -275,7 +275,7 @@ private:
     void SetHostName(HLERequestContext& ctx) {
         const std::string hostname = Common::StringFromBuffer(ctx.ReadBuffer());
         const Result res = SetHostNameImpl(hostname);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 
@@ -283,7 +283,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u32 option = rp.Pop<u32>();
         const Result res = SetVerifyOptionImpl(option);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 
@@ -291,13 +291,13 @@ private:
         IPC::RequestParser rp{ctx};
         const u32 mode = rp.Pop<u32>();
         const Result res = SetIoModeImpl(mode);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 
     void DoHandshake(HLERequestContext& ctx) {
         const Result res = DoHandshakeImpl();
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 
@@ -320,7 +320,7 @@ private:
                 out.certs_size = static_cast<u32>(certs_buf.size());
             }
         }
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         rb.PushRaw(out);
     }
@@ -328,7 +328,7 @@ private:
     void Read(HLERequestContext& ctx) {
         std::vector<u8> output_bytes(ctx.GetWriteBufferSize());
         const Result res = ReadImpl(&output_bytes);
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         if (res == ResultSuccess) {
             rb.Push(static_cast<u32>(output_bytes.size()));
@@ -341,7 +341,7 @@ private:
     void Write(HLERequestContext& ctx) {
         size_t write_size{0};
         const Result res = WriteImpl(&write_size, ctx.ReadBuffer());
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         rb.Push(static_cast<u32>(write_size));
     }
@@ -349,7 +349,7 @@ private:
     void Pending(HLERequestContext& ctx) {
         s32 pending_size{0};
         const Result res = PendingImpl(&pending_size);
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         rb.Push<s32>(pending_size);
     }
@@ -358,7 +358,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u32 mode = rp.Pop<u32>();
         const Result res = SetSessionCacheModeImpl(mode);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
     }
 
@@ -384,7 +384,7 @@ private:
                         parameters.value);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -430,7 +430,7 @@ private:
         LOG_WARNING(Service_SSL, "(STUBBED) called. option={}, value={}", parameters.option,
                     parameters.value);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -440,7 +440,7 @@ private:
         std::unique_ptr<SSLConnectionBackend> backend;
         const Result res = CreateSSLConnectionBackend(&backend);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(res);
         if (res == ResultSuccess) {
             rb.PushIpcInterface<ISslConnection>(system, ssl_version, shared_data,
@@ -451,7 +451,7 @@ private:
     void GetConnectionCount(HLERequestContext& ctx) {
         LOG_DEBUG(Service_SSL, "connection_count={}", shared_data->connection_count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(shared_data->connection_count);
     }
@@ -465,7 +465,7 @@ private:
 
         LOG_WARNING(Service_SSL, "(STUBBED) called, certificate_format={}", certificate_format);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(server_id);
     }
@@ -484,7 +484,7 @@ private:
 
         LOG_WARNING(Service_SSL, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(client_id);
     }
@@ -526,7 +526,7 @@ private:
         LOG_WARNING(Service_SSL, "(STUBBED) called, api_version={}, pid_placeholder={}",
                     parameters.ssl_version.api_version, parameters.pid_placeholder);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISslContext>(system, parameters.ssl_version);
     }
@@ -537,7 +537,7 @@ private:
 
         LOG_DEBUG(Service_SSL, "called, ssl_version={}", ssl_version);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };

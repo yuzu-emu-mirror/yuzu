@@ -84,13 +84,13 @@ private:
         // Error checking
         if (length < 0) {
             LOG_ERROR(Service_FS, "Length is less than 0, length={}", length);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_SIZE);
             return;
         }
         if (offset < 0) {
             LOG_ERROR(Service_FS, "Offset is less than 0, offset={}", offset);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_OFFSET);
             return;
         }
@@ -100,7 +100,7 @@ private:
         // Write the data to memory
         ctx.WriteBuffer(output);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -108,7 +108,7 @@ private:
         const u64 size = backend->GetSize();
         LOG_DEBUG(Service_FS, "called, size={}", size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(size);
     }
@@ -145,13 +145,13 @@ private:
         // Error checking
         if (length < 0) {
             LOG_ERROR(Service_FS, "Length is less than 0, length={}", length);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_SIZE);
             return;
         }
         if (offset < 0) {
             LOG_ERROR(Service_FS, "Offset is less than 0, offset={}", offset);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_OFFSET);
             return;
         }
@@ -162,7 +162,7 @@ private:
         // Write the data to memory
         ctx.WriteBuffer(output);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(static_cast<u64>(output.size()));
     }
@@ -179,13 +179,13 @@ private:
         // Error checking
         if (length < 0) {
             LOG_ERROR(Service_FS, "Length is less than 0, length={}", length);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_SIZE);
             return;
         }
         if (offset < 0) {
             LOG_ERROR(Service_FS, "Offset is less than 0, offset={}", offset);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(FileSys::ERROR_INVALID_OFFSET);
             return;
         }
@@ -206,7 +206,7 @@ private:
                    "Could not write all bytes to file (requested={:016X}, actual={:016X}).", length,
                    written);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -215,7 +215,7 @@ private:
 
         // Exists for SDK compatibiltity -- No need to flush file.
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -226,7 +226,7 @@ private:
 
         backend->Resize(size);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -234,7 +234,7 @@ private:
         const u64 size = backend->GetSize();
         LOG_DEBUG(Service_FS, "called, size={}", size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(size);
     }
@@ -301,7 +301,7 @@ private:
         // Write the data to memory
         ctx.WriteBuffer(begin, range_size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(actual_entries);
     }
@@ -311,7 +311,7 @@ private:
 
         u64 count = entries.size() - next_entry_index;
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(count);
     }
@@ -356,7 +356,7 @@ public:
         LOG_DEBUG(Service_FS, "called. file={}, mode=0x{:X}, size=0x{:08X}", name, file_mode,
                   file_size);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.CreateFile(name, file_size));
     }
 
@@ -366,7 +366,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. file={}", name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.DeleteFile(name));
     }
 
@@ -376,7 +376,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. directory={}", name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.CreateDirectory(name));
     }
 
@@ -386,7 +386,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. directory={}", name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.DeleteDirectory(name));
     }
 
@@ -396,7 +396,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. directory={}", name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.DeleteDirectoryRecursively(name));
     }
 
@@ -406,7 +406,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. Directory: {}", name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.CleanDirectoryRecursively(name));
     }
 
@@ -416,7 +416,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called. file '{}' to file '{}'", src_name, dst_name);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(backend.RenameFile(src_name, dst_name));
     }
 
@@ -433,14 +433,14 @@ public:
         FileSys::VirtualFile vfs_file{};
         auto result = backend.OpenFile(&vfs_file, name, mode);
         if (result != ResultSuccess) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
         auto file = std::make_shared<IFile>(system, vfs_file);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IFile>(std::move(file));
     }
@@ -457,14 +457,14 @@ public:
         FileSys::VirtualDir vfs_dir{};
         auto result = backend.OpenDirectory(&vfs_dir, name);
         if (result != ResultSuccess) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
         auto directory = std::make_shared<IDirectory>(system, vfs_dir, mode);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDirectory>(std::move(directory));
     }
@@ -478,12 +478,12 @@ public:
         FileSys::EntryType vfs_entry_type{};
         auto result = backend.GetEntryType(&vfs_entry_type, name);
         if (result != ResultSuccess) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(static_cast<u32>(vfs_entry_type));
     }
@@ -491,14 +491,14 @@ public:
     void Commit(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetFreeSpaceSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(size.get_free_size());
     }
@@ -506,7 +506,7 @@ public:
     void GetTotalSpaceSize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(size.get_total_size());
     }
@@ -520,12 +520,12 @@ public:
         FileSys::FileTimeStampRaw vfs_timestamp{};
         auto result = backend.GetFileTimeStampRaw(&vfs_timestamp, name);
         if (result != ResultSuccess) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 10};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(vfs_timestamp);
     }
@@ -565,7 +565,7 @@ public:
         savedata_attribute.dir_entry_name_length_max = 0x40;
         savedata_attribute.file_entry_name_length_max = 0x40;
 
-        IPC::ResponseBuilder rb{ctx, 50};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(savedata_attribute);
     }
@@ -607,7 +607,7 @@ public:
         // Write the data to memory
         ctx.WriteBuffer(begin, range_size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(actual_entries);
     }
@@ -876,7 +876,7 @@ void FSP_SRV::SetCurrentProcess(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called. current_process_id=0x{:016X}", current_process_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -887,7 +887,7 @@ void FSP_SRV::OpenFileSystemWithPatch(HLERequestContext& ctx) {
     const auto title_id = rp.PopRaw<u64>();
     LOG_WARNING(Service_FS, "(STUBBED) called with type={}, title_id={:016X}", type, title_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 0};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultUnknown);
 }
 
@@ -900,7 +900,7 @@ void FSP_SRV::OpenSdCardFileSystem(HLERequestContext& ctx) {
     auto filesystem = std::make_shared<IFileSystem>(
         system, sdmc_dir, SizeGetter::FromStorageId(fsc, FileSys::StorageId::SdCard));
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
@@ -918,7 +918,7 @@ void FSP_SRV::CreateSaveDataFileSystem(HLERequestContext& ctx) {
     FileSys::VirtualDir save_data_dir{};
     fsc.CreateSaveData(&save_data_dir, FileSys::SaveDataSpaceId::NandUser, save_struct);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -933,7 +933,7 @@ void FSP_SRV::CreateSaveDataFileSystemBySystemSaveDataId(HLERequestContext& ctx)
     FileSys::VirtualDir save_data_dir{};
     fsc.CreateSaveData(&save_data_dir, FileSys::SaveDataSpaceId::NandSystem, save_struct);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -952,7 +952,7 @@ void FSP_SRV::OpenSaveDataFileSystem(HLERequestContext& ctx) {
     FileSys::VirtualDir dir{};
     auto result = fsc.OpenSaveData(&dir, parameters.space_id, parameters.attribute);
     if (result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 0};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
         return;
     }
@@ -978,7 +978,7 @@ void FSP_SRV::OpenSaveDataFileSystem(HLERequestContext& ctx) {
     auto filesystem =
         std::make_shared<IFileSystem>(system, std::move(dir), SizeGetter::FromStorageId(fsc, id));
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
@@ -998,7 +998,7 @@ void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(HLERequestContext& ctx) {
     const auto space = rp.PopRaw<FileSys::SaveDataSpaceId>();
     LOG_INFO(Service_FS, "called, space={}", space);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISaveDataInfoReader>(
         std::make_shared<ISaveDataInfoReader>(system, space, fsc));
@@ -1007,7 +1007,7 @@ void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(HLERequestContext& ctx) {
 void FSP_SRV::OpenSaveDataInfoReaderOnlyCacheStorage(HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISaveDataInfoReader>(system, FileSys::SaveDataSpaceId::TemporaryStorage,
                                              fsc);
@@ -1016,7 +1016,7 @@ void FSP_SRV::OpenSaveDataInfoReaderOnlyCacheStorage(HLERequestContext& ctx) {
 void FSP_SRV::WriteSaveDataFileSystemExtraDataBySaveDataAttribute(HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called.");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -1041,7 +1041,7 @@ void FSP_SRV::ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(HLERequ
                 parameters.attribute.save_id, parameters.attribute.type, parameters.attribute.rank,
                 parameters.attribute.index);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(flags);
 }
@@ -1054,7 +1054,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(HLERequestContext& ctx) {
         if (!current_romfs) {
             // TODO (bunnei): Find the right error code to use here
             LOG_CRITICAL(Service_FS, "no file system interface available!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultUnknown);
             return;
         }
@@ -1064,7 +1064,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(HLERequestContext& ctx) {
 
     auto storage = std::make_shared<IStorage>(system, romfs);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
@@ -1084,7 +1084,7 @@ void FSP_SRV::OpenDataStorageByDataId(HLERequestContext& ctx) {
         const auto archive = FileSys::SystemArchive::SynthesizeSystemArchive(title_id);
 
         if (archive != nullptr) {
-            IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultSuccess);
             rb.PushIpcInterface(std::make_shared<IStorage>(system, archive));
             return;
@@ -1094,7 +1094,7 @@ void FSP_SRV::OpenDataStorageByDataId(HLERequestContext& ctx) {
         LOG_ERROR(Service_FS,
                   "could not open data storage with title_id={:016X}, storage_id={:02X}", title_id,
                   storage_id);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
@@ -1105,7 +1105,7 @@ void FSP_SRV::OpenDataStorageByDataId(HLERequestContext& ctx) {
     auto storage = std::make_shared<IStorage>(
         system, pm.PatchRomFS(base.get(), std::move(data), FileSys::ContentRecordType::Data));
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
@@ -1118,7 +1118,7 @@ void FSP_SRV::OpenPatchDataStorageByCurrentProcess(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called with storage_id={:02X}, title_id={:016X}", storage_id, title_id);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
 }
 
@@ -1137,14 +1137,14 @@ void FSP_SRV::OpenDataStorageWithProgramIndex(HLERequestContext& ctx) {
         // TODO: Find the right error code to use here
         LOG_ERROR(Service_FS, "could not open storage with program_index={}", program_index);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultUnknown);
         return;
     }
 
     auto storage = std::make_shared<IStorage>(system, std::move(patched_romfs));
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IStorage>(std::move(storage));
 }
@@ -1154,7 +1154,7 @@ void FSP_SRV::DisableAutoSaveDataCreation(HLERequestContext& ctx) {
 
     fsc.SetAutoSaveDataCreation(false);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -1164,14 +1164,14 @@ void FSP_SRV::SetGlobalAccessLogMode(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called, access_log_mode={}", access_log_mode);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void FSP_SRV::GetGlobalAccessLogMode(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(access_log_mode);
 }
@@ -1185,14 +1185,14 @@ void FSP_SRV::OutputAccessLogToSdCard(HLERequestContext& ctx) {
 
     reporter.SaveFSAccessLog(log);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void FSP_SRV::GetProgramIndexForAccessLog(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(AccessLogVersion::Latest);
     rb.Push(access_log_program_index);
@@ -1204,7 +1204,7 @@ void FSP_SRV::GetCacheStorageSize(HLERequestContext& ctx) {
 
     LOG_WARNING(Service_FS, "(STUBBED) called with index={}", index);
 
-    IPC::ResponseBuilder rb{ctx, 6};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(s64{0});
     rb.Push(s64{0});
@@ -1227,14 +1227,14 @@ private:
     void Add(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void Commit(HLERequestContext& ctx) {
         LOG_WARNING(Service_FS, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -1242,7 +1242,7 @@ private:
 void FSP_SRV::OpenMultiCommitManager(HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IMultiCommitManager>(std::make_shared<IMultiCommitManager>(system));
 }

@@ -31,7 +31,7 @@ private:
 
         controller.SetPerformanceConfiguration(mode, config);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -41,7 +41,7 @@ private:
         const auto mode = rp.PopEnum<PerformanceMode>();
         LOG_DEBUG(Service_APM, "called mode={}", mode);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(controller.GetCurrentPerformanceConfiguration(mode));
     }
@@ -54,7 +54,7 @@ private:
         LOG_WARNING(Service_APM, "(STUBBED) called, cpu_overclock_enabled={}",
                     cpu_overclock_enabled);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -77,7 +77,7 @@ APM::~APM() = default;
 void APM::OpenSession(HLERequestContext& ctx) {
     LOG_DEBUG(Service_APM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISession>(system, controller);
 }
@@ -85,14 +85,14 @@ void APM::OpenSession(HLERequestContext& ctx) {
 void APM::GetPerformanceMode(HLERequestContext& ctx) {
     LOG_DEBUG(Service_APM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.PushEnum(controller.GetCurrentPerformanceMode());
 }
 
 void APM::IsCpuOverclockEnabled(HLERequestContext& ctx) {
     LOG_WARNING(Service_APM, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(false);
 }
@@ -120,7 +120,7 @@ APM_Sys::~APM_Sys() = default;
 void APM_Sys::GetPerformanceEvent(HLERequestContext& ctx) {
     LOG_DEBUG(Service_APM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISession>(system, controller);
 }
@@ -133,14 +133,14 @@ void APM_Sys::SetCpuBoostMode(HLERequestContext& ctx) {
 
     controller.SetFromCpuBoostMode(mode);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
 void APM_Sys::GetCurrentPerformanceConfiguration(HLERequestContext& ctx) {
     LOG_DEBUG(Service_APM, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushEnum(
         controller.GetCurrentPerformanceConfiguration(controller.GetCurrentPerformanceMode()));

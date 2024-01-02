@@ -593,7 +593,7 @@ private:
                                                           params.nro_address, params.nro_size,
                                                           params.bss_address, params.bss_size);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         rb.Push(load_address);
     }
@@ -610,7 +610,7 @@ private:
         auto params = rp.PopRaw<InputParameters>();
         auto result = interface.UnmapManualLoadModuleMemory(ctx.GetPID(), params.nro_address);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -628,7 +628,7 @@ private:
         auto result =
             interface.RegisterModuleInfo(ctx.GetPID(), params.nrr_address, params.nrr_size);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -644,7 +644,7 @@ private:
         auto params = rp.PopRaw<InputParameters>();
         auto result = interface.UnregisterModuleInfo(ctx.GetPID(), params.nrr_address);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -655,7 +655,7 @@ private:
         auto client_pid = ctx.GetPID();
         auto result = interface.RegisterProcessHandle(client_pid, process.GetPointerUnsafe());
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 
@@ -676,7 +676,7 @@ private:
         auto result = interface.RegisterProcessModuleInfo(
             client_pid, params.nrr_address, params.nrr_size, process.GetPointerUnsafe());
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
     }
 

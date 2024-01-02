@@ -81,14 +81,14 @@ private:
         clock_rate = rp.Pop<u32>();
         LOG_DEBUG(Service_PCV, "(STUBBED) called, clock_rate={}", clock_rate);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void GetClockRate(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCV, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(clock_rate);
     }
@@ -122,7 +122,7 @@ private:
 
         LOG_DEBUG(Service_PCV, "called, device_code={}, input={}", device_code, unkonwn_input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IClkrstSession>(system, device_code);
     }

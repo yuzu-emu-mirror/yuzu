@@ -30,7 +30,7 @@ IAsyncContext::~IAsyncContext() {
 void IAsyncContext::GetSystemEvent(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(completion_event->GetReadableEvent());
 }
@@ -41,7 +41,7 @@ void IAsyncContext::Cancel(HLERequestContext& ctx) {
     Cancel();
     MarkComplete();
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -50,7 +50,7 @@ void IAsyncContext::HasDone(HLERequestContext& ctx) {
 
     is_complete.store(IsComplete());
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push(is_complete.load());
 }
@@ -58,7 +58,7 @@ void IAsyncContext::HasDone(HLERequestContext& ctx) {
 void IAsyncContext::GetResult(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(GetResult());
 }
 

@@ -139,7 +139,7 @@ private:
     void GetCompletionEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(completion_event->GetReadableEvent());
     }
@@ -148,7 +148,7 @@ private:
         // This is safe to stub, as there should be no adverse consequences from reporting no
         // blocked users.
         LOG_WARNING(Service_Friend, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u32>(0); // Indicates there are no blocked users
     }
@@ -156,14 +156,14 @@ private:
     void DeclareCloseOnlinePlaySession(HLERequestContext& ctx) {
         // Stub used by Splatoon 2
         LOG_WARNING(Service_Friend, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void UpdateUserPresence(HLERequestContext& ctx) {
         // Stub used by Retro City Rampage
         LOG_WARNING(Service_Friend, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -175,7 +175,7 @@ private:
         LOG_WARNING(Service_Friend, "(STUBBED) called, local_play={}, uuid=0x{}", local_play,
                     uuid.RawString());
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -188,7 +188,7 @@ private:
         LOG_WARNING(Service_Friend, "(STUBBED) called, offset={}, uuid=0x{}, pid={}", friend_offset,
                     uuid.RawString(), pid);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
 
         rb.Push<u32>(0); // Friend count
@@ -201,7 +201,7 @@ private:
 
         LOG_WARNING(Service_Friend, "(STUBBED) called, uuid=0x{}", uuid.RawString());
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
     }
@@ -212,7 +212,7 @@ private:
 
         LOG_WARNING(Service_Friend, "(STUBBED) called, uuid=0x{}", uuid.RawString());
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(true);
     }
@@ -248,7 +248,7 @@ private:
     void GetEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_Friend, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(notification_event->GetReadableEvent());
     }
@@ -260,7 +260,7 @@ private:
         }
         std::memset(&states, 0, sizeof(States));
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -269,7 +269,7 @@ private:
 
         if (notifications.empty()) {
             LOG_ERROR(Service_Friend, "No notifications in queue!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(Account::ResultNoNotifications);
             return;
         }
@@ -291,7 +291,7 @@ private:
             break;
         }
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw<SizedNotificationInfo>(notification);
     }
@@ -324,7 +324,7 @@ private:
 };
 
 void Module::Interface::CreateFriendService(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IFriendService>(system);
     LOG_DEBUG(Service_Friend, "called");
@@ -336,7 +336,7 @@ void Module::Interface::CreateNotificationService(HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_Friend, "called, uuid=0x{}", uuid.RawString());
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<INotificationService>(system, uuid);
 }

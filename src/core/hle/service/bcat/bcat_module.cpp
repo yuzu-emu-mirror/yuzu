@@ -58,7 +58,7 @@ bool VerifyNameValidInternal(HLERequestContext& ctx, std::array<char, 0x20> name
     });
     if (null_chars == 0x20 || null_chars == 0 || bad_chars != 0 || name[0x1F] != '\0') {
         LOG_ERROR(Service_BCAT, "Name passed was invalid!");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ERROR_INVALID_ARGUMENT);
         return false;
     }
@@ -101,7 +101,7 @@ private:
     void GetEvent(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(event);
     }
@@ -111,7 +111,7 @@ private:
 
         ctx.WriteBuffer(impl);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -180,7 +180,7 @@ private:
                              GetCurrentBuildID(system.GetApplicationProcessBuildID())},
                             GetProgressBackend(SyncType::Normal));
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface(CreateProgressService(SyncType::Normal));
     }
@@ -197,7 +197,7 @@ private:
                                       GetCurrentBuildID(system.GetApplicationProcessBuildID())},
                                      name, GetProgressBackend(SyncType::Directory));
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface(CreateProgressService(SyncType::Directory));
     }
@@ -213,13 +213,13 @@ private:
 
         if (title_id == 0) {
             LOG_ERROR(Service_BCAT, "Invalid title ID!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_ARGUMENT);
         }
 
         if (passphrase_raw.size() > 0x40) {
             LOG_ERROR(Service_BCAT, "Passphrase too large!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_ARGUMENT);
             return;
         }
@@ -230,7 +230,7 @@ private:
 
         backend.SetPassphrase(title_id, passphrase);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -242,19 +242,19 @@ private:
 
         if (title_id == 0) {
             LOG_ERROR(Service_BCAT, "Invalid title ID!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_INVALID_ARGUMENT);
             return;
         }
 
         if (!backend.Clear(title_id)) {
             LOG_ERROR(Service_BCAT, "Could not clear the directory successfully!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_FAILED_CLEAR_CACHE);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -273,7 +273,7 @@ private:
 void Module::Interface::CreateBcatService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IBcatService>(system, *backend);
 }
@@ -312,7 +312,7 @@ private:
 
         if (current_file != nullptr) {
             LOG_ERROR(Service_BCAT, "A file has already been opened on this interface!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_ENTITY_ALREADY_OPEN);
             return;
         }
@@ -321,7 +321,7 @@ private:
 
         if (dir == nullptr) {
             LOG_ERROR(Service_BCAT, "The directory of name={} couldn't be opened!", dir_name);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_FAILED_OPEN_ENTITY);
             return;
         }
@@ -330,12 +330,12 @@ private:
 
         if (current_file == nullptr) {
             LOG_ERROR(Service_BCAT, "The file of name={} couldn't be opened!", file_name);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_FAILED_OPEN_ENTITY);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -349,7 +349,7 @@ private:
 
         if (current_file == nullptr) {
             LOG_ERROR(Service_BCAT, "There is no file currently open!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_NO_OPEN_ENTITY);
         }
 
@@ -357,7 +357,7 @@ private:
         const auto buffer = current_file->ReadBytes(size, offset);
         ctx.WriteBuffer(buffer);
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(buffer.size());
     }
@@ -367,11 +367,11 @@ private:
 
         if (current_file == nullptr) {
             LOG_ERROR(Service_BCAT, "There is no file currently open!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_NO_OPEN_ENTITY);
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u64>(current_file->GetSize());
     }
@@ -381,11 +381,11 @@ private:
 
         if (current_file == nullptr) {
             LOG_ERROR(Service_BCAT, "There is no file currently open!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_NO_OPEN_ENTITY);
         }
 
-        IPC::ResponseBuilder rb{ctx, 6};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(DigestFile(current_file));
     }
@@ -424,7 +424,7 @@ private:
 
         if (current_dir != nullptr) {
             LOG_ERROR(Service_BCAT, "A file has already been opened on this interface!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_ENTITY_ALREADY_OPEN);
             return;
         }
@@ -433,12 +433,12 @@ private:
 
         if (current_dir == nullptr) {
             LOG_ERROR(Service_BCAT, "Failed to open the directory name={}!", name);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_FAILED_OPEN_ENTITY);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -449,7 +449,7 @@ private:
 
         if (current_dir == nullptr) {
             LOG_ERROR(Service_BCAT, "There is no open directory!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_NO_OPEN_ENTITY);
             return;
         }
@@ -467,7 +467,7 @@ private:
 
         ctx.WriteBuffer(entries);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(static_cast<u32>(write_size * sizeof(DeliveryCacheDirectoryEntry)));
     }
@@ -477,14 +477,14 @@ private:
 
         if (current_dir == nullptr) {
             LOG_ERROR(Service_BCAT, "There is no open directory!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_NO_OPEN_ENTITY);
             return;
         }
 
         const auto files = current_dir->GetFiles();
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(static_cast<u32>(files.size()));
     }
@@ -519,7 +519,7 @@ private:
     void CreateFileService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDeliveryCacheFileService>(system, root);
     }
@@ -527,7 +527,7 @@ private:
     void CreateDirectoryService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_BCAT, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IDeliveryCacheDirectoryService>(system, root);
     }
@@ -541,7 +541,7 @@ private:
         ctx.WriteBuffer(entries.data() + next_read_index, size * sizeof(DirectoryName));
         next_read_index += size;
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(static_cast<u32>(size));
     }
@@ -555,7 +555,7 @@ void Module::Interface::CreateDeliveryCacheStorageService(HLERequestContext& ctx
     LOG_DEBUG(Service_BCAT, "called");
 
     const auto title_id = system.GetApplicationProcessProgramID();
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IDeliveryCacheStorageService>(system, fsc.GetBCATDirectory(title_id));
 }
@@ -566,7 +566,7 @@ void Module::Interface::CreateDeliveryCacheStorageServiceWithApplicationId(HLERe
 
     LOG_DEBUG(Service_BCAT, "called, title_id={:016X}", title_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IDeliveryCacheStorageService>(system, fsc.GetBCATDirectory(title_id));
 }

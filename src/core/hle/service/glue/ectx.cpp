@@ -34,7 +34,7 @@ private:
         [[maybe_unused]] auto input = rp.PopRaw<InputParameters>();
         [[maybe_unused]] auto value = ctx.ReadBuffer();
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(0);
     }
@@ -54,7 +54,7 @@ ECTX_AW::ECTX_AW(Core::System& system_) : ServiceFramework{system_, "ectx:aw"} {
 ECTX_AW::~ECTX_AW() = default;
 
 void ECTX_AW::CreateContextRegistrar(HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IContextRegistrar>(std::make_shared<IContextRegistrar>(system));
 }

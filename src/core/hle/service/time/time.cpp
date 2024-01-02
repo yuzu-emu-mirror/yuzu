@@ -38,19 +38,19 @@ private:
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_UNINITIALIZED_CLOCK);
             return;
         }
 
         s64 posix_time{};
         if (const Result result{clock_core.GetCurrentTime(system, posix_time)}; result.IsError()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<s64>(posix_time);
     }
@@ -59,7 +59,7 @@ private:
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_UNINITIALIZED_CLOCK);
             return;
         }
@@ -67,12 +67,12 @@ private:
         Clock::SystemClockContext system_clock_context{};
         if (const Result result{clock_core.GetClockContext(system, system_clock_context)};
             result.IsError()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(result);
             return;
         }
 
-        IPC::ResponseBuilder rb{ctx, sizeof(Clock::SystemClockContext) / 4 + 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(system_clock_context);
     }
@@ -102,13 +102,13 @@ private:
         LOG_DEBUG(Service_Time, "called");
 
         if (!clock_core.IsInitialized()) {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_UNINITIALIZED_CLOCK);
             return;
         }
 
         const Clock::SteadyClockTimePoint time_point{clock_core.GetCurrentTimePoint(system)};
-        IPC::ResponseBuilder rb{ctx, (sizeof(Clock::SteadyClockTimePoint) / 4) + 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(time_point);
     }
@@ -180,7 +180,7 @@ Result Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
 
 void Module::Interface::GetStandardUserSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISystemClock>(system.GetTimeManager().GetStandardUserSystemClockCore(),
                                       system);
@@ -188,7 +188,7 @@ void Module::Interface::GetStandardUserSystemClock(HLERequestContext& ctx) {
 
 void Module::Interface::GetStandardNetworkSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISystemClock>(system.GetTimeManager().GetStandardNetworkSystemClockCore(),
                                       system);
@@ -196,14 +196,14 @@ void Module::Interface::GetStandardNetworkSystemClock(HLERequestContext& ctx) {
 
 void Module::Interface::GetStandardSteadyClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISteadyClock>(system.GetTimeManager().GetStandardSteadyClockCore(), system);
 }
 
 void Module::Interface::GetTimeZoneService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ITimeZoneService>(system,
                                           system.GetTimeManager().GetTimeZoneContentManager());
@@ -211,7 +211,7 @@ void Module::Interface::GetTimeZoneService(HLERequestContext& ctx) {
 
 void Module::Interface::GetStandardLocalSystemClock(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ISystemClock>(system.GetTimeManager().GetStandardLocalSystemClockCore(),
                                       system);
@@ -220,7 +220,7 @@ void Module::Interface::GetStandardLocalSystemClock(HLERequestContext& ctx) {
 void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     auto& clock_core{system.GetTimeManager().GetStandardNetworkSystemClockCore()};
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(clock_core.IsStandardNetworkSystemClockAccuracySufficient(system));
 }
@@ -230,7 +230,7 @@ void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(HLERequestCon
 
     auto& steady_clock_core{system.GetTimeManager().GetStandardSteadyClockCore()};
     if (!steady_clock_core.IsInitialized()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ERROR_UNINITIALIZED_CLOCK);
         return;
     }
@@ -244,13 +244,13 @@ void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(HLERequestCon
             system.CoreTiming().GetClockTicks())};
         const s64 base_time_point{context.offset + current_time_point.time_point -
                                   ticks.ToSeconds()};
-        IPC::ResponseBuilder rb{ctx, (sizeof(s64) / 4) + 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(base_time_point);
         return;
     }
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ERROR_TIME_MISMATCH);
 }
 
@@ -265,7 +265,7 @@ void Module::Interface::GetClockSnapshot(HLERequestContext& ctx) {
             system.GetTimeManager().GetStandardUserSystemClockCore().GetClockContext(system,
                                                                                      user_context)};
         result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -275,7 +275,7 @@ void Module::Interface::GetClockSnapshot(HLERequestContext& ctx) {
             system.GetTimeManager().GetStandardNetworkSystemClockCore().GetClockContext(
                 system, network_context)};
         result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
@@ -284,14 +284,14 @@ void Module::Interface::GetClockSnapshot(HLERequestContext& ctx) {
     if (const Result result{GetClockSnapshotFromSystemClockContextInternal(
             &ctx.GetThread(), user_context, network_context, type, clock_snapshot)};
         result.IsError()) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(clock_snapshot);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -310,14 +310,14 @@ void Module::Interface::GetClockSnapshotFromSystemClockContext(HLERequestContext
     if (const Result result{GetClockSnapshotFromSystemClockContextInternal(
             &ctx.GetThread(), user_context, network_context, type, clock_snapshot)};
         result != ResultSuccess) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(result);
         return;
     }
 
     ctx.WriteBuffer(clock_snapshot);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -343,7 +343,7 @@ void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(HLERequ
         time_span_type.nanoseconds = 0;
     }
 
-    IPC::ResponseBuilder rb{ctx, (sizeof(s64) / 4) + 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(time_span_type.nanoseconds);
 }
@@ -370,7 +370,7 @@ void Module::Interface::CalculateSpanBetween(HLERequestContext& ctx) {
             time_span_type =
                 Clock::TimeSpanType::FromSeconds(snapshot_b.network_time - snapshot_a.network_time);
         } else {
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ERROR_TIME_NOT_FOUND);
             return;
         }
@@ -378,14 +378,14 @@ void Module::Interface::CalculateSpanBetween(HLERequestContext& ctx) {
         time_span_type = Clock::TimeSpanType::FromSeconds(span);
     }
 
-    IPC::ResponseBuilder rb{ctx, (sizeof(s64) / 4) + 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushRaw(time_span_type.nanoseconds);
 }
 
 void Module::Interface::GetSharedMemoryNativeHandle(HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(&system.Kernel().GetTimeSharedMem());
 }

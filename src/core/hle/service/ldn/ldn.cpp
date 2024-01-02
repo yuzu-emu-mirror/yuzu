@@ -41,7 +41,7 @@ private:
     void GetStateForMonitor(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(state);
     }
@@ -51,7 +51,7 @@ private:
 
         state = State::Initialized;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -73,7 +73,7 @@ public:
     void CreateMonitorService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IMonitorService>(system);
     }
@@ -126,7 +126,7 @@ private:
     void InitializeSystem2(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -204,7 +204,7 @@ public:
             state = lan_discovery.GetState();
         }
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(state);
     }
@@ -214,7 +214,7 @@ public:
 
         if (write_buffer_size != sizeof(NetworkInfo)) {
             LOG_ERROR(Service_LDN, "Invalid buffer size {}", write_buffer_size);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultBadInput);
             return;
         }
@@ -223,13 +223,13 @@ public:
         const auto rc = lan_discovery.GetNetworkInfo(network_info);
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(rc);
             return;
         }
 
         ctx.WriteBuffer<NetworkInfo>(network_info);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -238,7 +238,7 @@ public:
 
         if (!network_interface) {
             LOG_ERROR(Service_LDN, "No network interface available");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultNoIpAddress);
             return;
         }
@@ -256,14 +256,14 @@ public:
         std::reverse(std::begin(current_address), std::end(current_address)); // ntohl
         std::reverse(std::begin(subnet_mask), std::end(subnet_mask));         // ntohl
 
-        IPC::ResponseBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(current_address);
         rb.PushRaw(subnet_mask);
     }
 
     void GetDisconnectReason(HLERequestContext& ctx) {
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushEnum(lan_discovery.GetDisconnectReason());
     }
@@ -275,7 +275,7 @@ public:
 
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(rc);
             return;
         }
@@ -284,7 +284,7 @@ public:
         std::memcpy(security_parameter.data.data(), info.ldn.security_parameter.data(),
                     sizeof(SecurityParameter::data));
 
-        IPC::ResponseBuilder rb{ctx, 10};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
         rb.PushRaw<SecurityParameter>(security_parameter);
     }
@@ -296,7 +296,7 @@ public:
 
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkConfig is not valid {}", rc.raw);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(rc);
             return;
         }
@@ -306,7 +306,7 @@ public:
         config.node_count_max = info.ldn.node_count_max;
         config.local_communication_version = info.ldn.nodes[0].local_communication_version;
 
-        IPC::ResponseBuilder rb{ctx, 10};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
         rb.PushRaw<NetworkConfig>(config);
     }
@@ -314,7 +314,7 @@ public:
     void AttachStateChangeEvent(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(state_change_event->GetReadableEvent());
     }
@@ -326,7 +326,7 @@ public:
         if (node_buffer_count == 0 || network_buffer_size != sizeof(NetworkInfo)) {
             LOG_ERROR(Service_LDN, "Invalid buffer, size = {}, count = {}", network_buffer_size,
                       node_buffer_count);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultBadInput);
             return;
         }
@@ -337,7 +337,7 @@ public:
         const auto rc = lan_discovery.GetNetworkInfo(info, latest_update, latest_update.size());
         if (rc.IsError()) {
             LOG_ERROR(Service_LDN, "NetworkInfo is not valid {}", rc.raw);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(rc);
             return;
         }
@@ -345,7 +345,7 @@ public:
         ctx.WriteBuffer(info, 0);
         ctx.WriteBuffer(latest_update, 1);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -366,7 +366,7 @@ public:
 
         if (network_info_size == 0) {
             LOG_ERROR(Service_LDN, "Invalid buffer size {}", network_info_size);
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultBadInput);
             return;
         }
@@ -381,7 +381,7 @@ public:
 
         ctx.WriteBuffer(network_infos);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
         rb.Push<u32>(count);
     }
@@ -389,21 +389,21 @@ public:
     void SetWirelessControllerRestriction(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void OpenAccessPoint(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.OpenAccessPoint());
     }
 
     void CloseAccessPoint(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.CloseAccessPoint());
     }
 
@@ -429,49 +429,49 @@ public:
         rp.Pop<u32>(); // Padding
         const auto network_Config{rp.PopRaw<NetworkConfig>()};
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.CreateNetwork(security_config, user_config, network_Config));
     }
 
     void DestroyNetwork(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.DestroyNetwork());
     }
 
     void SetAdvertiseData(HLERequestContext& ctx) {
         const auto read_buffer = ctx.ReadBuffer();
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.SetAdvertiseData(read_buffer));
     }
 
     void SetStationAcceptPolicy(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void AddAcceptFilterEntry(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void OpenStation(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.OpenStation());
     }
 
     void CloseStation(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.CloseStation());
     }
 
@@ -496,7 +496,7 @@ public:
         const auto read_buffer = ctx.ReadBuffer();
         if (read_buffer.size() != sizeof(NetworkInfo)) {
             LOG_ERROR(Frontend, "NetworkInfo doesn't match read_buffer size!");
-            IPC::ResponseBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx};
             rb.Push(ResultBadInput);
             return;
         }
@@ -504,7 +504,7 @@ public:
         NetworkInfo network_info{};
         std::memcpy(&network_info, read_buffer.data(), read_buffer.size());
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.Connect(network_info, parameters.user_config,
                                       static_cast<u16>(parameters.local_communication_version)));
     }
@@ -512,7 +512,7 @@ public:
     void Disconnect(HLERequestContext& ctx) {
         LOG_INFO(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.Disconnect());
     }
 
@@ -522,7 +522,7 @@ public:
             LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
     }
 
@@ -533,7 +533,7 @@ public:
 
         is_initialized = false;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(lan_discovery.Finalize());
     }
 
@@ -543,7 +543,7 @@ public:
             LOG_ERROR(Service_LDN, "Network isn't initialized, rc={}", rc.raw);
         }
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(rc);
     }
 
@@ -593,7 +593,7 @@ public:
     void CreateSystemLocalCommunicationService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISystemLocalCommunicationService>(system);
     }
@@ -614,7 +614,7 @@ public:
     void CreateUserLocalCommunicationService(HLERequestContext& ctx) {
         LOG_DEBUG(Service_LDN, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<IUserLocalCommunicationService>(system);
     }
@@ -678,7 +678,7 @@ public:
     void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultDisabled);
     }
 };
@@ -704,7 +704,7 @@ public:
         LOG_WARNING(Service_LDN, "(STUBBED) called reserved_input={} input={}", reserved_input,
                     input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<INetworkService>(system);
     }
@@ -715,7 +715,7 @@ public:
 
         LOG_WARNING(Service_LDN, "(STUBBED) called reserved_input={}", reserved_input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<INetworkServiceMonitor>(system);
     }
@@ -742,7 +742,7 @@ public:
         LOG_WARNING(Service_LDN, "(STUBBED) called reserved_input={} input={}", reserved_input,
                     input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<INetworkService>(system);
     }
@@ -753,7 +753,7 @@ public:
 
         LOG_WARNING(Service_LDN, "(STUBBED) called reserved_input={}", reserved_input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<INetworkServiceMonitor>(system);
     }
@@ -778,7 +778,7 @@ private:
     void Initialize(HLERequestContext& ctx) {
         LOG_WARNING(Service_LDN, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(0);
     }
@@ -793,7 +793,7 @@ private:
         GroupInfo group_info{};
 
         ctx.WriteBuffer(group_info);
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 };
@@ -817,7 +817,7 @@ private:
 
         LOG_INFO(Service_LDN, "called, reserved_input={}", reserved_input);
 
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushIpcInterface<ISfMonitorService>(system);
     }

@@ -214,7 +214,7 @@ void IPlatformServiceManager::RequestLoad(HLERequestContext& ctx) {
     // Games don't call this so all fonts should be loaded
     LOG_DEBUG(Service_NS, "called, shared_font_type={}", shared_font_type);
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
 }
 
@@ -223,7 +223,7 @@ void IPlatformServiceManager::GetLoadState(HLERequestContext& ctx) {
     const u32 font_id{rp.Pop<u32>()};
     LOG_DEBUG(Service_NS, "called, font_id={}", font_id);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(static_cast<u32>(LoadState::Done));
 }
@@ -233,7 +233,7 @@ void IPlatformServiceManager::GetSize(HLERequestContext& ctx) {
     const u32 font_id{rp.Pop<u32>()};
     LOG_DEBUG(Service_NS, "called, font_id={}", font_id);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(impl->GetSharedFontRegion(font_id).size);
 }
@@ -243,7 +243,7 @@ void IPlatformServiceManager::GetSharedMemoryAddressOffset(HLERequestContext& ct
     const u32 font_id{rp.Pop<u32>()};
     LOG_DEBUG(Service_NS, "called, font_id={}", font_id);
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.Push<u32>(impl->GetSharedFontRegion(font_id).offset);
 }
@@ -256,7 +256,7 @@ void IPlatformServiceManager::GetSharedMemoryNativeHandle(HLERequestContext& ctx
     std::memcpy(kernel.GetFontSharedMem().GetPointer(), impl->shared_font->data(),
                 impl->shared_font->size());
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(&kernel.GetFontSharedMem());
 }
@@ -275,7 +275,7 @@ void IPlatformServiceManager::GetSharedFontInOrderOfPriority(HLERequestContext& 
         std::min(MaxElementCount, ctx.GetWriteBufferNumElements<u32>(2));
     LOG_DEBUG(Service_NS, "called, language_code={:X}", language_code);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx};
     std::vector<u32> font_codes;
     std::vector<u32> font_offsets;
     std::vector<u32> font_sizes;

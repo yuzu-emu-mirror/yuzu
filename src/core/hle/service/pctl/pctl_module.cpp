@@ -193,7 +193,7 @@ private:
 
     void Initialize(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
 
         if (False(capability & (Capability::Application | Capability::System))) {
             LOG_ERROR(Service_PCTL, "Invalid capability! capability={:X}", capability);
@@ -232,7 +232,7 @@ private:
     void CheckFreeCommunicationPermission(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         if (!CheckFreeCommunicationPermissionImpl()) {
             rb.Push(Error::ResultNoFreeCommunication);
         } else {
@@ -245,7 +245,7 @@ private:
     void ConfirmSnsPostPermission(HLERequestContext& ctx) {
         LOG_WARNING(Service_PCTL, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(Error::ResultNoFreeCommunication);
     }
 
@@ -255,7 +255,7 @@ private:
         LOG_WARNING(Service_PCTL, "(STUBBED) called, is_temporary_unlocked={}",
                     is_temporary_unlocked);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u8>(is_temporary_unlocked);
     }
@@ -264,21 +264,21 @@ private:
         LOG_DEBUG(Service_PCTL, "called");
         states.stereo_vision = true;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void EndFreeCommunication(HLERequestContext& ctx) {
         LOG_WARNING(Service_PCTL, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
     void IsFreeCommunicationAvailable(HLERequestContext& ctx) {
         LOG_WARNING(Service_PCTL, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         if (!CheckFreeCommunicationPermissionImpl()) {
             rb.Push(Error::ResultNoFreeCommunication);
         } else {
@@ -289,7 +289,7 @@ private:
     void IsRestrictionEnabled(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         if (False(capability & (Capability::Status | Capability::Recovery))) {
             LOG_ERROR(Service_PCTL, "Application does not have Status or Recovery capabilities!");
             rb.Push(Error::ResultNoCapability);
@@ -305,7 +305,7 @@ private:
 
         LOG_WARNING(Service_PCTL, "(STUBBED) called, safety_level={}", safety_level);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(safety_level);
     }
@@ -313,7 +313,7 @@ private:
     void GetCurrentSettings(HLERequestContext& ctx) {
         LOG_INFO(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(restriction_settings);
     }
@@ -323,7 +323,7 @@ private:
 
         LOG_WARNING(Service_PCTL, "(STUBBED) called, count={}", count);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push(count);
     }
@@ -331,7 +331,7 @@ private:
     void ConfirmStereoVisionRestrictionConfigurable(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
 
         if (False(capability & Capability::StereoVision)) {
             LOG_ERROR(Service_PCTL, "Application does not have StereoVision capability!");
@@ -350,7 +350,7 @@ private:
     void IsStereoVisionPermitted(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         if (!ConfirmStereoVisionPermissionImpl()) {
             rb.Push(Error::ResultStereoVisionRestricted);
             rb.Push(false);
@@ -365,7 +365,7 @@ private:
 
         LOG_WARNING(Service_PCTL, "(STUBBED) called, is_pairing_active={}", is_pairing_active);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u8>(is_pairing_active);
     }
@@ -373,7 +373,7 @@ private:
     void GetSynchronizationEvent(HLERequestContext& ctx) {
         LOG_INFO(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(synchronization_event->GetReadableEvent());
     }
@@ -383,7 +383,7 @@ private:
 
         const PlayTimerSettings timer_settings{};
 
-        IPC::ResponseBuilder rb{ctx, 15};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushRaw(timer_settings);
     }
@@ -391,7 +391,7 @@ private:
     void GetPlayTimerEventToRequestSuspension(HLERequestContext& ctx) {
         LOG_INFO(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(request_suspension_event->GetReadableEvent());
     }
@@ -402,7 +402,7 @@ private:
         LOG_INFO(Service_PCTL, "called, is_play_timer_alarm_disabled={}",
                  is_play_timer_alarm_disabled);
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.Push<u8>(is_play_timer_alarm_disabled);
     }
@@ -410,7 +410,7 @@ private:
     void GetUnlinkedEvent(HLERequestContext& ctx) {
         LOG_INFO(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(unlinked_event->GetReadableEvent());
     }
@@ -420,7 +420,7 @@ private:
         const auto can_use = rp.Pop<bool>();
         LOG_DEBUG(Service_PCTL, "called, can_use={}", can_use);
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         if (False(capability & Capability::StereoVision)) {
             LOG_ERROR(Service_PCTL, "Application does not have StereoVision capability!");
             rb.Push(Error::ResultNoCapability);
@@ -434,7 +434,7 @@ private:
     void GetStereoVisionRestriction(HLERequestContext& ctx) {
         LOG_DEBUG(Service_PCTL, "called");
 
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx};
         if (False(capability & Capability::StereoVision)) {
             LOG_ERROR(Service_PCTL, "Application does not have StereoVision capability!");
             rb.Push(Error::ResultNoCapability);
@@ -451,7 +451,7 @@ private:
 
         states.stereo_vision = false;
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx};
         rb.Push(ResultSuccess);
     }
 
@@ -508,7 +508,7 @@ private:
 void Module::Interface::CreateService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PCTL, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     // TODO(ogniK): Get TID from process
 
@@ -518,7 +518,7 @@ void Module::Interface::CreateService(HLERequestContext& ctx) {
 void Module::Interface::CreateServiceWithoutInitialize(HLERequestContext& ctx) {
     LOG_DEBUG(Service_PCTL, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IParentalControlService>(system, capability);
 }

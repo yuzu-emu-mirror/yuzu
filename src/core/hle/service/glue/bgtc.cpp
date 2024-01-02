@@ -23,7 +23,7 @@ BGTC_T::~BGTC_T() = default;
 void BGTC_T::OpenTaskService(HLERequestContext& ctx) {
     LOG_DEBUG(Service_BGTC, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<ITaskService>(system);
 }
