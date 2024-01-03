@@ -67,8 +67,10 @@ public:
      * @param other_setting Second setting to modify, to replace the label with a checkbox
      * @param suffix Set to specify formats for Slider feedback labels or SpinBox
      */
-    explicit Widget(Settings::BasicSetting* setting, const TranslationMap& translations,
-                    const ComboboxTranslationMap& combobox_translations, QWidget* parent,
+    explicit Widget(Settings::BasicSetting* setting,
+                    const TranslationShared::TranslationMap& translations,
+                    const TranslationShared::ComboboxTranslationMap& combobox_translations,
+                    QWidget* parent,
                     bool runtime_lock, std::vector<std::function<void(bool)>>& apply_funcs_,
                     RequestType request = RequestType::Default, bool managed = true,
                     float multiplier = default_multiplier,
@@ -138,8 +140,8 @@ private:
                                  const std::function<void()>& touch);
 
     QWidget* parent;
-    const TranslationMap& translations;
-    const ComboboxTranslationMap& combobox_enumerations;
+    const TranslationShared::TranslationMap& translations;
+    const TranslationShared::ComboboxTranslationMap& combobox_enumerations;
     Settings::BasicSetting& setting;
     std::vector<std::function<void(bool)>>& apply_funcs;
 
@@ -165,11 +167,11 @@ public:
                         RequestType request = RequestType::Default,
                         const QString& suffix = default_suffix) const;
 
-    const ComboboxTranslationMap& ComboboxTranslations() const;
+    const TranslationShared::ComboboxTranslationMap& ComboboxTranslations() const;
 
 private:
-    std::unique_ptr<TranslationMap> translations;
-    std::unique_ptr<ComboboxTranslationMap> combobox_translations;
+    std::unique_ptr<TranslationShared::TranslationMap> translations;
+    std::unique_ptr<TranslationShared::ComboboxTranslationMap> combobox_translations;
 
     QWidget* parent;
     const bool runtime_lock;

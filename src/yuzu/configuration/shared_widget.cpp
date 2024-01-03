@@ -132,7 +132,7 @@ QWidget* Widget::CreateCombobox(std::function<std::string()>& serializer,
     combobox = new QComboBox(this);
     combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-    const ComboboxTranslations* enumeration{nullptr};
+    const TranslationShared::ComboboxTranslations* enumeration{nullptr};
     if (combobox_enumerations.contains(type)) {
         enumeration = &combobox_enumerations.at(type);
         for (const auto& [id, name] : *enumeration) {
@@ -182,7 +182,7 @@ QWidget* Widget::CreateRadioGroup(std::function<std::string()>& serializer,
     layout->setContentsMargins(0, 0, 0, 0);
     group->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-    const ComboboxTranslations* enumeration{nullptr};
+    const TranslationShared::ComboboxTranslations* enumeration{nullptr};
     if (combobox_enumerations.contains(type)) {
         enumeration = &combobox_enumerations.at(type);
         for (const auto& [id, name] : *enumeration) {
@@ -710,8 +710,10 @@ bool Widget::Valid() const {
 
 Widget::~Widget() = default;
 
-Widget::Widget(Settings::BasicSetting* setting_, const TranslationMap& translations_,
-               const ComboboxTranslationMap& combobox_translations_, QWidget* parent_,
+Widget::Widget(Settings::BasicSetting* setting_,
+               const TranslationShared::TranslationMap& translations_,
+               const TranslationShared::ComboboxTranslationMap& combobox_translations_,
+               QWidget* parent_,
                bool runtime_lock_, std::vector<std::function<void(bool)>>& apply_funcs_,
                RequestType request, bool managed, float multiplier,
                Settings::BasicSetting* other_setting, const QString& suffix)
@@ -765,8 +767,9 @@ Widget::Widget(Settings::BasicSetting* setting_, const TranslationMap& translati
 }
 
 Builder::Builder(QWidget* parent_, bool runtime_lock_)
-    : translations{InitializeTranslations(parent_)},
-      combobox_translations{ComboboxEnumeration(parent_)}, parent{parent_}, runtime_lock{
+    : translations{TranslationShared::InitializeTranslations(parent_)},
+      combobox_translations{TranslationShared::ComboboxEnumeration(parent_)}, parent{parent_},
+      runtime_lock{
                                                                                 runtime_lock_} {}
 
 Builder::~Builder() = default;
@@ -795,7 +798,7 @@ Widget* Builder::BuildWidget(Settings::BasicSetting* setting,
     return BuildWidget(setting, apply_funcs, request, true, 1.0f, other_setting, suffix);
 }
 
-const ComboboxTranslationMap& Builder::ComboboxTranslations() const {
+const TranslationShared::ComboboxTranslationMap& Builder::ComboboxTranslations() const {
     return *combobox_translations;
 }
 

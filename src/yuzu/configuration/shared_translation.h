@@ -9,20 +9,13 @@
 #include <utility>
 #include <vector>
 #include <QString>
+#include <qobject.h>
 #include "common/common_types.h"
 #include "common/settings.h"
 
 class QWidget;
 
 namespace ConfigurationShared {
-using TranslationMap = std::map<u32, std::pair<QString, QString>>;
-using ComboboxTranslations = std::vector<std::pair<u32, QString>>;
-using ComboboxTranslationMap = std::map<u32, ComboboxTranslations>;
-
-std::unique_ptr<TranslationMap> InitializeTranslations(QWidget* parent);
-
-std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QWidget* parent);
-
 static const std::map<Settings::AntiAliasing, QString> anti_aliasing_texts_map = {
     {Settings::AntiAliasing::None, QStringLiteral(QT_TRANSLATE_NOOP("GMainWindow", "None"))},
     {Settings::AntiAliasing::Fxaa, QStringLiteral(QT_TRANSLATE_NOOP("GMainWindow", "FXAA"))},
@@ -65,4 +58,17 @@ static const std::map<Settings::ShaderBackend, QString> shader_backend_texts_map
     {Settings::ShaderBackend::SpirV, QStringLiteral(QT_TRANSLATE_NOOP("GMainWindow", "SPIRV"))},
 };
 
+} // namespace ConfigurationShared
+namespace ConfigurationShared {
+class TranslationShared : public QObject {
+    Q_OBJECT
+public:
+    using TranslationMap = std::map<u32, std::pair<QString, QString>>;
+    using ComboboxTranslations = std::vector<std::pair<u32, QString>>;
+    using ComboboxTranslationMap = std::map<u32, ComboboxTranslations>;
+    static std::unique_ptr<TranslationShared::TranslationMap> InitializeTranslations(
+        QWidget* parent);
+    static std::unique_ptr<TranslationShared::ComboboxTranslationMap> ComboboxEnumeration(
+        QWidget* parent);
+};
 } // namespace ConfigurationShared
