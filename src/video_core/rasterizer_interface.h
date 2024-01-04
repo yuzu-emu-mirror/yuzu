@@ -155,12 +155,6 @@ public:
     virtual void AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
                                           std::span<const u8> memory) = 0;
 
-    /// Attempt to use a faster method to display the framebuffer to screen
-    [[nodiscard]] virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& config,
-                                                 VAddr framebuffer_addr, u32 pixel_stride) {
-        return false;
-    }
-
     /// Increase/decrease the number of object in pages touching the specified region
     virtual void UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {}
 

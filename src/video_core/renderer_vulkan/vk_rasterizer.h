@@ -40,7 +40,7 @@ class Maxwell3D;
 
 namespace Vulkan {
 
-struct ScreenInfo;
+struct FramebufferTextureInfo;
 
 class StateTracker;
 
@@ -74,9 +74,9 @@ class RasterizerVulkan final : public VideoCore::RasterizerAccelerated,
                                protected VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 public:
     explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                              Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
-                              const Device& device_, MemoryAllocator& memory_allocator_,
-                              StateTracker& state_tracker_, Scheduler& scheduler_);
+                              Core::Memory::Memory& cpu_memory_, const Device& device_,
+                              MemoryAllocator& memory_allocator_, StateTracker& state_tracker_,
+                              Scheduler& scheduler_);
     ~RasterizerVulkan() override;
 
     void Draw(bool is_indexed, u32 instance_count) override;
@@ -122,8 +122,6 @@ public:
     Tegra::Engines::AccelerateDMAInterface& AccessAccelerateDMA() override;
     void AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
                                   std::span<const u8> memory) override;
-    bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
-                           u32 pixel_stride) override;
     void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                            const VideoCore::DiskResourceLoadCallback& callback) override;
 
@@ -132,6 +130,10 @@ public:
     void BindChannel(Tegra::Control::ChannelState& channel) override;
 
     void ReleaseChannel(s32 channel_id) override;
+
+    std::optional<FramebufferTextureInfo> AccelerateDisplay(const Tegra::FramebufferConfig& config,
+                                                            VAddr framebuffer_addr,
+                                                            u32 pixel_stride);
 
 private:
     static constexpr size_t MAX_TEXTURES = 192;
@@ -177,7 +179,6 @@ private:
 
     Tegra::GPU& gpu;
 
-    ScreenInfo& screen_info;
     const Device& device;
     MemoryAllocator& memory_allocator;
     StateTracker& state_tracker;

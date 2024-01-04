@@ -163,10 +163,10 @@ DrawParams MakeDrawParams(const MaxwellDrawState& draw_state, u32 num_instances,
 } // Anonymous namespace
 
 RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                                   Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
-                                   const Device& device_, MemoryAllocator& memory_allocator_,
-                                   StateTracker& state_tracker_, Scheduler& scheduler_)
-    : RasterizerAccelerated{cpu_memory_}, gpu{gpu_}, screen_info{screen_info_}, device{device_},
+                                   Core::Memory::Memory& cpu_memory_, const Device& device_,
+                                   MemoryAllocator& memory_allocator_, StateTracker& state_tracker_,
+                                   Scheduler& scheduler_)
+    : RasterizerAccelerated{cpu_memory_}, gpu{gpu_}, device{device_},
       memory_allocator{memory_allocator_}, state_tracker{state_tracker_}, scheduler{scheduler_},
       staging_pool(device, memory_allocator, scheduler), descriptor_pool(device, scheduler),
       guest_descriptor_queue(device, scheduler), compute_pass_descriptor_queue(device, scheduler),
@@ -781,23 +781,25 @@ void RasterizerVulkan::AccelerateInlineToMemory(GPUVAddr address, size_t copy_si
     query_cache.InvalidateRegion(*cpu_addr, copy_size);
 }
 
-bool RasterizerVulkan::AccelerateDisplay(const Tegra::FramebufferConfig& config,
-                                         VAddr framebuffer_addr, u32 pixel_stride) {
+std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
+    const Tegra::FramebufferConfig& config, VAddr framebuffer_addr, u32 pixel_stride) {
     if (!framebuffer_addr) {
-        return false;
+        return {};
     }
     std::scoped_lock lock{texture_cache.mutex};
     ImageView* const image_view =
         texture_cache.TryFindFramebufferImageView(config, framebuffer_addr);
     if (!image_view) {
-        return false;
+        return {};
     }
     query_cache.NotifySegment(false);
-    screen_info.image = image_view->ImageHandle();
-    screen_info.image_view = image_view->Handle(Shader::TextureType::Color2D);
-    screen_info.width = image_view->size.width;
-    screen_info.height = image_view->size.height;
-    return true;
+
+    FramebufferTextureInfo info{};
+    info.image = image_view->ImageHandle();
+    info.image_view = image_view->Handle(Shader::TextureType::Color2D);
+    info.width = image_view->size.width;
+    info.height = image_view->size.height;
+    return info;
 }
 
 void RasterizerVulkan::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
