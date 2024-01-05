@@ -33,13 +33,15 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
 
     CommandDataContainer next;
 
+    scheduler.Init();
+
     while (!stop_token.stop_requested()) {
         state.queue.PopWait(next, stop_token);
         if (stop_token.stop_requested()) {
             break;
         }
-        if (auto* submit_list = std::get_if<SubmitListCommand>(&next.data)) {
-            scheduler.Push(submit_list->channel, std::move(submit_list->entries));
+        if (std::holds_alternative<SubmitListCommand>(next.data)) {
+            scheduler.Resume();
         } else if (std::holds_alternative<GPUTickCommand>(next.data)) {
             system.GPU().TickWork();
         } else if (const auto* flush = std::get_if<FlushRegionCommand>(&next.data)) {
@@ -66,14 +68,16 @@ ThreadManager::~ThreadManager() = default;
 
 void ThreadManager::StartThread(VideoCore::RendererBase& renderer,
                                 Core::Frontend::GraphicsContext& context,
-                                Tegra::Control::Scheduler& scheduler) {
+                                Tegra::Control::Scheduler& scheduler_) {
     rasterizer = renderer.ReadRasterizer();
+    scheduler = &scheduler_;
     thread = std::jthread(RunThread, std::ref(system), std::ref(renderer), std::ref(context),
-                          std::ref(scheduler), std::ref(state));
+                          std::ref(scheduler_), std::ref(state));
 }
 
 void ThreadManager::SubmitList(s32 channel, Tegra::CommandList&& entries) {
-    PushCommand(SubmitListCommand(channel, std::move(entries)));
+    scheduler->Push(channel, std::move(entries));
+    PushCommand(SubmitListCommand());
 }
 
 void ThreadManager::FlushRegion(DAddr addr, u64 size) {

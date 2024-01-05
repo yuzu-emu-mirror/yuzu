@@ -124,7 +124,8 @@ class KeplerCompute;
 
 namespace Control {
 struct ChannelState;
-}
+class Scheduler;
+} // namespace Control
 
 namespace Host1x {
 class Host1x;
@@ -203,6 +204,12 @@ public:
 
     /// Returns a const reference to the shader notifier.
     [[nodiscard]] const VideoCore::ShaderNotify& ShaderNotify() const;
+
+    /// Returns GPU Channel Scheduler.
+    [[nodiscard]] Tegra::Control::Scheduler& Scheduler();
+
+    /// Returns GPU Channel Scheduler.
+    [[nodiscard]] const Tegra::Control::Scheduler& Scheduler() const;
 
     [[nodiscard]] u64 GetTicks() const;
 

@@ -36,13 +36,7 @@ class RendererBase;
 namespace VideoCommon::GPUThread {
 
 /// Command to signal to the GPU thread that a command list is ready for processing
-struct SubmitListCommand final {
-    explicit SubmitListCommand(s32 channel_, Tegra::CommandList&& entries_)
-        : channel{channel_}, entries{std::move(entries_)} {}
-
-    s32 channel;
-    Tegra::CommandList entries;
-};
+struct SubmitListCommand final {};
 
 /// Command to signal to the GPU thread to flush a region
 struct FlushRegionCommand final {
@@ -124,6 +118,7 @@ public:
 private:
     /// Pushes a command to be executed by the GPU thread
     u64 PushCommand(CommandData&& command_data, bool block = false);
+    Tegra::Control::Scheduler* scheduler;
 
     Core::System& system;
     const bool is_async;

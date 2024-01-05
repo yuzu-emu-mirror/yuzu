@@ -401,6 +401,14 @@ std::shared_ptr<Control::ChannelState> GPU::AllocateChannel() {
     return impl->AllocateChannel();
 }
 
+Tegra::Control::Scheduler& GPU::Scheduler() {
+    return *impl->scheduler;
+}
+
+const Tegra::Control::Scheduler& GPU::Scheduler() const {
+    return *impl->scheduler;
+}
+
 void GPU::InitChannel(Control::ChannelState& to_init) {
     impl->InitChannel(to_init);
 }
