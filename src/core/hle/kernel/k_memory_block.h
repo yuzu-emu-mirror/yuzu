@@ -82,11 +82,11 @@ enum class KMemoryState : u32 {
     ThreadLocal = static_cast<u32>(Svc::MemoryState::ThreadLocal) | FlagLinearMapped,
 
     Transferred = static_cast<u32>(Svc::MemoryState::Transferred) | FlagsMisc |
-                 FlagCanAlignedDeviceMap | FlagCanChangeAttribute | FlagCanUseIpc |
-                 FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
+                  FlagCanAlignedDeviceMap | FlagCanChangeAttribute | FlagCanUseIpc |
+                  FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
     SharedTransferred = static_cast<u32>(Svc::MemoryState::SharedTransferred) | FlagsMisc |
-                       FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
+                        FlagCanAlignedDeviceMap | FlagCanUseNonSecureIpc | FlagCanUseNonDeviceIpc,
 
     SharedCode = static_cast<u32>(Svc::MemoryState::SharedCode) | FlagMapped |
                  FlagReferenceCounted | FlagLinearMapped | FlagCanUseNonSecureIpc |
