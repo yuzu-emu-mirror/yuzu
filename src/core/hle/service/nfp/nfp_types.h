@@ -244,7 +244,7 @@ struct NTAG215File {
     u8 uid_crc_check2;
     u8 internal_number;
     u16 static_lock;           // Set defined pages as read only
-    u32 compability_container; // Defines available memory
+    u32 compatibility_container; // Defines available memory
     HashData hmac_data;        // Hash
     u8 constant_value;         // Must be A5
     u16_be write_counter;      // Number of times the amiibo has been written?
@@ -278,7 +278,7 @@ struct EncryptedNTAG215File {
     u8 uuid_crc_check2;
     u8 internal_number;
     u16 static_lock;                 // Set defined pages as read only
-    u32 compability_container;       // Defines available memory
+    u32 compatibility_container;       // Defines available memory
     EncryptedAmiiboFile user_memory; // Writable data
     u32 dynamic_lock;                // Dynamic lock
     u32 CFG0;                        // Defines memory protected by password
