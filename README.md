@@ -7,14 +7,11 @@ SPDX-License-Identifier: GPL-2.0-or-later
   <br>
   <a href="https://yuzu-emu.org/"><img src="https://raw.githubusercontent.com/yuzu-emu/yuzu-assets/master/icons/icon.png" alt="yuzu" width="200"></a>
   <br>
-  <b>yuzu</b>
+  yuzu
   <br>
 </h1>
 
-<h4 align="center"><b>yuzu</b> is the world's most popular, open-source, Nintendo Switch emulator — started by the creators of <a href="https://citra-emu.org" target="_blank">Citra</a>.
-<br>
-It is written in C++ with portability in mind, and we actively maintain builds for Windows, Linux and Android.
-</h4>
+<h4 align="center">yuzu is an open-source Nintendo Switch emulator, developed by the creators of Citra. It's written in C++ and is designed to be portable across Windows, Linux, and Android.</h4>
 
 <p align="center">
     <a href="https://dev.azure.com/yuzu-emu/yuzu/">
@@ -38,48 +35,38 @@ It is written in C++ with portability in mind, and we actively maintain builds f
 
 ## Compatibility
 
-The emulator is capable of running most commercial games at full speed, provided you meet the [necessary hardware requirements](https://yuzu-emu.org/help/quickstart/#hardware-requirements).
-
-For a full list of games yuzu supports, please visit our [Compatibility page](https://yuzu-emu.org/game/).
-
-Check out our [website](https://yuzu-emu.org/) for the latest news on exciting features, monthly progress reports, and more!
+yuzu can run most commercial games at full speed, given that the necessary hardware requirements are met. Visit our [Compatibility page](https://yuzu-emu.org/game/) for a full list of supported games.
 
 ## Development
 
-Most of the development happens on GitHub. It's also where [our central repository](https://github.com/yuzu-emu/yuzu) is hosted. For development discussion, please join us on [Discord](https://discord.com/invite/u77vRWY).
+Development primarily takes place on GitHub, where our [central repository](https://github.com/yuzu-emu/yuzu) is hosted. Join us on [Discord](https://discord.com/invite/u77vRWY) for development discussions.
 
-If you want to contribute, please take a look at the [Contributor's Guide](https://github.com/yuzu-emu/yuzu/wiki/Contributing) and [Developer Information](https://github.com/yuzu-emu/yuzu/wiki/Developer-Information).
-You can also contact any of the developers on Discord in order to know about the current state of the emulator.
-
-If you want to contribute to the user interface translation project, please check out the [yuzu project on transifex](https://www.transifex.com/yuzu-emulator/yuzu). We centralize translation work there, and periodically upstream translations.
+If you're interested in contributing, please review the [Contributor's Guide](https://github.com/yuzu-emu/yuzu/wiki/Contributing) and [Developer Information](https://github.com/yuzu-emu/yuzu/wiki/Developer-Information). You can also reach out to our developers on Discord for more information about the emulator's current state.
 
 ## Building
 
-* __Windows__: [Windows Build](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Windows)
-* __Linux__: [Linux Build](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Linux)
+Instructions for building yuzu can be found here for [Windows](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Windows) and [Linux](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Linux).
 
 ## Download
 
-You can download the latest releases automatically via the installer on our [downloads](https://yuzu-emu.org/downloads/) page.
-
+The latest releases can be downloaded automatically via the installer on our [downloads](https://yuzu-emu.org/downloads/) page.
 
 ## Support
 
-If you enjoy the project and want to support us financially, check out our Patreon!
+If you appreciate our project and want to support us financially, consider checking out our Patreon!
 
 <a href="https://www.patreon.com/yuzuteam">
     <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
 </a>
 
-Any donations received will go towards things like:
-* Switch consoles to explore and reverse-engineer the hardware
-* Switch games for testing, reverse-engineering, and implementing new features
+Donations will be used for:
+* Purchasing Switch consoles and games for testing and reverse-engineering
 * Web hosting and infrastructure setup
-* Software licenses (e.g. Visual Studio, IDA Pro, etc.)
-* Additional hardware (e.g. GPUs as-needed to improve rendering support, other peripherals to add support for, etc.)
+* Software licenses (e.g., Visual Studio, IDA Pro)
+* Additional hardware (e.g., GPUs for improving rendering support, other peripherals)
 
-If you wish to support us a different way, please join our [Discord](https://discord.gg/u77vRWY) and talk to bunnei. You may also contact: donations@yuzu-emu.org.
+For other ways to support us, join our [Discord](https://discord.gg/u77vRWY) and talk to bunnei or email: donations@yuzu-emu.org.
 
 ## License
 
-yuzu is licensed under the GPLv3 (or any later version). Refer to the [LICENSE.txt](https://github.com/yuzu-emu/yuzu/blob/master/LICENSE.txt) file.
+yuzu is licensed under the GPLv3 (or any later version). Refer to the [LICENSE.txt](https://github.com/yuzu-emu/yuzu/blob/master/LICENSE.txt) file for more information.
