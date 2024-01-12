@@ -17,6 +17,7 @@
 #include "video_core/rasterizer_accelerated.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/blit_image.h"
+#include "video_core/renderer_opengl/gl_blit_screen.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_fence_manager.h"
