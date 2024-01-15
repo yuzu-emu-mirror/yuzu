@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "core/hle/service/nvnflinger/pixel_format.h"
-#include "video_core/renderer_opengl/gl_fsr.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 
 namespace Core::Memory {
@@ -25,7 +24,10 @@ struct FramebufferConfig;
 namespace OpenGL {
 
 class Device;
+class FSR;
+class ProgramManager;
 class RasterizerOpenGL;
+class SMAA;
 class StateTracker;
 
 /// Structure used for storing information about the textures for the Switch screen
@@ -50,6 +52,7 @@ public:
     explicit BlitScreen(RasterizerOpenGL& rasterizer, Core::Memory::Memory& cpu_memory,
                         StateTracker& state_tracker, ProgramManager& program_manager,
                         Device& device);
+    ~BlitScreen();
 
     void ConfigureFramebufferTexture(const Tegra::FramebufferConfig& framebuffer);
 
@@ -87,18 +90,8 @@ private:
     OGLTexture aa_texture;
     OGLFramebuffer aa_framebuffer;
 
-    OGLProgram smaa_edge_detection_vert;
-    OGLProgram smaa_blending_weight_calculation_vert;
-    OGLProgram smaa_neighborhood_blending_vert;
-    OGLProgram smaa_edge_detection_frag;
-    OGLProgram smaa_blending_weight_calculation_frag;
-    OGLProgram smaa_neighborhood_blending_frag;
-    OGLTexture smaa_area_tex;
-    OGLTexture smaa_search_tex;
-    OGLTexture smaa_edges_tex;
-    OGLTexture smaa_blend_tex;
-
     std::unique_ptr<FSR> fsr;
+    std::unique_ptr<SMAA> smaa;
 
     /// OpenGL framebuffer data
     std::vector<u8> gl_framebuffer_data;
