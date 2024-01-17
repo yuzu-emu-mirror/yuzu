@@ -566,7 +566,6 @@ GMainWindow::GMainWindow(std::unique_ptr<QtConfig> config_, bool has_broken_vulk
         ui->action_Fullscreen->setChecked(is_fullscreen);
     }
 
-
     if (!game_path.isEmpty()) {
         BootGame(game_path);
     }
