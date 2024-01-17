@@ -15,8 +15,8 @@ public:
     explicit ILibraryAppletProxy(Nvnflinger::Nvnflinger& nvnflinger_,
                                  std::shared_ptr<AppletMessageQueue> msg_queue_,
                                  Core::System& system_)
-        : ServiceFramework{system_, "ILibraryAppletProxy"},
-          nvnflinger{nvnflinger_}, msg_queue{std::move(msg_queue_)} {
+        : ServiceFramework{system_, "ILibraryAppletProxy"}, nvnflinger{nvnflinger_},
+          msg_queue{std::move(msg_queue_)} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &ILibraryAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},
@@ -143,8 +143,8 @@ public:
     explicit ISystemAppletProxy(Nvnflinger::Nvnflinger& nvnflinger_,
                                 std::shared_ptr<AppletMessageQueue> msg_queue_,
                                 Core::System& system_)
-        : ServiceFramework{system_, "ISystemAppletProxy"},
-          nvnflinger{nvnflinger_}, msg_queue{std::move(msg_queue_)} {
+        : ServiceFramework{system_, "ISystemAppletProxy"}, nvnflinger{nvnflinger_},
+          msg_queue{std::move(msg_queue_)} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &ISystemAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},
@@ -284,8 +284,8 @@ void AppletAE::OpenLibraryAppletProxyOld(HLERequestContext& ctx) {
 
 AppletAE::AppletAE(Nvnflinger::Nvnflinger& nvnflinger_,
                    std::shared_ptr<AppletMessageQueue> msg_queue_, Core::System& system_)
-    : ServiceFramework{system_, "appletAE"}, nvnflinger{nvnflinger_}, msg_queue{
-                                                                          std::move(msg_queue_)} {
+    : ServiceFramework{system_, "appletAE"}, nvnflinger{nvnflinger_},
+      msg_queue{std::move(msg_queue_)} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {100, &AppletAE::OpenSystemAppletProxy, "OpenSystemAppletProxy"},

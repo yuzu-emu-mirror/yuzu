@@ -419,8 +419,8 @@ private:
 };
 
 AudRenU::AudRenU(Core::System& system_)
-    : ServiceFramework{system_, "audren:u"},
-      service_context{system_, "audren:u"}, impl{std::make_unique<Manager>(system_)} {
+    : ServiceFramework{system_, "audren:u"}, service_context{system_, "audren:u"},
+      impl{std::make_unique<Manager>(system_)} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},

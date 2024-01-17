@@ -16,8 +16,8 @@ using Core::Memory::YUZU_PAGESIZE;
 template <class P>
 BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                             Core::Memory::Memory& cpu_memory_, Runtime& runtime_)
-    : runtime{runtime_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_}, memory_tracker{
-                                                                               rasterizer} {
+    : runtime{runtime_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_},
+      memory_tracker{rasterizer} {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     common_ranges.clear();

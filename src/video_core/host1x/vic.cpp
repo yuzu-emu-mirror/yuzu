@@ -50,8 +50,8 @@ union VicConfig {
 };
 
 Vic::Vic(Host1x& host1x_, std::shared_ptr<Nvdec> nvdec_processor_)
-    : host1x(host1x_),
-      nvdec_processor(std::move(nvdec_processor_)), converted_frame_buffer{nullptr, av_free} {}
+    : host1x(host1x_), nvdec_processor(std::move(nvdec_processor_)),
+      converted_frame_buffer{nullptr, av_free} {}
 
 Vic::~Vic() = default;
 

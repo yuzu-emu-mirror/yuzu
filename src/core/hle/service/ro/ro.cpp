@@ -556,9 +556,7 @@ class IRoInterface : public ServiceFramework<IRoInterface> {
 public:
     explicit IRoInterface(Core::System& system_, const char* name_, std::shared_ptr<RoContext> ro,
                           NrrKind nrr_kind)
-        : ServiceFramework{system_, name_}, interface {
-        ro, nrr_kind
-    } {
+        : ServiceFramework{system_, name_}, interface{ro, nrr_kind} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IRoInterface::MapManualLoadModuleMemory, "MapManualLoadModuleMemory"},

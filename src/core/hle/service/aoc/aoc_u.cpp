@@ -49,8 +49,8 @@ static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system) {
 class IPurchaseEventManager final : public ServiceFramework<IPurchaseEventManager> {
 public:
     explicit IPurchaseEventManager(Core::System& system_)
-        : ServiceFramework{system_, "IPurchaseEventManager"}, service_context{
-                                                                  system, "IPurchaseEventManager"} {
+        : ServiceFramework{system_, "IPurchaseEventManager"},
+          service_context{system, "IPurchaseEventManager"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IPurchaseEventManager::SetDefaultDeliveryTarget, "SetDefaultDeliveryTarget"},

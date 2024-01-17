@@ -16,9 +16,8 @@ StandardUserSystemClockCore::StandardUserSystemClockCore(
     : SystemClockCore(local_system_clock_core_.GetSteadyClockCore()),
       local_system_clock_core{local_system_clock_core_},
       network_system_clock_core{network_system_clock_core_},
-      auto_correction_time{SteadyClockTimePoint::GetRandom()}, service_context{
-                                                                   system_,
-                                                                   "StandardUserSystemClockCore"} {
+      auto_correction_time{SteadyClockTimePoint::GetRandom()},
+      service_context{system_, "StandardUserSystemClockCore"} {
     auto_correction_event =
         service_context.CreateEvent("StandardUserSystemClockCore:AutoCorrectionEvent");
 }

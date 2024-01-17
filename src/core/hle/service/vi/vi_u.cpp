@@ -9,8 +9,8 @@ namespace Service::VI {
 
 VI_U::VI_U(Core::System& system_, Nvnflinger::Nvnflinger& nv_flinger_,
            Nvnflinger::HosBinderDriverServer& hos_binder_driver_server_)
-    : ServiceFramework{system_, "vi:u"}, nv_flinger{nv_flinger_}, hos_binder_driver_server{
-                                                                      hos_binder_driver_server_} {
+    : ServiceFramework{system_, "vi:u"}, nv_flinger{nv_flinger_},
+      hos_binder_driver_server{hos_binder_driver_server_} {
     static const FunctionInfo functions[] = {
         {0, &VI_U::GetDisplayService, "GetDisplayService"},
         {1, nullptr, "GetDisplayServiceWithProxyNameExchange"},

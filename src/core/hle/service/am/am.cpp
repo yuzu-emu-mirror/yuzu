@@ -1143,8 +1143,8 @@ private:
 };
 
 IStorage::IStorage(Core::System& system_, std::vector<u8>&& buffer)
-    : ServiceFramework{system_, "IStorage"}, impl{std::make_shared<StorageDataImpl>(
-                                                 std::move(buffer))} {
+    : ServiceFramework{system_, "IStorage"},
+      impl{std::make_shared<StorageDataImpl>(std::move(buffer))} {
     Register();
 }
 
@@ -1964,8 +1964,8 @@ void IAppletCommonFunctions::SetCpuBoostRequestPriority(HLERequestContext& ctx) 
 }
 
 IApplicationFunctions::IApplicationFunctions(Core::System& system_)
-    : ServiceFramework{system_, "IApplicationFunctions"}, service_context{system,
-                                                                          "IApplicationFunctions"} {
+    : ServiceFramework{system_, "IApplicationFunctions"},
+      service_context{system, "IApplicationFunctions"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
@@ -2551,8 +2551,8 @@ void LoopProcess(Nvnflinger::Nvnflinger& nvnflinger, Core::System& system) {
 }
 
 IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_)
-    : ServiceFramework{system_, "IHomeMenuFunctions"}, service_context{system,
-                                                                       "IHomeMenuFunctions"} {
+    : ServiceFramework{system_, "IHomeMenuFunctions"},
+      service_context{system, "IHomeMenuFunctions"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {10, &IHomeMenuFunctions::RequestToGetForeground, "RequestToGetForeground"},

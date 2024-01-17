@@ -14,8 +14,8 @@ public:
     explicit IApplicationProxy(Nvnflinger::Nvnflinger& nvnflinger_,
                                std::shared_ptr<AppletMessageQueue> msg_queue_,
                                Core::System& system_)
-        : ServiceFramework{system_, "IApplicationProxy"},
-          nvnflinger{nvnflinger_}, msg_queue{std::move(msg_queue_)} {
+        : ServiceFramework{system_, "IApplicationProxy"}, nvnflinger{nvnflinger_},
+          msg_queue{std::move(msg_queue_)} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IApplicationProxy::GetCommonStateGetter, "GetCommonStateGetter"},
@@ -112,8 +112,8 @@ void AppletOE::OpenApplicationProxy(HLERequestContext& ctx) {
 
 AppletOE::AppletOE(Nvnflinger::Nvnflinger& nvnflinger_,
                    std::shared_ptr<AppletMessageQueue> msg_queue_, Core::System& system_)
-    : ServiceFramework{system_, "appletOE"}, nvnflinger{nvnflinger_}, msg_queue{
-                                                                          std::move(msg_queue_)} {
+    : ServiceFramework{system_, "appletOE"}, nvnflinger{nvnflinger_},
+      msg_queue{std::move(msg_queue_)} {
     static const FunctionInfo functions[] = {
         {0, &AppletOE::OpenApplicationProxy, "OpenApplicationProxy"},
     };

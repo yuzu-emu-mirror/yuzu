@@ -31,8 +31,8 @@
 namespace Service::AM::Applets {
 
 AppletDataBroker::AppletDataBroker(Core::System& system_, LibraryAppletMode applet_mode_)
-    : system{system_}, applet_mode{applet_mode_}, service_context{system,
-                                                                  "ILibraryAppletAccessor"} {
+    : system{system_}, applet_mode{applet_mode_},
+      service_context{system, "ILibraryAppletAccessor"} {
     state_changed_event = service_context.CreateEvent("ILibraryAppletAccessor:StateChangedEvent");
     pop_out_data_event = service_context.CreateEvent("ILibraryAppletAccessor:PopDataOutEvent");
     pop_interactive_out_data_event =

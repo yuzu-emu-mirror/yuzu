@@ -26,8 +26,8 @@ MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, u64
       address_space_bits{address_space_bits_}, page_bits{page_bits_}, big_page_bits{big_page_bits_},
       entries{}, big_entries{}, page_table{address_space_bits, address_space_bits + page_bits - 38,
                                            page_bits != big_page_bits ? page_bits : 0},
-      kind_map{PTEKind::INVALID}, unique_identifier{unique_identifier_generator.fetch_add(
-                                      1, std::memory_order_acq_rel)},
+      kind_map{PTEKind::INVALID},
+      unique_identifier{unique_identifier_generator.fetch_add(1, std::memory_order_acq_rel)},
       accumulator{std::make_unique<VideoCommon::InvalidationAccumulator>()} {
     address_space_size = 1ULL << address_space_bits;
     page_size = 1ULL << page_bits;

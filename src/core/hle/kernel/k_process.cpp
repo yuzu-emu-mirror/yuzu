@@ -1141,8 +1141,8 @@ void KProcess::Switch(KProcess* cur_process, KProcess* next_process) {}
 KProcess::KProcess(KernelCore& kernel)
     : KAutoObjectWithSlabHeapAndContainer(kernel), m_page_table{kernel}, m_state_lock{kernel},
       m_list_lock{kernel}, m_cond_var{kernel.System()}, m_address_arbiter{kernel.System()},
-      m_handle_table{kernel}, m_dirty_memory_managers{},
-      m_exclusive_monitor{}, m_memory{kernel.System()} {}
+      m_handle_table{kernel}, m_dirty_memory_managers{}, m_exclusive_monitor{},
+      m_memory{kernel.System()} {}
 KProcess::~KProcess() = default;
 
 Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size,

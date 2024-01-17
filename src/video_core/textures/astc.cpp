@@ -1588,7 +1588,7 @@ static void DecompressBlock(std::span<const u8, 16> inBuf, const u32 blockWidth,
     // Reverse everything
     for (u32 i = 0; i < 8; i++) {
 // Taken from http://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64Bits
-#define REVERSE_BYTE(b) (((b)*0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32
+#define REVERSE_BYTE(b) (((b) * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32
         u8 a = static_cast<u8>(REVERSE_BYTE(texelWeightData[i]));
         u8 b = static_cast<u8>(REVERSE_BYTE(texelWeightData[15 - i]));
 #undef REVERSE_BYTE

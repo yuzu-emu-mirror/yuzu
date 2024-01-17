@@ -17,9 +17,8 @@ namespace Service::AM::Applets {
 
 Cabinet::Cabinet(Core::System& system_, LibraryAppletMode applet_mode_,
                  const Core::Frontend::CabinetApplet& frontend_)
-    : Applet{system_, applet_mode_}, frontend{frontend_}, system{system_}, service_context{
-                                                                               system_,
-                                                                               "CabinetApplet"} {
+    : Applet{system_, applet_mode_}, frontend{frontend_}, system{system_},
+      service_context{system_, "CabinetApplet"} {
 
     availability_change_event =
         service_context.CreateEvent("CabinetApplet:AvailabilityChangeEvent");

@@ -114,8 +114,8 @@ struct QueryCacheBase<Traits>::QueryCacheBaseImpl {
 
     QueryCacheBaseImpl(QueryCacheBase<Traits>* owner_, VideoCore::RasterizerInterface& rasterizer_,
                        Core::Memory::Memory& cpu_memory_, RuntimeType& runtime_, Tegra::GPU& gpu_)
-        : owner{owner_}, rasterizer{rasterizer_},
-          cpu_memory{cpu_memory_}, runtime{runtime_}, gpu{gpu_} {
+        : owner{owner_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_}, runtime{runtime_},
+          gpu{gpu_} {
         streamer_mask = 0;
         for (size_t i = 0; i < static_cast<size_t>(QueryType::MaxQueryTypes); i++) {
             streamers[i] = runtime.GetStreamerInterface(static_cast<QueryType>(i));

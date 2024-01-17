@@ -34,12 +34,12 @@ struct Point {
             .y = static_cast<T>(value op rhs.y),                                                   \
         };                                                                                         \
     }                                                                                              \
-    friend constexpr Point& operator compound_op(Point& lhs, const Point& rhs) noexcept {          \
+    friend constexpr Point& operator compound_op(Point & lhs, const Point & rhs) noexcept {        \
         lhs.x = static_cast<T>(lhs.x op rhs.x);                                                    \
         lhs.y = static_cast<T>(lhs.y op rhs.y);                                                    \
         return lhs;                                                                                \
     }                                                                                              \
-    friend constexpr Point& operator compound_op(Point& lhs, T value) noexcept {                   \
+    friend constexpr Point& operator compound_op(Point & lhs, T value) noexcept {                  \
         lhs.x = static_cast<T>(lhs.x op value);                                                    \
         lhs.y = static_cast<T>(lhs.y op value);                                                    \
         return lhs;                                                                                \
