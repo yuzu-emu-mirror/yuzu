@@ -6112,12 +6112,12 @@ Would you like to bypass this and exit anyway?</source>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="555"/>
         <source>Remove All Installed DLC</source>
-        <translation>移除所有安裝的遊戲更新</translation>
+        <translation>移除所有已安裝的 DLC</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="556"/>
         <source>Remove Custom Configuration</source>
-        <translation>移除額外設定</translation>
+        <translation>移除自訂配置</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list.cpp" line="557"/>
