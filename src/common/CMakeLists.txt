@@ -21,6 +21,7 @@ add_library(common STATIC
     address_space.h
     algorithm.h
     alignment.h
+    always_false.h
     announce_multiplayer_room.h
     assert.cpp
     assert.h

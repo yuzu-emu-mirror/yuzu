@@ -913,6 +913,7 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
         arm/dynarmic/dynarmic_cp15.h
         arm/dynarmic/dynarmic_exclusive_monitor.cpp
         arm/dynarmic/dynarmic_exclusive_monitor.h
+        arm/dynarmic/dynarmic_settings.h
         hle/service/jit/jit_code_memory.cpp
         hle/service/jit/jit_code_memory.h
         hle/service/jit/jit_context.cpp
