@@ -42,6 +42,9 @@ void ConfigureOptimizationSettings(Config& config) {
         if (!Settings::values.cpuopt_misc_ir) {
             config.optimizations &= ~Dynarmic::OptimizationFlag::MiscIROpt;
         }
+        if (!Settings::values.cpuopt_multiblock_compilation) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::MultiBlockCompilation;
+        }
         if (!Settings::values.cpuopt_reduce_misalign_checks) {
             config.only_detect_misalignment_via_page_table_on_page_boundary = false;
         }

@@ -218,6 +218,8 @@ struct Values {
                                               Category::CpuDebug};
     Setting<bool> cpuopt_ignore_memory_aborts{linkage, true, "cpuopt_ignore_memory_aborts",
                                               Category::CpuDebug};
+    Setting<bool> cpuopt_multiblock_compilation{linkage, true, "cpuopt_multiblock_compilation",
+                                                Category::CpuDebug};
 
     SwitchableSetting<bool> cpuopt_unsafe_unfuse_fma{linkage, true, "cpuopt_unsafe_unfuse_fma",
                                                      Category::CpuUnsafe};
