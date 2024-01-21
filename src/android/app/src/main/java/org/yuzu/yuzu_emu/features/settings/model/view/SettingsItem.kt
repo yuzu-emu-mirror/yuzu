@@ -337,7 +337,7 @@ abstract class SettingsItem(
                     BooleanSetting.MULTIBLOCK_COMPILATION.setBoolean(value)
                 }
 
-                override val key: String = MULTIBLOCK_COMPILATION
+                override val key: String = BooleanSetting.MULTIBLOCK_COMPILATION.key
                 override val isRuntimeModifiable: Boolean = false
                 override val pairedSettingKey = BooleanSetting.CPU_DEBUG_MODE.key
                 override val defaultValue: Boolean = true
