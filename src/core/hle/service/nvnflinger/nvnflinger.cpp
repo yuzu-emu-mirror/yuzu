@@ -332,7 +332,7 @@ s64 Nvnflinger::GetNextTicks() const {
     f32 effective_fps;
     if (swap_interval >= 5) {
         // As an extension, treat high swap intervals as speed limit override
-        speed_scale = 100.f / swap_interval;
+        speed_scale = 100.f / static_cast<f32>(swap_interval);
         effective_fps = 60.f;
     } else if (swap_interval <= 0) {
         // As an extension, treat nonpositive swap interval as framerate multiplier.
