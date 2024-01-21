@@ -10,6 +10,7 @@ enum class BooleanSetting(override val key: String) : AbstractBooleanSetting {
     CPU_DEBUG_MODE("cpu_debug_mode"),
     FASTMEM("cpuopt_fastmem"),
     FASTMEM_EXCLUSIVES("cpuopt_fastmem_exclusives"),
+    MULTIBLOCK_COMPILATION("cpuopt_multiblock_compilation"),
     RENDERER_USE_SPEED_LIMIT("use_speed_limit"),
     USE_DOCKED_MODE("use_docked_mode"),
     RENDERER_USE_DISK_SHADER_CACHE("use_disk_shader_cache"),

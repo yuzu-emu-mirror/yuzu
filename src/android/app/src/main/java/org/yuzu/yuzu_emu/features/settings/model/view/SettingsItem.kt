@@ -328,6 +328,36 @@ abstract class SettingsItem(
                 override fun reset() = setBoolean(defaultValue)
             }
             put(SwitchSetting(fastmem, R.string.fastmem, 0))
+
+            val multiblock_compilation = object : AbstractBooleanSetting {
+                override fun getBoolean(needsGlobal: Boolean): Boolean =
+                    BooleanSetting.MULTIBLOCK_COMPILATION.getBoolean()
+
+                override fun setBoolean(value: Boolean) {
+                    BooleanSetting.MULTIBLOCK_COMPILATION.setBoolean(value)
+                }
+
+                override val key: String = MULTIBLOCK_COMPILATION
+                override val isRuntimeModifiable: Boolean = false
+                override val pairedSettingKey = BooleanSetting.CPU_DEBUG_MODE.key
+                override val defaultValue: Boolean = true
+                override val isSwitchable: Boolean = true
+                override var global: Boolean
+                    get() {
+                        return BooleanSetting.MULTIBLOCK_COMPILATION.global
+                    }
+                    set(value) {
+                        BooleanSetting.MULTIBLOCK_COMPILATION.global = value
+                    }
+
+                override val isSaveable = true
+
+                override fun getValueAsString(needsGlobal: Boolean): String =
+                    getBoolean().toString()
+
+                override fun reset() = setBoolean(defaultValue)
+            }
+            put(SwitchSetting(multiblock_compilation, R.string.multiblock_compilation, 0))
         }
     }
 }

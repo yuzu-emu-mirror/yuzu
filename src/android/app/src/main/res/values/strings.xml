@@ -246,6 +246,7 @@
     <string name="renderer_debug">Graphics debugging</string>
     <string name="renderer_debug_description">Sets the graphics API to a slow debugging mode.</string>
     <string name="fastmem">Fastmem</string>
+    <string name="multiblock_compilation">Accelerated boot</string>
 
     <!-- Audio settings strings -->
     <string name="audio_output_engine">Output engine</string>
