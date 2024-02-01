@@ -42,6 +42,7 @@ ConfigureWeb::ConfigureWeb(QWidget* parent)
             &ConfigureWeb::RefreshTelemetryID);
     connect(ui->button_verify_login, &QPushButton::clicked, this, &ConfigureWeb::VerifyLogin);
     connect(&verify_watcher, &QFutureWatcher<bool>::finished, this, &ConfigureWeb::OnLoginVerified);
+    connect(ui->button_change_url, &QPushButton::clicked, this, &ConfigureWeb::ChangeURL);
 
 #ifndef USE_DISCORD_PRESENCE
     ui->discord_group->setVisible(false);
@@ -93,6 +94,7 @@ void ConfigureWeb::SetConfiguration() {
         ui->username->setText(QString::fromStdString(Settings::values.yuzu_username.GetValue()));
     }
 
+    ui->edit_url->setText(QString::fromStdString(Settings::values.report_api_url.GetValue()));
     ui->toggle_telemetry->setChecked(Settings::values.enable_telemetry.GetValue());
     ui->edit_token->setText(QString::fromStdString(GenerateDisplayToken(
         Settings::values.yuzu_username.GetValue(), Settings::values.yuzu_token.GetValue())));
@@ -177,4 +179,8 @@ void ConfigureWeb::OnLoginVerified() {
 void ConfigureWeb::SetWebServiceConfigEnabled(bool enabled) {
     ui->label_disable_info->setVisible(!enabled);
     ui->groupBoxWebConfig->setEnabled(enabled);
+}
+
+void ConfigureWeb::ChangeURL() {
+    Settings::values.report_api_url = ui->edit_url->text().toStdString();
 }

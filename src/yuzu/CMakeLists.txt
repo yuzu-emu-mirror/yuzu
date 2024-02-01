@@ -35,7 +35,6 @@ add_executable(yuzu
     applets/qt_web_browser_scripts.h
     bootmanager.cpp
     bootmanager.h
-    compatdb.ui
     compatibility_list.cpp
     compatibility_list.h
     configuration/configuration_shared.cpp

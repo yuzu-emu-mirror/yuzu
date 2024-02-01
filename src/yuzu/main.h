@@ -244,6 +244,7 @@ public slots:
     void WebBrowserRequestExit();
     void OnAppFocusStateChanged(Qt::ApplicationState state);
     void OnTasStateChanged();
+    void OnReportUserChange(QString cookie, QString user);
 
 private:
     /// Updates an action's shortcut and text to reflect an updated hotkey from the hotkey registry.

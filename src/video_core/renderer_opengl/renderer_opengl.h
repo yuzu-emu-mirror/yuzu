@@ -75,6 +75,10 @@ public:
         return device.GetVendorName();
     }
 
+    [[nodiscard]] std::string GetDeviceModel() const override;
+
+    [[nodiscard]] std::string GetDeviceDriverVersion() const override;
+
 private:
     /// Initializes the OpenGL state and creates persistent objects.
     void InitOpenGLObjects();

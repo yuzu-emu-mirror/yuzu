@@ -27,6 +27,14 @@ public:
         return "NULL";
     }
 
+    [[nodiscard]] std::string GetDeviceModel() const override {
+        return "NULL";
+    }
+
+    [[nodiscard]] std::string GetDeviceDriverVersion() const override {
+        return "NULL";
+    }
+
 private:
     Tegra::GPU& m_gpu;
     RasterizerNull m_rasterizer;
