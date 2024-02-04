@@ -24,11 +24,11 @@ namespace UISettings {
 
 const Themes included_themes{{
     {"Default", "default"},
-    {"Default Colorful", "colorful"},
-    {"Dark", "qdarkstyle"},
-    {"Dark Colorful", "colorful_dark"},
+    {"Default monochrome", "monochrome"},
+    {"Mine Shaft", "qdarkstyle"},
+    {"Mine Shaft monochrome", "qdarkstyle_monochrome"},
     {"Midnight Blue", "qdarkstyle_midnight_blue"},
-    {"Midnight Blue Colorful", "colorful_midnight_blue"},
+    {"Midnight Blue monochrome", "qdarkstyle_midnight_blue_monochrome"},
 }};
 
 Values values = {};

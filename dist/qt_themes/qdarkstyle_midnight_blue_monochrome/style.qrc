@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="qdarkstyle_midnight_blue_monochrome">
+        <file alias="style.qss">../qdarkstyle_midnight_blue/style.qss</file>
+    </qresource>
+    <qresource prefix="qdarkstyle_midnight_blue_monochrome_dark">
+        <file alias="style.qss">../qdarkstyle/style.qss</file>
+    </qresource>
+</RCC>

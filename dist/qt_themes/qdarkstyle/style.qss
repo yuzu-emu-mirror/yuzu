@@ -1380,10 +1380,6 @@ QWidget#connectedControllers {
     background: transparent;
 }
 
-QWidget#closeButtons {
-    background: transparent;
-}
-
 QWidget#playersSupported,
 QWidget#controllersSupported,
 QWidget#controllerSupported1,
