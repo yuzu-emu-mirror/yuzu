@@ -23,9 +23,8 @@
 #include "yuzu/util/controller_navigation.h"
 
 #ifdef __unix__
+#include <QSocketNotifier>
 #include <QVariant>
-#include <QtDBus/QDBusInterface>
-#include <QtDBus/QtDBus>
 #endif
 
 class QtConfig;
@@ -164,14 +163,9 @@ class GMainWindow : public QMainWindow {
         CREATE_SHORTCUT_MSGBOX_APPVOLATILE_WARNING,
     };
 
-    /**
-     * Try to load a stylesheet from its path. If the path starts with ":/", its embedded in the app
-     * @returns true if the text file could be opened as read-only
-     */
-    bool tryLoadStylesheet(const QString& theme_path);
-
 public:
     void filterBarSetChecked(bool state);
+    static bool CheckDarkMode();
     void UpdateUITheme();
     explicit GMainWindow(std::unique_ptr<QtConfig> config_, bool has_broken_vulkan);
     ~GMainWindow() override;
@@ -264,12 +258,44 @@ private:
 
     void SetDefaultUIGeometry();
     void RestoreUIState();
+    /**
+     *  Load the icons used by the current theme. Use dark icons if the current mode is dark
+     */
+    void UpdateIcons(const QString& theme_used);
+    /**
+     *  Set the palette used by the stylsheet for the dark/light mode selected, according to the OS
+     */
+    void UpdateThemePalette();
+    /**
+     * Try to load a stylesheet from its URI.
+     * If the path starts with ":/", its embedded in the app, otherwise its in a local directory
+     * @returns true if the text file could be opened as read-only
+     */
+    bool TryLoadStylesheet(const QString& theme_uri);
+    /**
+     * Try to load a stylesheet from filesystem path
+     * @returns true if the text file could be opened as read-only
+     */
+    bool TryLoadStylesheet(const std::filesystem::path& theme_path);
+    /**
+     *  Default customizations to the stylesheets
+     */
+    void SetCustomStylesheet();
+#ifdef __unix__
+    /**
+     * Create a signal to update the UI theme when the OS color scheme is changed
+     * @returns true if we could connect to dbus
+     */
+    bool ListenColorSchemeChange();
+#endif
 
     void ConnectWidgetEvents();
     void ConnectMenuEvents();
     void UpdateMenuState();
 
+#ifdef __unix__
     void SetupPrepareForSleep();
+#endif
 
     void PreventOSSleep();
     void AllowOSSleep();
@@ -400,6 +426,7 @@ private slots:
     void ResetWindowSize720();
     void ResetWindowSize900();
     void ResetWindowSize1080();
+    void UpdateUITheme();
     void OnAlbum();
     void OnCabinet(Service::NFP::CabinetMode mode);
     void OnMiiEdit();
@@ -445,7 +472,7 @@ private:
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
-    bool CheckDarkMode();
+    bool CheckSystemArchiveDecryption();
     bool CheckFirmwarePresence();
     void SetFirmwareVersion();
     void ConfigureFilesystemProvider(const std::string& filepath);
@@ -529,7 +556,8 @@ private:
     QTimer update_input_timer;
 
     QString startup_icon_theme;
-    bool os_dark_mode = false;
+    bool alternate_base_modified = false;
+    QColor last_window_color;
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;

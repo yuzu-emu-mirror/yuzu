@@ -1,3 +1,17 @@
+/*
+* SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+* SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+QWidget:item:hover {
+    background-color: #18465d;
+    color: #eff0f1;
+}
+
+QWidget:item:selected {
+    background-color: #18465d;
+}
+
 QAbstractSpinBox {
     min-height: 19px;
 }
