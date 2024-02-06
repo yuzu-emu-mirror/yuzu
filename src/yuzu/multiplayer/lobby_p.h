@@ -202,12 +202,26 @@ public:
         case Qt::ForegroundRole: {
             auto members = data(MemberListRole).toList();
             auto max_players = data(MaxPlayerRole).toInt();
-            if (members.size() >= max_players) {
-                return QBrush(QColor(255, 48, 32));
-            } else if (members.size() == (max_players - 1)) {
-                return QBrush(QColor(255, 140, 32));
-            } else if (members.size() == 0) {
-                return QBrush(QColor(128, 128, 128));
+
+            if (QIcon::themeName().contains(QStringLiteral("dark")) ||
+                QIcon::themeName().contains(QStringLiteral("midnight"))) {
+                if (members.size() >= max_players) {
+                    return QBrush(QColor(255, 48, 32));
+                } else if (members.size() == (max_players - 1)) {
+                    return QBrush(QColor(255, 140, 32));
+                } else if (members.size() == 0) {
+                    return QBrush(QColor(128, 128, 128));
+                } else if (members.size() > 0 && members.size() < max_players - 1) {
+                    return QBrush(QColor(204, 204, 204));
+                }
+            } else {
+                if (members.size() >= max_players) {
+                    return QBrush(QColor(255, 48, 32));
+                } else if (members.size() == (max_players - 1)) {
+                    return QBrush(QColor(255, 140, 32));
+                } else if (members.size() == 0) {
+                    return QBrush(QColor(128, 128, 128));
+                }
             }
             // FIXME: How to return a value that tells Qt not to modify the
             // text color from the default (as if Qt::ForegroundRole wasn't overridden)?
