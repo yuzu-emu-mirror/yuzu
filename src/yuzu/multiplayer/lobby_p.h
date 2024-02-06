@@ -213,10 +213,7 @@ public:
             } else if (members.size() == 0) {
                 return QBrush(room_empty_color);
             } else if (members.size() > 0 && members.size() < max_players - 1) {
-                if (QIcon::themeName().contains(QStringLiteral("dark")) ||
-                    QIcon::themeName().contains(QStringLiteral("midnight"))) {
-                    return QBrush(QColor(255, 255, 255));
-                }
+                return QBrush(QColor(32, 160, 32));
             }
             // FIXME: How to return a value that tells Qt not to modify the
             // text color from the default (as if Qt::ForegroundRole wasn't overridden)?
