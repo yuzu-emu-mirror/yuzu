@@ -13,6 +13,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/memory.h"
 #include "video_core/control/channel_state.h"
+#include "video_core/control/scheduler.h"
 #include "video_core/engines/puller.h"
 #include "video_core/gpu.h"
 #include "video_core/host1x/host1x.h"
@@ -33,6 +34,7 @@ nvhost_gpu::nvhost_gpu(Core::System& system_, EventInterface& events_interface_,
       syncpoint_manager{core_.GetSyncpointManager()}, nvmap{core.GetNvMapFile()},
       channel_state{system.GPU().AllocateChannel()} {
     channel_syncpoint = syncpoint_manager.AllocateSyncpoint(false);
+    channel_state->syncpoint_id = channel_syncpoint;
     sm_exception_breakpoint_int_report_event =
         events_interface.CreateEvent("GpuChannelSMExceptionBreakpointInt");
     sm_exception_breakpoint_pause_report_event =
@@ -157,6 +159,9 @@ NvResult nvhost_gpu::SetErrorNotifier(IoctlSetErrorNotifier& params) {
 
 NvResult nvhost_gpu::SetChannelPriority(IoctlChannelSetPriority& params) {
     channel_priority = params.priority;
+    if (channel_state->initialized) {
+        system.GPU().Scheduler().ChangePriority(channel_state->bind_id, channel_priority);
+    }
     LOG_DEBUG(Service_NVDRV, "(STUBBED) called, priority={:X}", channel_priority);
     return NvResult::Success;
 }
@@ -314,6 +319,7 @@ NvResult nvhost_gpu::GetWaitbase(IoctlGetWaitbase& params) {
 NvResult nvhost_gpu::ChannelSetTimeout(IoctlChannelSetTimeout& params) {
     LOG_INFO(Service_NVDRV, "called, timeout=0x{:X}", params.timeout);
 
+    channel_state->timeout = params.timeout;
     return NvResult::Success;
 }
 
@@ -321,6 +327,7 @@ NvResult nvhost_gpu::ChannelSetTimeslice(IoctlSetTimeslice& params) {
     LOG_INFO(Service_NVDRV, "called, timeslice=0x{:X}", params.timeslice);
 
     channel_timeslice = params.timeslice;
+    channel_state->timeslice = params.timeslice;
 
     return NvResult::Success;
 }

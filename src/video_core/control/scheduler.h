@@ -3,13 +3,11 @@
 
 #pragma once
 
-#include <atomic>
-#include <deque>
+#include <list>
 #include <memory>
-#include <mutex>
-#include <unordered_map>
 
-#include "common/fiber.h"
+#include "common/common_types.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/dma_pusher.h"
 
 namespace Tegra {
@@ -35,26 +33,18 @@ public:
 
     void DeclareChannel(std::shared_ptr<ChannelState> new_channel);
 
+    void ChangePriority(s32 channel_id, u32 new_priority);
+
 private:
     void ChannelLoop(size_t gpfifo_id, s32 channel_id);
+    bool ScheduleLevel(std::list<size_t>& queue);
+    void CheckStatus();
+    bool UpdateHighestPriorityChannel();
 
-    std::unordered_map<s32, std::shared_ptr<ChannelState>> channels;
-    std::unordered_map<s32, size_t> channel_gpfifo_ids;
-    std::mutex scheduling_guard;
-    std::shared_ptr<Common::Fiber> master_control;
-    struct GPFifoContext {
-        bool is_active;
-        std::shared_ptr<Common::Fiber> context;
-        std::deque<CommandList> pending_work;
-        std::atomic<bool> working{};
-        std::mutex guard;
-        s32 bind_id;
-    };
-    std::deque<GPFifoContext> gpfifos;
-    std::deque<size_t> free_fifos;
+    struct SchedulerImpl;
+    std::unique_ptr<SchedulerImpl> impl;
+
     GPU& gpu;
-    size_t current_fifo_rotation_id{};
-    GPFifoContext* current_fifo{};
 };
 
 } // namespace Control

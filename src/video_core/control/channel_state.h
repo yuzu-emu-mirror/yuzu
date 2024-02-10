@@ -45,6 +45,12 @@ struct ChannelState {
     void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
     s32 bind_id = -1;
+    /// Scheduling info
+    u32 syncpoint_id = 0xFFFF;
+    u32 priority = 0;
+    u32 timeslice = 0;
+    u32 timeout = 0;
+
     /// 3D engine
     std::unique_ptr<Engines::Maxwell3D> maxwell_3d;
     /// 2D engine
