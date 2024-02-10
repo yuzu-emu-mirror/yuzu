@@ -40,12 +40,15 @@ endif()
 add_subdirectory(glad)
 
 # mbedtls
-add_subdirectory(mbedtls)
-target_include_directories(mbedtls PUBLIC ./mbedtls/include)
-if (NOT MSVC)
-    target_compile_options(mbedcrypto PRIVATE
-        -Wno-unused-but-set-variable
-        -Wno-string-concatenation)
+if (NOT TARGET MbedTLS::mbedcrypto)
+    set(ENABLE_PROGRAMS OFF)
+    set(ENABLE_TESTING OFF)
+    add_subdirectory(mbedtls)
+    if (NOT MSVC)
+        target_compile_options(mbedcrypto PRIVATE
+            -Wno-unused-but-set-variable
+            -Wno-string-concatenation)
+    endif()
 endif()
 
 # MicroProfile
