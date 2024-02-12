@@ -153,6 +153,8 @@ ENUM(ConsoleMode, Handheld, Docked);
 
 ENUM(AppletMode, HLE, LLE);
 
+ENUM(DarkModeState, Off, On, Auto);
+
 template <typename Type>
 inline std::string CanonicalizeEnum(Type id) {
     const auto group = EnumMetadata<Type>::Canonicalizations();

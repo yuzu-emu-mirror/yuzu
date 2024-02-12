@@ -18,6 +18,7 @@
 #include <QString>
 #include <QToolButton>
 #include <QVariant>
+#include <QtGlobal>
 
 #include "common/common_types.h"
 #include "common/fs/path_util.h"
@@ -28,6 +29,8 @@
 #include "core/frontend/framebuffer_layout.h"
 #include "ui_configure_ui.h"
 #include "yuzu/uisettings.h"
+
+using Settings::DarkModeState;
 
 namespace {
 constexpr std::array default_game_icon_sizes{
@@ -131,6 +134,17 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
         ui->theme_combobox->addItem(theme_name, theme_dir);
     }
 
+    ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
+// Windows dark mode is based on palette swap made by OS, so the "Always On" option disabled.
+// We could check if the dark mode state is "On" and force a dark palette like on Linux to support
+// "Always On"
+#ifdef _WIN32
+    ui->dark_mode_label->setText(tr("Dark mode (needs restart)"));
+#else
+    ui->dark_mode_combobox->addItem(tr("Always On"), QVariant::fromValue(DarkModeState::On));
+#endif
+    ui->dark_mode_combobox->addItem(tr("Always Off"), QVariant::fromValue(DarkModeState::Off));
+
     InitializeIconSizeComboBox();
     InitializeRowComboBoxes();
 
@@ -185,6 +199,8 @@ ConfigureUi::~ConfigureUi() = default;
 void ConfigureUi::ApplyConfiguration() {
     UISettings::values.theme =
         ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
+    UISettings::values.dark_mode_state =
+        static_cast<DarkModeState>(ui->dark_mode_combobox->currentData().toUInt());
     UISettings::values.show_add_ons = ui->show_add_ons->isChecked();
     UISettings::values.show_compat = ui->show_compat->isChecked();
     UISettings::values.show_size = ui->show_size->isChecked();
@@ -212,6 +228,8 @@ void ConfigureUi::RequestGameListUpdate() {
 
 void ConfigureUi::SetConfiguration() {
     ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
+    ui->dark_mode_combobox->setCurrentIndex(
+        ui->dark_mode_combobox->findData(QVariant::fromValue(UISettings::values.dark_mode_state)));
     ui->language_combobox->setCurrentIndex(ui->language_combobox->findData(
         QString::fromStdString(UISettings::values.language.GetValue())));
     ui->show_add_ons->setChecked(UISettings::values.show_add_ons.GetValue());
