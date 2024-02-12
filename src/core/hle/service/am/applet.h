@@ -10,13 +10,14 @@
 #include "core/hle/service/caps/caps_types.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/os/event.h"
+#include "core/hle/service/os/process.h"
 #include "core/hle/service/service.h"
 
 #include "core/hle/service/am/am_types.h"
 #include "core/hle/service/am/applet_message_queue.h"
 #include "core/hle/service/am/display_layer_manager.h"
 #include "core/hle/service/am/hid_registration.h"
-#include "core/hle/service/am/process.h"
+#include "core/hle/service/am/process_holder.h"
 
 namespace Service::AM {
 
@@ -35,6 +36,7 @@ struct Applet {
 
     // Process
     std::unique_ptr<Process> process;
+    std::optional<ProcessHolder> process_holder;
 
     // Creation state
     AppletId applet_id{};

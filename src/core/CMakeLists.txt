@@ -434,8 +434,10 @@ add_library(core STATIC
     hle/service/am/hid_registration.h
     hle/service/am/library_applet_storage.cpp
     hle/service/am/library_applet_storage.h
-    hle/service/am/process.cpp
-    hle/service/am/process.h
+    hle/service/am/process_creation.cpp
+    hle/service/am/process_creation.h
+    hle/service/am/process_holder.cpp
+    hle/service/am/process_holder.h
     hle/service/am/service/all_system_applet_proxies_service.cpp
     hle/service/am/service/all_system_applet_proxies_service.h
     hle/service/am/service/applet_common_functions.cpp
@@ -914,6 +916,8 @@ add_library(core STATIC
     hle/service/os/multi_wait_utils.h
     hle/service/os/mutex.cpp
     hle/service/os/mutex.h
+    hle/service/os/process.cpp
+    hle/service/os/process.h
     hle/service/pcie/pcie.cpp
     hle/service/pcie/pcie.h
     hle/service/pctl/parental_control_service_factory.cpp

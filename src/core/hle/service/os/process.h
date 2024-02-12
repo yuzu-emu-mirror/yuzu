@@ -3,38 +3,47 @@
 
 #pragma once
 
-#include "common/common_funcs.h"
 #include "common/common_types.h"
-
-namespace Kernel {
-class KProcess;
-}
 
 namespace Core {
 class System;
 }
 
-namespace Service::AM {
+namespace Loader {
+class AppLoader;
+}
+
+namespace Kernel {
+class KProcess;
+}
+
+namespace Service {
 
 class Process {
 public:
     explicit Process(Core::System& system);
     ~Process();
 
-    bool Initialize(u64 program_id, u8 minimum_key_generation, u8 maximum_key_generation);
+    bool Initialize(Loader::AppLoader& loader);
     void Finalize();
 
     bool Run();
     void Terminate();
+    void Suspend(bool suspended);
+    void ResetSignal();
 
     bool IsInitialized() const {
         return m_process != nullptr;
     }
+
+    bool IsTerminated() const;
+
     u64 GetProcessId() const;
     u64 GetProgramId() const {
         return m_program_id;
     }
-    Kernel::KProcess* GetProcess() const {
+
+    Kernel::KProcess* GetHandle() const {
         return m_process;
     }
 
@@ -47,4 +56,4 @@ private:
     bool m_process_started{};
 };
 
-} // namespace Service::AM
+} // namespace Service

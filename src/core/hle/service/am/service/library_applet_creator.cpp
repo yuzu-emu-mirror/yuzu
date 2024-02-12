@@ -7,6 +7,7 @@
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/frontend/applets.h"
 #include "core/hle/service/am/library_applet_storage.h"
+#include "core/hle/service/am/process_creation.h"
 #include "core/hle/service/am/service/library_applet_accessor.h"
 #include "core/hle/service/am/service/library_applet_creator.h"
 #include "core/hle/service/am/service/storage.h"
@@ -110,8 +111,8 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
         Firmware1700 = 17,
     };
 
-    auto process = std::make_unique<Process>(system);
-    if (!process->Initialize(program_id, Firmware1400, Firmware1700)) {
+    auto process = CreateProcess(system, program_id, Firmware1400, Firmware1700);
+    if (!process) {
         // Couldn't initialize the guest process
         return {};
     }
