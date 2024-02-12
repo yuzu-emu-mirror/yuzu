@@ -409,6 +409,8 @@ add_library(core STATIC
     hle/service/am/button_poller.h
     hle/service/am/display_layer_manager.cpp
     hle/service/am/display_layer_manager.h
+    hle/service/am/event_observer.cpp
+    hle/service/am/event_observer.h
     hle/service/am/frontend/applet_cabinet.cpp
     hle/service/am/frontend/applet_cabinet.h
     hle/service/am/frontend/applet_controller.cpp

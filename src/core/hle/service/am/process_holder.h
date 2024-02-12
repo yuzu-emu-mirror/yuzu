@@ -13,7 +13,7 @@ namespace Service::AM {
 
 struct Applet;
 
-class ProcessHolder : public MultiWaitHolder {
+class ProcessHolder : public MultiWaitHolder, public Common::IntrusiveListBaseNode<ProcessHolder> {
 public:
     explicit ProcessHolder(Applet& applet, Process& process);
     ~ProcessHolder();
