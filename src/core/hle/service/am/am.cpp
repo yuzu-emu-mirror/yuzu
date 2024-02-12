@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/hle/service/am/am.h"
+#include "core/hle/service/am/button_poller.h"
 #include "core/hle/service/am/service/all_system_applet_proxies_service.h"
 #include "core/hle/service/am/service/application_proxy_service.h"
 #include "core/hle/service/server_manager.h"
@@ -9,6 +10,8 @@
 namespace Service::AM {
 
 void LoopProcess(Core::System& system) {
+    ButtonPoller button_poller(system);
+
     auto server_manager = std::make_unique<ServerManager>(system);
 
     server_manager->RegisterNamedService("appletAE",

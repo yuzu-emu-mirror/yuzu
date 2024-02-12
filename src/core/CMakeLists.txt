@@ -405,6 +405,8 @@ add_library(core STATIC
     hle/service/am/applet_data_broker.cpp
     hle/service/am/applet_data_broker.h
     hle/service/am/applet_manager.h
+    hle/service/am/button_poller.cpp
+    hle/service/am/button_poller.h
     hle/service/am/display_layer_manager.cpp
     hle/service/am/display_layer_manager.h
     hle/service/am/frontend/applet_cabinet.cpp
