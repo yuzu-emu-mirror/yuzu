@@ -117,7 +117,7 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
         return {};
     }
 
-    const auto applet = std::make_shared<Applet>(system, std::move(process));
+    const auto applet = std::make_shared<Applet>(system, std::move(process), false);
     applet->program_id = program_id;
     applet->applet_id = applet_id;
     applet->type = AppletType::LibraryApplet;
@@ -129,15 +129,12 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
     case LibraryAppletMode::NoUi:
     case LibraryAppletMode::PartialForeground:
     case LibraryAppletMode::PartialForegroundIndirectDisplay:
-        applet->hid_registration.EnableAppletToGetInput(true);
-        applet->focus_state = FocusState::InFocus;
-        applet->message_queue.PushMessage(AppletMessage::ChangeIntoForeground);
+        applet->lifecycle_manager.SetFocusState(FocusState::InFocus);
+        applet->SetInteractibleLocked(true);
         break;
     case LibraryAppletMode::AllForegroundInitiallyHidden:
-        applet->hid_registration.EnableAppletToGetInput(false);
-        applet->focus_state = FocusState::NotInFocus;
-        applet->display_layer_manager.SetWindowVisibility(false);
-        applet->message_queue.PushMessage(AppletMessage::ChangeIntoBackground);
+        applet->lifecycle_manager.SetFocusState(FocusState::NotInFocus);
+        applet->SetInteractibleLocked(false);
         break;
     }
 
@@ -157,7 +154,7 @@ std::shared_ptr<ILibraryAppletAccessor> CreateFrontendApplet(Core::System& syste
     const auto program_id = static_cast<u64>(AppletIdToProgramId(applet_id));
 
     auto process = std::make_unique<Process>(system);
-    auto applet = std::make_shared<Applet>(system, std::move(process));
+    auto applet = std::make_shared<Applet>(system, std::move(process), false);
     applet->program_id = program_id;
     applet->applet_id = applet_id;
     applet->type = AppletType::LibraryApplet;

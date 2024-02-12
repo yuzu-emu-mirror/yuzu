@@ -155,7 +155,7 @@ Result ISelfController::SetOperationModeChangedNotification(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->operation_mode_changed_notification_enabled = enabled;
+    m_applet->lifecycle_manager.SetOperationModeChangedNotificationEnabled(enabled);
 
     R_SUCCEED();
 }
@@ -164,17 +164,18 @@ Result ISelfController::SetPerformanceModeChangedNotification(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->performance_mode_changed_notification_enabled = enabled;
+    m_applet->lifecycle_manager.SetPerformanceModeChangedNotificationEnabled(enabled);
 
     R_SUCCEED();
 }
 
 Result ISelfController::SetFocusHandlingMode(bool notify, bool background, bool suspend) {
-    LOG_WARNING(Service_AM, "(STUBBED) called, notify={} background={} suspend={}", notify,
-                background, suspend);
+    LOG_INFO(Service_AM, "called, notify={} background={} suspend={}", notify, background, suspend);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->focus_handling_mode = {notify, background, suspend};
+    m_applet->lifecycle_manager.SetFocusStateChangedNotificationEnabled(notify);
+    m_applet->lifecycle_manager.SetFocusHandlingMode(suspend);
+    m_applet->UpdateSuspensionStateLocked(true);
 
     R_SUCCEED();
 }
@@ -183,7 +184,7 @@ Result ISelfController::SetRestartMessageEnabled(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->restart_message_enabled = enabled;
+    m_applet->lifecycle_manager.SetResumeNotificationEnabled(enabled);
 
     R_SUCCEED();
 }
@@ -202,7 +203,8 @@ Result ISelfController::SetOutOfFocusSuspendingEnabled(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->out_of_focus_suspension_enabled = enabled;
+    m_applet->lifecycle_manager.SetOutOfFocusSuspendingEnabled(enabled);
+    m_applet->UpdateSuspensionStateLocked(false);
 
     R_SUCCEED();
 }

@@ -59,7 +59,7 @@ Result IApplicationAccessor::Start() {
 
 Result IApplicationAccessor::RequestExit() {
     LOG_INFO(Service_AM, "called");
-    m_applet->message_queue.RequestExit();
+    m_applet->lifecycle_manager.RequestExit();
     R_SUCCEED();
 }
 
@@ -77,7 +77,7 @@ Result IApplicationAccessor::GetResult() {
 Result IApplicationAccessor::GetAppletStateChangedEvent(
     OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_INFO(Service_AM, "called");
-    *out_event = m_applet->caller_applet_broker->GetStateChangedEvent().GetHandle();
+    *out_event = m_applet->state_changed_event.GetHandle();
     R_SUCCEED();
 }
 

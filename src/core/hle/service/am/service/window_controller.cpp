@@ -63,17 +63,13 @@ Result IWindowController::RejectToChangeIntoBackground() {
 }
 
 Result IWindowController::SetAppletWindowVisibility(bool visible) {
-    m_applet->display_layer_manager.SetWindowVisibility(visible);
-    m_applet->hid_registration.EnableAppletToGetInput(visible);
+    LOG_WARNING(Service_AM, "(STUBBED) called");
 
-    if (visible) {
-        m_applet->message_queue.PushMessage(AppletMessage::ChangeIntoForeground);
-        m_applet->focus_state = FocusState::InFocus;
-    } else {
-        m_applet->focus_state = FocusState::NotInFocus;
-    }
-
-    m_applet->message_queue.PushMessage(AppletMessage::FocusStateChanged);
+    std::scoped_lock lk{m_applet->lock};
+    m_applet->lifecycle_manager.SetFocusState(visible ? FocusState::InFocus
+                                                      : FocusState::NotInFocus);
+    m_applet->SetInteractibleLocked(visible);
+    m_applet->UpdateSuspensionStateLocked(true);
 
     R_SUCCEED();
 }

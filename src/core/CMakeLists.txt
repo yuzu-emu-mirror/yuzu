@@ -401,12 +401,10 @@ add_library(core STATIC
     hle/service/am/am_types.h
     hle/service/am/applet.cpp
     hle/service/am/applet.h
+    hle/service/am/applet_manager.cpp
     hle/service/am/applet_data_broker.cpp
     hle/service/am/applet_data_broker.h
-    hle/service/am/applet_manager.cpp
     hle/service/am/applet_manager.h
-    hle/service/am/applet_message_queue.cpp
-    hle/service/am/applet_message_queue.h
     hle/service/am/display_layer_manager.cpp
     hle/service/am/display_layer_manager.h
     hle/service/am/frontend/applet_cabinet.cpp
@@ -434,6 +432,8 @@ add_library(core STATIC
     hle/service/am/hid_registration.h
     hle/service/am/library_applet_storage.cpp
     hle/service/am/library_applet_storage.h
+    hle/service/am/lifecycle_manager.cpp
+    hle/service/am/lifecycle_manager.h
     hle/service/am/process_creation.cpp
     hle/service/am/process_creation.h
     hle/service/am/process_holder.cpp

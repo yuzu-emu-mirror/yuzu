@@ -45,7 +45,6 @@ public:
     void RequestExit();
     void RequestResume();
     void OperationModeChanged();
-    void FocusStateChanged();
 
 private:
     Core::System& m_system;

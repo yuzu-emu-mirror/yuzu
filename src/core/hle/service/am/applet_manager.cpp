@@ -255,6 +255,11 @@ void AppletManager::TerminateAndRemoveApplet(AppletResourceUserId aruid) {
     // Terminate process.
     applet->process->Terminate();
 
+    {
+        std::scoped_lock lk{applet->lock};
+        applet->OnProcessTerminatedLocked();
+    }
+
     // If there were no applets left, stop emulation.
     if (should_stop) {
         m_system.Exit();
@@ -265,7 +270,8 @@ void AppletManager::CreateAndInsertByFrontendAppletParameters(
     AppletResourceUserId aruid, const FrontendAppletParameters& params) {
     // TODO: this should be run inside AM so that the events will have a parent process
     // TODO: have am create the guest process
-    auto applet = std::make_shared<Applet>(m_system, std::make_unique<Process>(m_system));
+    auto applet = std::make_shared<Applet>(m_system, std::make_unique<Process>(m_system),
+                                           params.applet_id == AppletId::Application);
 
     applet->aruid = aruid;
     applet->program_id = params.program_id;
@@ -322,9 +328,7 @@ void AppletManager::CreateAndInsertByFrontendAppletParameters(
     }
 
     // Applet was started by frontend, so it is foreground.
-    applet->message_queue.PushMessage(AppletMessage::ChangeIntoForeground);
-    applet->message_queue.PushMessage(AppletMessage::FocusStateChanged);
-    applet->focus_state = FocusState::InFocus;
+    applet->lifecycle_manager.SetFocusState(FocusState::InFocus);
 
     this->InsertApplet(std::move(applet));
 }
@@ -349,7 +353,8 @@ void AppletManager::RequestExit() {
     std::scoped_lock lk{m_lock};
 
     for (const auto& [aruid, applet] : m_applets) {
-        applet->message_queue.RequestExit();
+        std::scoped_lock lk2{applet->lock};
+        applet->lifecycle_manager.RequestExit();
     }
 }
 
@@ -357,7 +362,8 @@ void AppletManager::RequestResume() {
     std::scoped_lock lk{m_lock};
 
     for (const auto& [aruid, applet] : m_applets) {
-        applet->message_queue.RequestResume();
+        std::scoped_lock lk2{applet->lock};
+        applet->lifecycle_manager.RequestResumeNotification();
     }
 }
 
@@ -365,15 +371,8 @@ void AppletManager::OperationModeChanged() {
     std::scoped_lock lk{m_lock};
 
     for (const auto& [aruid, applet] : m_applets) {
-        applet->message_queue.OperationModeChanged();
-    }
-}
-
-void AppletManager::FocusStateChanged() {
-    std::scoped_lock lk{m_lock};
-
-    for (const auto& [aruid, applet] : m_applets) {
-        applet->message_queue.FocusStateChanged();
+        std::scoped_lock lk2{applet->lock};
+        applet->lifecycle_manager.OnOperationAndPerformanceModeChanged();
     }
 }
 
