@@ -16,7 +16,7 @@ Applet::Applet(Core::System& system, std::unique_ptr<Process> process_, bool is_
       library_applet_launchable_event(context), accumulated_suspended_tick_changed_event(context),
       sleep_lock_event(context), state_changed_event(context) {
 
-    aruid = process->GetProcessId();
+    aruid.pid = process->GetProcessId();
     program_id = process->GetProgramId();
 }
 
@@ -27,18 +27,19 @@ void Applet::UpdateSuspensionStateLocked(bool force_message) {
     lifecycle_manager.RemoveForceResumeIfPossible();
 
     // Check if we're runnable.
-    const bool is_runnable = lifecycle_manager.IsRunnable();
-    const bool was_running = running;
+    const bool curr_activity_runnable = lifecycle_manager.IsRunnable();
+    const bool prev_activity_runnable = is_activity_runnable;
+    const bool was_changed = curr_activity_runnable != prev_activity_runnable;
 
-    if (is_runnable != was_running) {
-        if (is_runnable) {
+    if (was_changed) {
+        if (curr_activity_runnable) {
             process->Suspend(false);
         } else {
             process->Suspend(true);
             lifecycle_manager.RequestResumeNotification();
         }
 
-        running = is_runnable;
+        is_activity_runnable = curr_activity_runnable;
     }
 
     if (lifecycle_manager.GetForcedSuspend()) {
@@ -47,8 +48,7 @@ void Applet::UpdateSuspensionStateLocked(bool force_message) {
     }
 
     // Signal if the focus state was changed or the process state was changed.
-    if (lifecycle_manager.UpdateRequestedFocusState() || is_runnable != was_running ||
-        force_message) {
+    if (lifecycle_manager.UpdateRequestedFocusState() || was_changed || force_message) {
         lifecycle_manager.SignalSystemEventIfNeeded();
     }
 }
@@ -60,10 +60,7 @@ void Applet::SetInteractibleLocked(bool interactible) {
 
     is_interactible = interactible;
 
-    const bool new_state =
-        window_visible && is_interactible && !lifecycle_manager.GetExitRequested();
-    display_layer_manager.SetWindowVisibility(new_state);
-    hid_registration.EnableAppletToGetInput(new_state);
+    hid_registration.EnableAppletToGetInput(interactible && !lifecycle_manager.GetExitRequested());
 }
 
 void Applet::OnProcessTerminatedLocked() {

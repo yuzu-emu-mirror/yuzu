@@ -36,12 +36,11 @@ public:
         return m_process != nullptr;
     }
 
+    bool IsRunning() const;
     bool IsTerminated() const;
 
     u64 GetProcessId() const;
-    u64 GetProgramId() const {
-        return m_program_id;
-    }
+    u64 GetProgramId() const;
 
     Kernel::KProcess* GetHandle() const {
         return m_process;
@@ -52,7 +51,6 @@ private:
     Kernel::KProcess* m_process{};
     s32 m_main_thread_priority{};
     u64 m_main_thread_stack_size{};
-    u64 m_program_id{};
     bool m_process_started{};
 };
 

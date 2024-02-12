@@ -9,6 +9,7 @@
 #include "common/math_util.h"
 #include "core/hle/service/apm/apm_controller.h"
 #include "core/hle/service/caps/caps_types.h"
+#include "core/hle/service/cmif_types.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/os/event.h"
 #include "core/hle/service/os/process.h"
@@ -38,6 +39,7 @@ struct Applet {
     // Process
     std::unique_ptr<Process> process;
     std::optional<ProcessHolder> process_holder;
+    bool is_process_running{};
 
     // Creation state
     AppletId applet_id{};
@@ -78,7 +80,6 @@ struct Applet {
     bool game_play_recording_supported{};
     GamePlayRecordingState game_play_recording_state{GamePlayRecordingState::Disabled};
     bool jit_service_launched{};
-    bool is_running{};
     bool application_crash_report_enabled{};
 
     // Common state
@@ -95,6 +96,7 @@ struct Applet {
     // Caller applet
     std::weak_ptr<Applet> caller_applet{};
     std::shared_ptr<AppletDataBroker> caller_applet_broker{};
+    std::list<std::shared_ptr<Applet>> child_applets{};
     bool is_completed{};
 
     // Self state
@@ -108,7 +110,7 @@ struct Applet {
     u64 suspended_ticks{};
     bool album_image_taken_notification_enabled{};
     bool record_volume_muted{};
-    bool running{};
+    bool is_activity_runnable{};
     bool is_interactible{true};
     bool window_visible{true};
 

@@ -5,6 +5,7 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/am/applet.h"
 #include "core/hle/service/am/event_observer.h"
+#include "core/hle/service/am/window_system.h"
 
 namespace Service::AM {
 
@@ -13,9 +14,10 @@ enum class UserDataTag : u32 {
     AppletProcess,
 };
 
-EventObserver::EventObserver(Core::System& system)
-    : m_system(system), m_context(system, "am:EventObserver"), m_wakeup_event(m_context),
-      m_wakeup_holder(m_wakeup_event.GetHandle()) {
+EventObserver::EventObserver(Core::System& system, WindowSystem& window_system)
+    : m_system(system), m_context(system, "am:EventObserver"), m_window_system(window_system),
+      m_wakeup_event(m_context), m_wakeup_holder(m_wakeup_event.GetHandle()) {
+    m_window_system.SetEventObserver(this);
     m_wakeup_holder.SetUserData(static_cast<uintptr_t>(UserDataTag::WakeupEvent));
     m_wakeup_holder.LinkToMultiWait(std::addressof(m_multi_wait));
     m_thread = std::thread([&] { this->ThreadFunc(); });
@@ -107,15 +109,16 @@ void EventObserver::OnWakeupEvent(MultiWaitHolder* holder) {
     m_wakeup_event.Clear();
 
     // Perform recalculation.
-    // TODO
+    m_window_system.Update();
 }
 
 void EventObserver::OnProcessEvent(ProcessHolder* holder) {
     // Check process state.
+    auto& applet = holder->GetApplet();
     auto& process = holder->GetProcess();
 
     {
-        std::scoped_lock lk{m_lock};
+        std::scoped_lock lk{m_lock, applet.lock};
         if (process.IsTerminated()) {
             // Destroy the holder.
             this->DestroyAppletProcessHolderLocked(holder);
@@ -126,10 +129,13 @@ void EventObserver::OnProcessEvent(ProcessHolder* holder) {
             // Relink wakeup event.
             holder->LinkToMultiWait(std::addressof(m_deferred_wait_list));
         }
+
+        // Set running.
+        applet.is_process_running = process.IsRunning();
     }
 
     // Perform recalculation.
-    // TODO
+    m_window_system.Update();
 }
 
 void EventObserver::DestroyAppletProcessHolderLocked(ProcessHolder* holder) {

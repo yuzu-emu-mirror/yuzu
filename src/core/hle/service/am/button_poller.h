@@ -17,15 +17,19 @@ class System;
 
 namespace Service::AM {
 
+class WindowSystem;
+
 class ButtonPoller {
 public:
-    explicit ButtonPoller(Core::System& system);
+    explicit ButtonPoller(Core::System& system, WindowSystem& window_system);
     ~ButtonPoller();
 
 private:
     void OnButtonStateChanged();
 
 private:
+    WindowSystem& m_window_system;
+
     Core::HID::EmulatedController* m_handheld{};
     int m_handheld_key{};
     Core::HID::EmulatedController* m_player1{};

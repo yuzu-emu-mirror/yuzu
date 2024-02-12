@@ -17,10 +17,11 @@ namespace Service::AM {
 
 struct Applet;
 class ProcessHolder;
+class WindowSystem;
 
 class EventObserver {
 public:
-    explicit EventObserver(Core::System& system);
+    explicit EventObserver(Core::System& system, WindowSystem& window_system);
     ~EventObserver();
 
     void TrackAppletProcess(Applet& applet);
@@ -47,6 +48,9 @@ private:
     // System reference and context.
     Core::System& m_system;
     KernelHelpers::ServiceContext m_context;
+
+    // Window manager.
+    WindowSystem& m_window_system;
 
     // Guest event handle to wake up the event loop processor.
     Event m_wakeup_event;

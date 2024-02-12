@@ -34,11 +34,11 @@ public:
     ~AppletManager();
 
     void InsertApplet(std::shared_ptr<Applet> applet);
-    void TerminateAndRemoveApplet(AppletResourceUserId aruid);
+    void TerminateAndRemoveApplet(u64 aruid);
 
-    void CreateAndInsertByFrontendAppletParameters(AppletResourceUserId aruid,
+    void CreateAndInsertByFrontendAppletParameters(u64 aruid,
                                                    const FrontendAppletParameters& params);
-    std::shared_ptr<Applet> GetByAppletResourceUserId(AppletResourceUserId aruid) const;
+    std::shared_ptr<Applet> GetByAppletResourceUserId(u64 aruid) const;
 
     void Reset();
 
@@ -50,7 +50,7 @@ private:
     Core::System& m_system;
 
     mutable std::mutex m_lock{};
-    std::map<AppletResourceUserId, std::shared_ptr<Applet>> m_applets{};
+    std::map<u64, std::shared_ptr<Applet>> m_applets{};
 
     // AudioController state goes here
 };

@@ -233,7 +233,6 @@ struct ApplicationPlayStatistics {
 static_assert(sizeof(ApplicationPlayStatistics) == 0x18,
               "ApplicationPlayStatistics has incorrect size.");
 
-using AppletResourceUserId = u64;
 using ProgramId = u64;
 
 struct Applet;

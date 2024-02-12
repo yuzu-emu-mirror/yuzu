@@ -12,7 +12,7 @@ namespace Service {
 
 Process::Process(Core::System& system)
     : m_system(system), m_process(), m_main_thread_priority(), m_main_thread_stack_size(),
-      m_program_id(), m_process_started() {}
+      m_process_started() {}
 
 Process::~Process() {
     this->Finalize();
@@ -73,7 +73,6 @@ void Process::Finalize() {
     m_process = nullptr;
     m_main_thread_priority = 0;
     m_main_thread_stack_size = 0;
-    m_program_id = 0;
     m_process_started = false;
 }
 
@@ -107,6 +106,17 @@ void Process::ResetSignal() {
     }
 }
 
+bool Process::IsRunning() const {
+    if (m_process) {
+        const auto state = m_process->GetState();
+        return state == Kernel::KProcess::State::Running ||
+               state == Kernel::KProcess::State::RunningAttached ||
+               state == Kernel::KProcess::State::DebugBreak;
+    }
+
+    return false;
+}
+
 bool Process::IsTerminated() const {
     if (m_process) {
         return m_process->IsTerminated();
@@ -118,6 +128,14 @@ bool Process::IsTerminated() const {
 u64 Process::GetProcessId() const {
     if (m_process) {
         return m_process->GetProcessId();
+    }
+
+    return 0;
+}
+
+u64 Process::GetProgramId() const {
+    if (m_process) {
+        return m_process->GetProgramId();
     }
 
     return 0;

@@ -232,10 +232,10 @@ AppletManager::~AppletManager() {
 void AppletManager::InsertApplet(std::shared_ptr<Applet> applet) {
     std::scoped_lock lk{m_lock};
 
-    m_applets.emplace(applet->aruid, std::move(applet));
+    m_applets.emplace(applet->aruid.pid, std::move(applet));
 }
 
-void AppletManager::TerminateAndRemoveApplet(AppletResourceUserId aruid) {
+void AppletManager::TerminateAndRemoveApplet(u64 aruid) {
     std::shared_ptr<Applet> applet;
     bool should_stop = false;
     {
@@ -267,13 +267,13 @@ void AppletManager::TerminateAndRemoveApplet(AppletResourceUserId aruid) {
 }
 
 void AppletManager::CreateAndInsertByFrontendAppletParameters(
-    AppletResourceUserId aruid, const FrontendAppletParameters& params) {
+    u64 aruid, const FrontendAppletParameters& params) {
     // TODO: this should be run inside AM so that the events will have a parent process
     // TODO: have am create the guest process
     auto applet = std::make_shared<Applet>(m_system, std::make_unique<Process>(m_system),
                                            params.applet_id == AppletId::Application);
 
-    applet->aruid = aruid;
+    applet->aruid.pid = aruid;
     applet->program_id = params.program_id;
     applet->applet_id = params.applet_id;
     applet->type = params.applet_type;
@@ -333,7 +333,7 @@ void AppletManager::CreateAndInsertByFrontendAppletParameters(
     this->InsertApplet(std::move(applet));
 }
 
-std::shared_ptr<Applet> AppletManager::GetByAppletResourceUserId(AppletResourceUserId aruid) const {
+std::shared_ptr<Applet> AppletManager::GetByAppletResourceUserId(u64 aruid) const {
     std::scoped_lock lk{m_lock};
 
     if (const auto it = m_applets.find(aruid); it != m_applets.end()) {

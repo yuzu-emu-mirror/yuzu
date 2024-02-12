@@ -3,6 +3,7 @@
 
 #include "core/core.h"
 #include "core/hle/service/am/button_poller.h"
+#include "core/hle/service/am/window_system.h"
 #include "hid_core/frontend/emulated_controller.h"
 #include "hid_core/hid_core.h"
 #include "hid_core/hid_types.h"
@@ -11,14 +12,7 @@ namespace Service::AM {
 
 namespace {
 
-enum class ButtonPressDuration {
-    ShortPressing,
-    MiddlePressing,
-    LongPressing,
-};
-
-[[maybe_unused]] ButtonPressDuration ClassifyPressDuration(
-    std::chrono::steady_clock::time_point start) {
+ButtonPressDuration ClassifyPressDuration(std::chrono::steady_clock::time_point start) {
     using namespace std::chrono_literals;
 
     const auto dur = std::chrono::steady_clock::now() - start;
@@ -36,7 +30,8 @@ enum class ButtonPressDuration {
 
 } // namespace
 
-ButtonPoller::ButtonPoller(Core::System& system) {
+ButtonPoller::ButtonPoller(Core::System& system, WindowSystem& window_system)
+    : m_window_system(window_system) {
     // TODO: am reads this from the home button state in hid, which is controller-agnostic.
     Core::HID::ControllerUpdateCallback engine_callback{
         .on_change =
@@ -78,7 +73,7 @@ void ButtonPoller::OnButtonStateChanged() {
 
     // Buttons released which were previously held
     if (!home_button && m_home_button_press_start) {
-        // TODO
+        m_window_system.OnHomeButtonPressed(ClassifyPressDuration(*m_home_button_press_start));
         m_home_button_press_start = std::nullopt;
     }
     if (!capture_button && m_capture_button_press_start) {
