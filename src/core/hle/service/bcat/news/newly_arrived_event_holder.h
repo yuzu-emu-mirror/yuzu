@@ -5,6 +5,7 @@
 
 #include "core/hle/service/cmif_types.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/os/event.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -26,8 +27,8 @@ public:
 private:
     Result Get(OutCopyHandle<Kernel::KReadableEvent> out_event);
 
-    Kernel::KEvent* arrived_event;
     KernelHelpers::ServiceContext service_context;
+    Event arrived_event;
 };
 
 } // namespace Service::News

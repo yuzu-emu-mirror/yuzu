@@ -7,8 +7,8 @@
 namespace Service::News {
 
 IOverwriteEventHolder::IOverwriteEventHolder(Core::System& system_)
-    : ServiceFramework{system_, "IOverwriteEventHolder"}, service_context{system_,
-                                                                          "IOverwriteEventHolder"} {
+    : ServiceFramework{system_, "IOverwriteEventHolder"},
+      service_context{system_, "IOverwriteEventHolder"}, overwrite_event{service_context} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, D<&IOverwriteEventHolder::Get>, "Get"},
@@ -16,17 +16,14 @@ IOverwriteEventHolder::IOverwriteEventHolder(Core::System& system_)
     // clang-format on
 
     RegisterHandlers(functions);
-    overwrite_event = service_context.CreateEvent("IOverwriteEventHolder::OverwriteEvent");
 }
 
-IOverwriteEventHolder::~IOverwriteEventHolder() {
-    service_context.CloseEvent(overwrite_event);
-}
+IOverwriteEventHolder::~IOverwriteEventHolder() = default;
 
 Result IOverwriteEventHolder::Get(OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_INFO(Service_BCAT, "called");
 
-    *out_event = &overwrite_event->GetReadableEvent();
+    *out_event = overwrite_event.GetHandle();
     R_SUCCEED();
 }
 

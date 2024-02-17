@@ -10,6 +10,7 @@
 #include "core/hle/service/ldn/sf_service_monitor.h"
 #include "core/hle/service/ldn/system_local_communication_service.h"
 #include "core/hle/service/ldn/user_local_communication_service.h"
+#include "core/hle/service/server_manager.h"
 
 namespace Service::LDN {
 

@@ -10,12 +10,8 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "core/hle/ipc.h"
-#include "core/hle/kernel/k_process.h"
-#include "core/hle/kernel/k_resource_limit.h"
-#include "core/hle/kernel/k_session.h"
 #include "core/hle/result.h"
 #include "core/hle/service/hle_ipc.h"
-#include "core/hle/service/server_manager.h"
 
 namespace IPC {
 
@@ -151,19 +147,7 @@ public:
         if (manager->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
-            ASSERT(Kernel::GetCurrentProcess(kernel).GetResourceLimit()->Reserve(
-                Kernel::LimitableResource::SessionCountMax, 1));
-
-            auto* session = Kernel::KSession::Create(kernel);
-            session->Initialize(nullptr, 0);
-            Kernel::KSession::Register(kernel, session);
-
-            auto next_manager = std::make_shared<Service::SessionRequestManager>(
-                kernel, manager->GetServerManager());
-            next_manager->SetSessionHandler(iface);
-            manager->GetServerManager().RegisterSession(&session->GetServerSession(), next_manager);
-
-            context->AddMoveObject(&session->GetClientSession());
+            context->AddMoveInterface(std::move(iface));
         }
     }
 

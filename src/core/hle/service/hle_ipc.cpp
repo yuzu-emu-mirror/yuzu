@@ -11,17 +11,21 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "common/scratch_buffer.h"
 #include "core/guest_memory.h"
 #include "core/hle/kernel/k_auto_object.h"
+#include "core/hle/kernel/k_code_memory.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_server_port.h"
 #include "core/hle/kernel/k_server_session.h"
+#include "core/hle/kernel/k_session.h"
+#include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/hle_ipc.h"
 #include "core/hle/service/ipc_helpers.h"
+#include "core/hle/service/server_manager.h"
 #include "core/memory.h"
 
 namespace Service {
@@ -133,6 +137,45 @@ HLERequestContext::HLERequestContext(Kernel::KernelCore& kernel_, Core::Memory::
 }
 
 HLERequestContext::~HLERequestContext() = default;
+
+template <typename T>
+T* HLERequestContext::GetObjectFromHandle(u32 handle) {
+    auto obj = client_handle_table->GetObjectForIpc(handle, thread);
+    if (obj.IsNotNull()) {
+        return obj->DynamicCast<T*>();
+    }
+    return nullptr;
+}
+
+template <typename T>
+void HLERequestContext::AddCopyObject(T* object) {
+    outgoing_copy_objects.push_back(object);
+}
+
+template <typename T>
+void HLERequestContext::AddMoveObject(T* object) {
+    outgoing_move_objects.push_back(object);
+}
+
+template Kernel::KCodeMemory* HLERequestContext::GetObjectFromHandle<Kernel::KCodeMemory>(
+    u32 handle);
+template Kernel::KProcess* HLERequestContext::GetObjectFromHandle<Kernel::KProcess>(u32 handle);
+template Kernel::KReadableEvent* HLERequestContext::GetObjectFromHandle<Kernel::KReadableEvent>(
+    u32 handle);
+template Kernel::KTransferMemory* HLERequestContext::GetObjectFromHandle<Kernel::KTransferMemory>(
+    u32 handle);
+
+template void HLERequestContext::AddCopyObject<Kernel::KProcess>(Kernel::KProcess* object);
+template void HLERequestContext::AddCopyObject<Kernel::KReadableEvent>(
+    Kernel::KReadableEvent* object);
+template void HLERequestContext::AddCopyObject<Kernel::KSharedMemory>(
+    Kernel::KSharedMemory* object);
+template void HLERequestContext::AddCopyObject<Kernel::KTransferMemory>(
+    Kernel::KTransferMemory* object);
+
+template void HLERequestContext::AddMoveObject<Kernel::KClientSession>(
+    Kernel::KClientSession* object);
+template void HLERequestContext::AddMoveObject<Kernel::KServerPort>(Kernel::KServerPort* object);
 
 void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     IPC::RequestParser rp(src_cmdbuf);

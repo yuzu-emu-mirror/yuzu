@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/alignment.h"
 #include "core/core.h"
 #include "core/hle/service/psc/time/alarms.h"
 #include "core/hle/service/psc/time/manager.h"

@@ -1982,7 +1982,7 @@ void IHidServer::InitializeSevenSixAxisSensor(HLERequestContext& ctx) {
 
     auto t_mem_1 = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(t_mem_1_handle);
 
-    if (t_mem_1.IsNull()) {
+    if (!t_mem_1) {
         LOG_ERROR(Service_HID, "t_mem_1 is a nullptr for handle=0x{:08X}", t_mem_1_handle);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultUnknown);
@@ -1991,7 +1991,7 @@ void IHidServer::InitializeSevenSixAxisSensor(HLERequestContext& ctx) {
 
     auto t_mem_2 = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(t_mem_2_handle);
 
-    if (t_mem_2.IsNull()) {
+    if (!t_mem_2) {
         LOG_ERROR(Service_HID, "t_mem_2 is a nullptr for handle=0x{:08X}", t_mem_2_handle);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultUnknown);
@@ -2272,7 +2272,7 @@ void IHidServer::WritePalmaWaveEntry(HLERequestContext& ctx) {
 
     auto t_mem = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(t_mem_handle);
 
-    if (t_mem.IsNull()) {
+    if (!t_mem) {
         LOG_ERROR(Service_HID, "t_mem is a nullptr for handle=0x{:08X}", t_mem_handle);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultUnknown);

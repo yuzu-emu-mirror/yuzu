@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "core/core.h"
 #include "core/hle/service/bcat/bcat_service.h"
 #include "core/hle/service/bcat/delivery_cache_storage_service.h"
 #include "core/hle/service/bcat/service_creator.h"

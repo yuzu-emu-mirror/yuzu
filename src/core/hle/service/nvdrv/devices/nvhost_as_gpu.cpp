@@ -7,6 +7,7 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/bit_util.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/service/nvdrv/core/container.h"

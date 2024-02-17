@@ -15,9 +15,9 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/concepts.h"
+#include "common/scratch_buffer.h"
 #include "common/swap.h"
 #include "core/hle/ipc.h"
-#include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/svc_common.h"
 
 union Result;
@@ -40,9 +40,8 @@ class KAutoObject;
 class KernelCore;
 class KHandleTable;
 class KProcess;
+class KReadableEvent;
 class KServerSession;
-template <typename T>
-class KScopedAutoObject;
 class KThread;
 } // namespace Kernel
 
@@ -335,15 +334,13 @@ public:
         return incoming_move_handles.at(index);
     }
 
-    void AddMoveObject(Kernel::KAutoObject* object) {
-        outgoing_move_objects.emplace_back(object);
-    }
+    template <typename T>
+    void AddMoveObject(T* object);
 
     void AddMoveInterface(SessionRequestHandlerPtr s);
 
-    void AddCopyObject(Kernel::KAutoObject* object) {
-        outgoing_copy_objects.emplace_back(object);
-    }
+    template <typename T>
+    void AddCopyObject(T* object);
 
     void AddDomainObject(SessionRequestHandlerPtr object) {
         outgoing_domain_objects.emplace_back(std::move(object));
@@ -369,13 +366,7 @@ public:
     }
 
     template <typename T>
-    Kernel::KScopedAutoObject<T> GetObjectFromHandle(u32 handle) {
-        auto obj = client_handle_table->GetObjectForIpc(handle, thread);
-        if (obj.IsNotNull()) {
-            return obj->DynamicCast<T*>();
-        }
-        return nullptr;
-    }
+    T* GetObjectFromHandle(u32 handle);
 
     [[nodiscard]] std::shared_ptr<SessionRequestManager> GetManager() const {
         return manager.lock();
