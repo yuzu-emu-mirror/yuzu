@@ -590,6 +590,18 @@ add_library(core STATIC
     hle/service/caps/caps_u.h
     hle/service/cmif_serialization.h
     hle/service/cmif_types.h
+    hle/service/dmnt/cheat_interface.cpp
+    hle/service/dmnt/cheat_interface.h
+    hle/service/dmnt/cheat_parser.cpp
+    hle/service/dmnt/cheat_parser.h
+    hle/service/dmnt/cheat_process_manager.cpp
+    hle/service/dmnt/cheat_process_manager.h
+    hle/service/dmnt/cheat_virtual_machine.cpp
+    hle/service/dmnt/cheat_virtual_machine.h
+    hle/service/dmnt/dmnt.cpp
+    hle/service/dmnt/dmnt.h
+    hle/service/dmnt/dmnt_results.h
+    hle/service/dmnt/dmnt_types.h
     hle/service/erpt/erpt.cpp
     hle/service/erpt/erpt.h
     hle/service/es/es.cpp
@@ -1109,11 +1121,6 @@ add_library(core STATIC
     loader/xci.h
     memory.cpp
     memory.h
-    memory/cheat_engine.cpp
-    memory/cheat_engine.h
-    memory/dmnt_cheat_types.h
-    memory/dmnt_cheat_vm.cpp
-    memory/dmnt_cheat_vm.h
     perf_stats.cpp
     perf_stats.h
     precompiled_headers.h

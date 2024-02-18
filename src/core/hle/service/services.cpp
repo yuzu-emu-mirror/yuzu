@@ -13,6 +13,7 @@
 #include "core/hle/service/btdrv/btdrv.h"
 #include "core/hle/service/btm/btm.h"
 #include "core/hle/service/caps/caps.h"
+#include "core/hle/service/dmnt/dmnt.h"
 #include "core/hle/service/erpt/erpt.h"
 #include "core/hle/service/es/es.h"
 #include "core/hle/service/eupld/eupld.h"
@@ -128,6 +129,7 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     kernel.RunOnGuestCoreProcess("spl",        [&] { SPL::LoopProcess(system); });
     kernel.RunOnGuestCoreProcess("ssl",        [&] { SSL::LoopProcess(system); });
     kernel.RunOnGuestCoreProcess("usb",        [&] { USB::LoopProcess(system); });
+    kernel.RunOnGuestCoreProcess("dmnt",        [&] { DMNT::LoopProcess(system); });
     // clang-format on
 }
 

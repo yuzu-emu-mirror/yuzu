@@ -39,6 +39,7 @@
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/frontend/applets.h"
 #include "core/hle/service/apm/apm_controller.h"
+#include "core/hle/service/dmnt/cheat_process_manager.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/glue/time/static.h"
@@ -53,7 +54,6 @@
 #include "core/internal_network/network.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
-#include "core/memory/cheat_engine.h"
 #include "core/perf_stats.h"
 #include "core/reporter.h"
 #include "core/telemetry_session.h"
@@ -361,6 +361,11 @@ struct System::Impl {
         Kernel::KProcess::Register(system.Kernel(), main_process);
         kernel.AppendNewProcess(main_process);
         kernel.MakeApplicationProcess(main_process);
+
+        if (!cheat_manager) {
+            cheat_manager = std::make_unique<Service::DMNT::CheatProcessManager>(system);
+        }
+
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", load_result);
@@ -381,11 +386,6 @@ struct System::Impl {
 
         AddGlueRegistrationForProcess(*app_loader, *main_process);
         telemetry_session->AddInitialInfo(*app_loader, fs_controller, *content_provider);
-
-        // Initialize cheat engine
-        if (cheat_engine) {
-            cheat_engine->Initialize();
-        }
 
         // Register with applet manager.
         applet_manager.CreateAndInsertByFrontendAppletParameters(main_process->GetProcessId(),
@@ -470,7 +470,7 @@ struct System::Impl {
         services.reset();
         service_manager.reset();
         fs_controller.Reset();
-        cheat_engine.reset();
+        cheat_manager.reset();
         telemetry_session.reset();
         core_timing.ClearPendingEvents();
         app_loader.reset();
@@ -573,7 +573,7 @@ struct System::Impl {
     bool nvdec_active{};
 
     Reporter reporter;
-    std::unique_ptr<Memory::CheatEngine> cheat_engine;
+    std::unique_ptr<Service::DMNT::CheatProcessManager> cheat_manager;
     std::unique_ptr<Tools::Freezer> memory_freezer;
     std::array<u8, 0x20> build_id{};
 
@@ -879,11 +879,20 @@ FileSys::VirtualFilesystem System::GetFilesystem() const {
     return impl->virtual_filesystem;
 }
 
-void System::RegisterCheatList(const std::vector<Memory::CheatEntry>& list,
+void System::RegisterCheatList(std::span<const Service::DMNT::CheatEntry> list,
                                const std::array<u8, 32>& build_id, u64 main_region_begin,
                                u64 main_region_size) {
-    impl->cheat_engine = std::make_unique<Memory::CheatEngine>(*this, list, build_id);
-    impl->cheat_engine->SetMainMemoryParameters(main_region_begin, main_region_size);
+    impl->cheat_manager->AttachToApplicationProcess(build_id, main_region_begin, main_region_size);
+
+    // Register cheat list
+    for (const auto& cheat : list) {
+        if (cheat.cheat_id == 0) {
+            impl->cheat_manager->SetMasterCheat(cheat.definition);
+            continue;
+        }
+        u32 cheat_id{};
+        impl->cheat_manager->AddCheat(cheat_id, cheat.enabled, cheat.definition);
+    }
 }
 
 void System::SetFrontendAppletSet(Service::AM::Frontend::FrontendAppletSet&& set) {
@@ -1031,6 +1040,14 @@ Core::Debugger& System::GetDebugger() {
 
 const Core::Debugger& System::GetDebugger() const {
     return *impl->debugger;
+}
+
+Service::DMNT::CheatProcessManager& System::GetCheatManager() {
+    return *impl->cheat_manager;
+}
+
+const Service::DMNT::CheatProcessManager& System::GetCheatManager() const {
+    return *impl->cheat_manager;
 }
 
 Network::RoomNetwork& System::GetRoomNetwork() {
