@@ -4169,9 +4169,8 @@ void GMainWindow::OnInstallFirmware() {
         return;
     }
 
-    QString firmware_source_location =
-        QFileDialog::getExistingDirectory(this, tr("Select Dumped Firmware Source Location"),
-                                          QString::fromStdString(""), QFileDialog::ShowDirsOnly);
+    const QString firmware_source_location = QFileDialog::getExistingDirectory(
+        this, tr("Select Dumped Firmware Source Location"), {}, QFileDialog::ShowDirsOnly);
     if (firmware_source_location.isEmpty()) {
         return;
     }
@@ -4202,8 +4201,9 @@ void GMainWindow::OnInstallFirmware() {
     std::vector<std::filesystem::path> out;
     const Common::FS::DirEntryCallable callback =
         [&out](const std::filesystem::directory_entry& entry) {
-            if (entry.path().has_extension() && entry.path().extension() == ".nca")
+            if (entry.path().has_extension() && entry.path().extension() == ".nca") {
                 out.emplace_back(entry.path());
+            }
 
             return true;
         };
@@ -4235,7 +4235,6 @@ void GMainWindow::OnInstallFirmware() {
     auto firmware_vdir = sysnand_content_vdir->GetDirectoryRelative("registered");
 
     bool success = true;
-    bool cancelled = false;
     int i = 0;
     for (const auto& firmware_src_path : out) {
         i++;
@@ -4250,23 +4249,21 @@ void GMainWindow::OnInstallFirmware() {
             success = false;
         }
 
-        if (QtProgressCallback(100, 20 + (int)(((float)(i) / (float)out.size()) * 70.0))) {
-            success = false;
-            cancelled = true;
-            break;
+        if (QtProgressCallback(
+                100, 20 + static_cast<int>(((i) / static_cast<float>(out.size())) * 70.0))) {
+            progress.close();
+            QMessageBox::warning(
+                this, tr("Firmware install failed"),
+                tr("Firmware installation cancelled, firmware may be in bad state, "
+                   "restart yuzu or re-install firmware."));
+            return;
         }
     }
 
-    if (!success && !cancelled) {
+    if (!success) {
         progress.close();
         QMessageBox::critical(this, tr("Firmware install failed"),
                               tr("One or more firmware files failed to copy into NAND."));
-        return;
-    } else if (cancelled) {
-        progress.close();
-        QMessageBox::warning(this, tr("Firmware install failed"),
-                             tr("Firmware installation cancelled, firmware may be in bad state, "
-                                "restart yuzu or re-install firmware."));
         return;
     }
 
@@ -4301,9 +4298,9 @@ void GMainWindow::OnInstallDecryptionKeys() {
         return;
     }
 
-    QString key_source_location =
-        QFileDialog::getExistingDirectory(this, tr("Select Dumped Keys Source Location"),
-                                          QString::fromStdString(""), QFileDialog::ShowDirsOnly);
+    const QString key_source_location =
+        QFileDialog::getOpenFileName(this, tr("Select Dumped Keys Location"), {},
+                                     tr("prod.keys (prod.keys)"), {}, QFileDialog::ReadOnly);
     if (key_source_location.isEmpty()) {
         return;
     }
@@ -4311,53 +4308,52 @@ void GMainWindow::OnInstallDecryptionKeys() {
     // Verify that it contains prod.keys, title.keys and optionally, key_retail.bin
     LOG_INFO(Frontend, "Installing key files from {}", key_source_location.toStdString());
 
-    std::filesystem::path key_source_path = key_source_location.toStdString();
+    const std::filesystem::path prod_key_path = key_source_location.toStdString();
+    const std::filesystem::path key_source_path = prod_key_path.parent_path();
     if (!Common::FS::IsDir(key_source_path)) {
         return;
     }
 
-    int required_file_count = 0;
+    bool prod_keys_found = false;
     std::vector<std::filesystem::path> source_key_files;
-    const Common::FS::DirEntryCallable callback =
-        [&source_key_files, &required_file_count](const std::filesystem::directory_entry& entry) {
-            auto target_filename = entry.path().filename();
 
-            if (target_filename == "prod.keys" || target_filename == "title.keys") {
-                required_file_count++;
-                source_key_files.emplace_back(entry.path());
-            }
+    if (Common::FS::Exists(prod_key_path)) {
+        prod_keys_found = true;
+        source_key_files.emplace_back(prod_key_path);
+    }
 
-            if (target_filename == "key_retail.bin")
-                source_key_files.emplace_back(entry.path());
+    if (Common::FS::Exists(key_source_path / "title.keys")) {
+        source_key_files.emplace_back(key_source_path / "title.keys");
+    }
 
-            return true;
-        };
+    if (Common::FS::Exists(key_source_path / "key_retail.bin")) {
+        source_key_files.emplace_back(key_source_path / "key_retail.bin");
+    }
 
-    // There should be at least two files, prod.keys and title.keys.
-    Common::FS::IterateDirEntries(key_source_path, callback, Common::FS::DirEntryFilter::File);
-    if (source_key_files.size() < 2 || required_file_count != 2) {
+    // There should be at least prod.keys.
+    if (source_key_files.size() < 1 || !prod_keys_found) {
         QMessageBox::warning(this, tr("Decryption Keys install failed"),
-                             tr("prod.keys and title.keys are required decryption key files."));
+                             tr("prod.keys is a required decryption key file."));
         return;
     }
 
     const auto yuzu_keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
+    if (!Common::FS::RemoveDirContentsRecursively(yuzu_keys_dir)) {
+        QMessageBox::critical(this, tr("Decryption Keys install failed"),
+                              tr("Failed to remove old keys from Yuzu's keys location."));
+        return;
+    }
 
-    bool success = true;
     for (auto key_file : source_key_files) {
         std::filesystem::path destination_key_file = yuzu_keys_dir / key_file.filename();
         if (!std::filesystem::copy_file(key_file, destination_key_file,
                                         std::filesystem::copy_options::overwrite_existing)) {
             LOG_ERROR(Frontend, "Failed to copy file {} to {}", key_file.string(),
                       destination_key_file.string());
-            success = false;
+            QMessageBox::critical(this, tr("Decryption Keys install failed"),
+                                  tr("One or more keys failed to copy."));
+            return;
         }
-    }
-
-    if (!success) {
-        QMessageBox::critical(this, tr("Decryption Keys install failed"),
-                              tr("One or more keys failed to copy."));
-        return;
     }
 
     // Reinitialize the key manager, re-read the vfs (for update/dlc files),
@@ -4369,12 +4365,15 @@ void GMainWindow::OnInstallDecryptionKeys() {
 
     if (ContentManager::AreKeysPresent()) {
         QMessageBox::information(this, tr("Decryption Keys install succeeded"),
-                                 tr("Decryption Keys Installed"));
+                                 tr("Decryption Keys were successfully installed"));
     } else {
-        QMessageBox::critical(this, tr("Decryption Keys install failed"),
-                              tr("Decryption Keys failed to initialize. Check homebrew tools are "
-                                 "up to date and re-dump keys."));
+        QMessageBox::critical(
+            this, tr("Decryption Keys install failed"),
+            tr("Decryption Keys failed to initialize. Check that your dumping tools are "
+               "up to date and re-dump keys."));
     }
+
+    OnCheckFirmwareDecryption();
 }
 
 void GMainWindow::OnAbout() {
