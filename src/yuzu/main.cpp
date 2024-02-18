@@ -4338,12 +4338,6 @@ void GMainWindow::OnInstallDecryptionKeys() {
     }
 
     const auto yuzu_keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
-    if (!Common::FS::RemoveDirContentsRecursively(yuzu_keys_dir)) {
-        QMessageBox::critical(this, tr("Decryption Keys install failed"),
-                              tr("Failed to remove old keys from Yuzu's keys location."));
-        return;
-    }
-
     for (auto key_file : source_key_files) {
         std::filesystem::path destination_key_file = yuzu_keys_dir / key_file.filename();
         if (!std::filesystem::copy_file(key_file, destination_key_file,
