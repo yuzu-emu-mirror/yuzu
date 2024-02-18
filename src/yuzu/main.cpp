@@ -1604,6 +1604,7 @@ void GMainWindow::ConnectMenuEvents() {
     connect_menu(ui->action_Open_yuzu_Folder, &GMainWindow::OnOpenYuzuFolder);
     connect_menu(ui->action_Verify_installed_contents, &GMainWindow::OnVerifyInstalledContents);
     connect_menu(ui->action_Install_Firmware, &GMainWindow::OnInstallFirmware);
+    connect_menu(ui->action_Install_Keys, &GMainWindow::OnInstallDecryptionKeys);
     connect_menu(ui->action_About, &GMainWindow::OnAbout);
 }
 
@@ -1633,6 +1634,7 @@ void GMainWindow::UpdateMenuState() {
     }
 
     ui->action_Install_Firmware->setEnabled(!emulation_running);
+    ui->action_Install_Keys->setEnabled(!emulation_running);
 
     for (QAction* action : applet_actions) {
         action->setEnabled(is_firmware_available && !emulation_running);
@@ -4291,6 +4293,88 @@ void GMainWindow::OnInstallFirmware() {
 
     progress.close();
     OnCheckFirmwareDecryption();
+}
+
+void GMainWindow::OnInstallDecryptionKeys() {
+    // Don't do this while emulation is running.
+    if (emu_thread != nullptr && emu_thread->IsRunning()) {
+        return;
+    }
+
+    QString key_source_location =
+        QFileDialog::getExistingDirectory(this, tr("Select Dumped Keys Source Location"),
+                                          QString::fromStdString(""), QFileDialog::ShowDirsOnly);
+    if (key_source_location.isEmpty()) {
+        return;
+    }
+
+    // Verify that it contains prod.keys, title.keys and optionally, key_retail.bin
+    LOG_INFO(Frontend, "Installing key files from {}", key_source_location.toStdString());
+
+    std::filesystem::path key_source_path = key_source_location.toStdString();
+    if (!Common::FS::IsDir(key_source_path)) {
+        return;
+    }
+
+    int required_file_count = 0;
+    std::vector<std::filesystem::path> source_key_files;
+    const Common::FS::DirEntryCallable callback =
+        [&source_key_files, &required_file_count](const std::filesystem::directory_entry& entry) {
+            auto target_filename = entry.path().filename();
+
+            if (target_filename == "prod.keys" || target_filename == "title.keys") {
+                required_file_count++;
+                source_key_files.emplace_back(entry.path());
+            }
+
+            if (target_filename == "key_retail.bin")
+                source_key_files.emplace_back(entry.path());
+
+            return true;
+        };
+
+    // There should be at least two files, prod.keys and title.keys.
+    Common::FS::IterateDirEntries(key_source_path, callback, Common::FS::DirEntryFilter::File);
+    if (source_key_files.size() < 2 || required_file_count != 2) {
+        QMessageBox::warning(this, tr("Decryption Keys install failed"),
+                             tr("prod.keys and title.keys are required decryption key files."));
+        return;
+    }
+
+    const auto yuzu_keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
+
+    bool success = true;
+    for (auto key_file : source_key_files) {
+        std::filesystem::path destination_key_file = yuzu_keys_dir / key_file.filename();
+        if (!std::filesystem::copy_file(key_file, destination_key_file,
+                                        std::filesystem::copy_options::overwrite_existing)) {
+            LOG_ERROR(Frontend, "Failed to copy file {} to {}", key_file.string(),
+                      destination_key_file.string());
+            success = false;
+        }
+    }
+
+    if (!success) {
+        QMessageBox::critical(this, tr("Decryption Keys install failed"),
+                              tr("One or more keys failed to copy."));
+        return;
+    }
+
+    // Reinitialize the key manager, re-read the vfs (for update/dlc files),
+    // and re-populate the game list in the UI if the user has already added
+    // game folders.
+    Core::Crypto::KeyManager::Instance().ReloadKeys();
+    system->GetFileSystemController().CreateFactories(*vfs);
+    game_list->PopulateAsync(UISettings::values.game_dirs);
+
+    if (ContentManager::AreKeysPresent()) {
+        QMessageBox::information(this, tr("Decryption Keys install succeded"),
+                                 tr("Decryption Keys Installed"));
+    } else {
+        QMessageBox::critical(this, tr("Decryption Keys install failed"),
+                              tr("Decryption Keys failed to initialize. Check homebrew tools are "
+                                 "up to date and re-dump keys."));
+    }
 }
 
 void GMainWindow::OnAbout() {
