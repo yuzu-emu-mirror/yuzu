@@ -4368,7 +4368,7 @@ void GMainWindow::OnInstallDecryptionKeys() {
     game_list->PopulateAsync(UISettings::values.game_dirs);
 
     if (ContentManager::AreKeysPresent()) {
-        QMessageBox::information(this, tr("Decryption Keys install succeded"),
+        QMessageBox::information(this, tr("Decryption Keys install succeeded"),
                                  tr("Decryption Keys Installed"));
     } else {
         QMessageBox::critical(this, tr("Decryption Keys install failed"),
