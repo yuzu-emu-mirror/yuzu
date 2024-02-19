@@ -104,7 +104,7 @@ Result ISystemAppletProxy::GetLibraryAppletCreator(
 Result ISystemAppletProxy::GetApplicationCreator(
     Out<SharedPointer<IApplicationCreator>> out_application_creator) {
     LOG_DEBUG(Service_AM, "called");
-    *out_application_creator = std::make_shared<IApplicationCreator>(system);
+    *out_application_creator = std::make_shared<IApplicationCreator>(system, m_window_system);
     R_SUCCEED();
 }
 

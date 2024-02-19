@@ -9,12 +9,15 @@
 #include "core/hle/service/am/service/application_accessor.h"
 #include "core/hle/service/am/service/library_applet_accessor.h"
 #include "core/hle/service/am/service/storage.h"
+#include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
 
 namespace Service::AM {
 
-IApplicationAccessor::IApplicationAccessor(Core::System& system_, std::shared_ptr<Applet> applet)
-    : ServiceFramework{system_, "IApplicationAccessor"}, m_applet(std::move(applet)) {
+IApplicationAccessor::IApplicationAccessor(Core::System& system_, std::shared_ptr<Applet> applet,
+                                           WindowSystem& window_system)
+    : ServiceFramework{system_, "IApplicationAccessor"}, m_window_system(window_system),
+      m_applet(std::move(applet)) {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, D<&IApplicationAccessor::GetAppletStateChangedEvent>, "GetAppletStateChangedEvent"},
@@ -59,7 +62,15 @@ Result IApplicationAccessor::Start() {
 
 Result IApplicationAccessor::RequestExit() {
     LOG_INFO(Service_AM, "called");
-    m_applet->lifecycle_manager.RequestExit();
+
+    std::scoped_lock lk{m_applet->lock};
+    if (m_applet->exit_locked) {
+        m_applet->lifecycle_manager.RequestExit();
+        m_applet->UpdateSuspensionStateLocked(true);
+    } else {
+        m_applet->process->Terminate();
+    }
+
     R_SUCCEED();
 }
 
@@ -114,8 +125,9 @@ Result IApplicationAccessor::GetCurrentLibraryApplet(
 }
 
 Result IApplicationAccessor::RequestForApplicationToGetForeground() {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
-    R_THROW(ResultUnknown);
+    LOG_INFO(Service_AM, "called");
+    m_window_system.RequestApplicationToGetForeground();
+    R_SUCCEED();
 }
 
 Result IApplicationAccessor::CheckRightsEnvironmentAvailable(Out<bool> out_is_available) {
