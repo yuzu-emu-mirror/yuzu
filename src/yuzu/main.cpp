@@ -4331,7 +4331,7 @@ void GMainWindow::OnInstallDecryptionKeys() {
     }
 
     // There should be at least prod.keys.
-    if (source_key_files.size() < 1 || !prod_keys_found) {
+    if (source_key_files.empty() || !prod_keys_found) {
         QMessageBox::warning(this, tr("Decryption Keys install failed"),
                              tr("prod.keys is a required decryption key file."));
         return;
