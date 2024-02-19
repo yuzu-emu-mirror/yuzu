@@ -4298,9 +4298,9 @@ void GMainWindow::OnInstallDecryptionKeys() {
         return;
     }
 
-    const QString key_source_location =
-        QFileDialog::getOpenFileName(this, tr("Select Dumped Keys Location"), {},
-                                     QStringLiteral("prod.keys (prod.keys)"), {}, QFileDialog::ReadOnly);
+    const QString key_source_location = QFileDialog::getOpenFileName(
+        this, tr("Select Dumped Keys Location"), {}, QStringLiteral("prod.keys (prod.keys)"), {},
+        QFileDialog::ReadOnly);
     if (key_source_location.isEmpty()) {
         return;
     }
