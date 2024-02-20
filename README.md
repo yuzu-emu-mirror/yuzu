@@ -89,7 +89,6 @@ You can support developers via the button that we have provided for Android user
     <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="200">
 </a>
 
-
 EARLY ACCESS BENEFITS
 * Cutting-edge features and speed improvements
 * Early access to in-development updates
