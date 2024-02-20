@@ -58,10 +58,10 @@ Result ILibraryAppletAccessor::IsCompleted(Out<bool> out_is_completed) {
     R_SUCCEED();
 }
 
-Result ILibraryAppletAccessor::GetResult(Out<Result> out_result) {
+Result ILibraryAppletAccessor::GetResult() {
     LOG_DEBUG(Service_AM, "called");
-    *out_result = m_applet->terminate_result;
-    R_SUCCEED();
+    std::scoped_lock lk{m_applet->lock};
+    R_RETURN(m_applet->terminate_result);
 }
 
 Result ILibraryAppletAccessor::PresetLibraryAppletGpuTimeSliceZero() {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
+#include "core/hle/service/am/am_results.h"
 #include "core/hle/service/am/applet.h"
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/event_observer.h"
@@ -250,7 +251,9 @@ void WindowSystem::TerminateChildAppletsLocked(Applet* applet) {
 
     applet->lock.unlock();
     for (const auto& child_applet : child_applets) {
+        std::scoped_lock lk{child_applet->lock};
         child_applet->process->Terminate();
+        child_applet->terminate_result = AM::ResultLibraryAppletTerminated;
     }
     applet->lock.lock();
 }

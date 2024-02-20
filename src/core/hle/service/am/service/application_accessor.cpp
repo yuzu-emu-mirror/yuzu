@@ -83,7 +83,8 @@ Result IApplicationAccessor::Terminate() {
 
 Result IApplicationAccessor::GetResult() {
     LOG_INFO(Service_AM, "called");
-    R_SUCCEED();
+    std::scoped_lock lk{m_applet->lock};
+    R_RETURN(m_applet->terminate_result);
 }
 
 Result IApplicationAccessor::GetAppletStateChangedEvent(
