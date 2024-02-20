@@ -11,6 +11,7 @@
 #include "core/hle/service/am/service/storage.h"
 #include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
+#include "core/hle/service/glue/glue_manager.h"
 
 namespace Service::AM {
 
@@ -107,8 +108,15 @@ Result IApplicationAccessor::PushLaunchParameter(LaunchParameterKind kind,
 
 Result IApplicationAccessor::GetApplicationControlProperty(
     OutBuffer<BufferAttr_HipcMapAlias> out_control_property) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
-    R_THROW(ResultUnknown);
+    LOG_INFO(Service_AM, "called");
+
+    std::vector<u8> nacp;
+    R_TRY(system.GetARPManager().GetControlProperty(&nacp, m_applet->program_id));
+
+    std::memcpy(out_control_property.data(), nacp.data(),
+                std::min(out_control_property.size(), nacp.size()));
+
+    R_SUCCEED();
 }
 
 Result IApplicationAccessor::SetUsers(bool enable,
