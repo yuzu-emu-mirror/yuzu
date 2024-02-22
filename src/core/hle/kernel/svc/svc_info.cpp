@@ -1,13 +1,32 @@
 // SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/hle/api_version.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/svc.h"
 
 namespace Kernel::Svc {
+
+Result GetInitialProcessIdRange(u64* out, InitialProcessIdRangeInfo info) {
+    switch (info) {
+    case InitialProcessIdRangeInfo::Minimum:
+        static_assert(KProcess::InitialProcessIdMin <= KProcess::InitialProcessIdMax);
+        *out = KProcess::InitialProcessIdMin;
+        break;
+    case InitialProcessIdRangeInfo::Maximum:
+        static_assert(KProcess::InitialProcessIdMin <= KProcess::InitialProcessIdMax);
+        *out = KProcess::InitialProcessIdMax;
+        break;
+    default:
+        R_THROW(ResultInvalidCombination);
+    }
+
+    R_SUCCEED();
+}
 
 /// Gets system/memory information for the current process
 Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle handle,
@@ -174,9 +193,17 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
         R_SUCCEED();
 
     case InfoType::InitialProcessIdRange:
-        LOG_WARNING(Kernel_SVC,
-                    "(STUBBED) Attempted to query privileged process id bounds, returned 0");
-        *result = 0;
+        // NOTE: This info type was added in 4.0.0, and removed in 5.0.0
+        R_UNLESS(HLE::ApiVersion::GetTargetFirmware() <
+                     HLE::ApiVersion::AtmosphereTargetFirmware(5, 0, 0),
+                 ResultInvalidEnumValue);
+
+        // Verify the input handle is invalid
+        R_UNLESS(handle == InvalidHandle, ResultInvalidHandle);
+
+        // Get the process id range
+        R_TRY(
+            GetInitialProcessIdRange(result, static_cast<InitialProcessIdRangeInfo>(info_sub_id)));
         R_SUCCEED();
 
     case InfoType::ThreadTickCount: {
@@ -255,10 +282,58 @@ Result GetInfo(Core::System& system, u64* result, InfoType info_id_type, Handle 
     }
 }
 
+static constexpr bool IsValidMemoryPool(u64 pool) {
+    switch (static_cast<KMemoryManager::Pool>(pool)) {
+    case KMemoryManager::Pool::Application:
+    case KMemoryManager::Pool::Applet:
+    case KMemoryManager::Pool::System:
+    case KMemoryManager::Pool::SystemNonSecure:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Result GetSystemInfo(Core::System& system, uint64_t* out, SystemInfoType info_type, Handle handle,
                      uint64_t info_subtype) {
-    UNIMPLEMENTED();
-    R_THROW(ResultNotImplemented);
+    switch (info_type) {
+    case SystemInfoType::TotalPhysicalMemorySize:
+    case SystemInfoType::UsedPhysicalMemorySize: {
+        // Verify the input handle is invalid
+        R_UNLESS(handle == InvalidHandle, ResultInvalidHandle);
+
+        // Verify the sub-type is valid
+        R_UNLESS(IsValidMemoryPool(info_subtype), ResultInvalidCombination);
+
+        // Convert to pool
+        const auto pool = static_cast<KMemoryManager::Pool>(info_subtype);
+
+        // Get the memory size
+        auto& mm = system.Kernel().MemoryManager();
+        switch (info_type) {
+        case SystemInfoType::TotalPhysicalMemorySize:
+            *out = mm.GetSize(pool);
+            break;
+        case SystemInfoType::UsedPhysicalMemorySize:
+            *out = mm.GetSize(pool) - mm.GetFreeSize(pool);
+            break;
+        default:
+            UNREACHABLE();
+            break;
+        }
+    } break;
+    case SystemInfoType::InitialProcessIdRange: {
+        // Verify the handle is invalid
+        R_UNLESS(handle == InvalidHandle, ResultInvalidHandle);
+
+        // Get the process id range
+        R_TRY(GetInitialProcessIdRange(out, static_cast<InitialProcessIdRangeInfo>(info_subtype)));
+    } break;
+    default:
+        R_THROW(ResultInvalidEnumValue);
+    }
+
+    R_SUCCEED();
 }
 
 Result GetInfo64(Core::System& system, uint64_t* out, InfoType info_type, Handle handle,
