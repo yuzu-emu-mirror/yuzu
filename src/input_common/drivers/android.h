@@ -129,10 +129,12 @@ private:
     const std::string redmagic_vid{"3537"};
     const std::string backbone_labs_vid{"358a"};
     const std::string xbox_vid{"045e"};
-    const std::vector<std::string> flipped_ab_vids{sony_vid,     nintendo_vid,      razer_vid,
-                                                   redmagic_vid, backbone_labs_vid, xbox_vid};
-    const std::vector<std::string> flipped_xy_vids{sony_vid, razer_vid, redmagic_vid,
-                                                   backbone_labs_vid, xbox_vid};
+    const std::string eightbitdo_vid{"2dc8"};
+    const std::vector<std::string> flipped_ab_vids{sony_vid,      nintendo_vid,      razer_vid,
+                                                   redmagic_vid,  backbone_labs_vid, xbox_vid,
+                                                   eightbitdo_vid};
+    const std::vector<std::string> flipped_xy_vids{sony_vid,          razer_vid, redmagic_vid,
+                                                   backbone_labs_vid, xbox_vid,  eightbitdo_vid};
 };
 
 } // namespace InputCommon
