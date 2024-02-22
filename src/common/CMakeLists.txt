@@ -46,6 +46,7 @@ add_library(common STATIC
     dynamic_library.cpp
     dynamic_library.h
     elf.h
+    enum_util.h
     error.cpp
     error.h
     expected.h
@@ -148,6 +149,7 @@ add_library(common STATIC
     tiny_mt.h
     tree.h
     typed_address.h
+    typed_storage.h
     uint128.h
     unique_function.h
     uuid.cpp

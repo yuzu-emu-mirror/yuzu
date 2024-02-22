@@ -84,6 +84,48 @@ namespace Common {
     return f;
 }
 
+consteval bool IsLittleEndian() {
+    return std::endian::native == std::endian::little;
+}
+
+consteval bool IsBigEndian() {
+    return std::endian::native == std::endian::big;
+}
+static_assert(IsLittleEndian() ^ IsBigEndian());
+
+template <std::unsigned_integral U>
+U SwapEndian(const U u) {
+    constexpr std::size_t BitSizeU8 = 8;
+    if constexpr (sizeof(U) * BitSizeU8 == 64) {
+        return swap64(u);
+    } else if constexpr (sizeof(U) * BitSizeU8 == 32) {
+        return swap32(u);
+    } else if constexpr (sizeof(U) * BitSizeU8 == 16) {
+        return swap16(u);
+    } else if constexpr (sizeof(U) * BitSizeU8 == 8) {
+        return u;
+    } else {
+        static_assert(!std::is_same<U, U>::value);
+    }
+}
+
+template <std::integral T>
+constexpr T ConvertToLittleEndian(const T val) {
+    using U = typename std::make_unsigned<T>::type;
+
+    if constexpr (IsBigEndian()) {
+        return static_cast<T>(SwapEndian<U>(static_cast<U>(val)));
+    } else {
+        static_assert(IsLittleEndian());
+        return static_cast<T>(static_cast<U>(val));
+    }
+}
+
+template <std::integral T>
+constexpr T LoadLittleEndian(const T* ptr) {
+    return ConvertToLittleEndian<T>(*ptr);
+}
+
 } // Namespace Common
 
 template <typename T, typename F>
