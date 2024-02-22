@@ -634,8 +634,8 @@ add_library(core STATIC
     hle/service/filesystem/fsp/fs_i_storage.h
     hle/service/filesystem/fsp/fsp_ldr.cpp
     hle/service/filesystem/fsp/fsp_ldr.h
-    hle/service/filesystem/fsp/fsp_pr.cpp
-    hle/service/filesystem/fsp/fsp_pr.h
+    hle/service/filesystem/fsp/fs_i_program_registry.cpp
+    hle/service/filesystem/fsp/fs_i_program_registry.h
     hle/service/filesystem/fsp/fsp_srv.cpp
     hle/service/filesystem/fsp/fsp_srv.h
     hle/service/filesystem/fsp/fsp_types.h

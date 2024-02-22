@@ -20,8 +20,8 @@
 #include "core/file_sys/vfs/vfs.h"
 #include "core/file_sys/vfs/vfs_offset.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/filesystem/fsp/fs_i_program_registry.h"
 #include "core/hle/service/filesystem/fsp/fsp_ldr.h"
-#include "core/hle/service/filesystem/fsp/fsp_pr.h"
 #include "core/hle/service/filesystem/fsp/fsp_srv.h"
 #include "core/hle/service/filesystem/romfs_controller.h"
 #include "core/hle/service/filesystem/save_data_controller.h"
@@ -726,7 +726,7 @@ void LoopProcess(Core::System& system) {
     const auto FileSystemProxyFactory = [&] { return std::make_shared<FSP_SRV>(system); };
 
     server_manager->RegisterNamedService("fsp-ldr", std::make_shared<FSP_LDR>(system));
-    server_manager->RegisterNamedService("fsp:pr", std::make_shared<FSP_PR>(system));
+    server_manager->RegisterNamedService("fsp:pr", std::make_shared<IProgramRegistry>(system));
     server_manager->RegisterNamedService("fsp-srv", std::move(FileSystemProxyFactory));
     ServerManager::RunServer(std::move(server_manager));
 }
