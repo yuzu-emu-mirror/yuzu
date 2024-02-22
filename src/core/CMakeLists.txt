@@ -60,6 +60,7 @@ add_library(core STATIC
     file_sys/fs_path_utility.h
     file_sys/fs_save_data_types.h
     file_sys/fs_string_util.h
+    file_sys/fs_program_index_map_info.h
     file_sys/fsa/fs_i_directory.h
     file_sys/fsa/fs_i_file.h
     file_sys/fsa/fs_i_filesystem.h
@@ -109,6 +110,19 @@ add_library(core STATIC
     file_sys/fssystem/fssystem_switch_storage.h
     file_sys/fssystem/fssystem_utility.cpp
     file_sys/fssystem/fssystem_utility.h
+    file_sys/fssrv/impl/fssrv_program_info.cpp
+    file_sys/fssrv/impl/fssrv_program_info.h
+    file_sys/fssrv/impl/fssrv_access_control.h
+    file_sys/fssrv/impl/fssrv_access_control.cpp
+    file_sys/fssrv/impl/fssrv_access_control_bits.h
+    file_sys/fssrv/impl/fssrv_program_registry_manager.cpp
+    file_sys/fssrv/impl/fssrv_program_registry_manager.h
+    file_sys/fssrv/impl/fssrv_program_index_map_info_manager.h
+    file_sys/fssrv/impl/fssrv_save_data_properties.h
+    file_sys/fssrv/fssrv_program_registry_impl.h
+    file_sys/fssrv/fssrv_program_registry_impl.cpp
+    file_sys/fssrv/fssrv_program_registry_service.h
+    file_sys/fssrv/fssrv_program_registry_service.cpp
     file_sys/ips_layer.cpp
     file_sys/ips_layer.h
     file_sys/kernel_executable.cpp
