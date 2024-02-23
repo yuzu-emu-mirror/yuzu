@@ -37,7 +37,7 @@ static u64 stoull_be(std::string_view str) {
 }
 
 Result ISaveDataInfoReader::ReadSaveDataInfo(
-    Out<u64> out_count, OutArray<SaveDataInfo, BufferAttr_HipcMapAlias> out_entries) {
+    Out<u64> out_count, OutArray<FileSys::SaveDataInfo, BufferAttr_HipcMapAlias> out_entries) {
     LOG_DEBUG(Service_FS, "called");
 
     // Calculate how many entries we can fit in the output buffer
@@ -93,7 +93,7 @@ void ISaveDataInfoReader::FindNormalSaves(FileSys::SaveDataSpaceId space,
 
             if (save_id_numeric != 0) {
                 // System Save Data
-                info.emplace_back(SaveDataInfo{
+                info.emplace_back(FileSys::SaveDataInfo{
                     0,
                     space,
                     FileSys::SaveDataType::System,
@@ -112,7 +112,7 @@ void ISaveDataInfoReader::FindNormalSaves(FileSys::SaveDataSpaceId space,
             for (const auto& title_id : user_id->GetSubdirectories()) {
                 const auto device = std::all_of(user_id_numeric.begin(), user_id_numeric.end(),
                                                 [](u8 val) { return val == 0; });
-                info.emplace_back(SaveDataInfo{
+                info.emplace_back(FileSys::SaveDataInfo{
                     0,
                     space,
                     device ? FileSys::SaveDataType::Device : FileSys::SaveDataType::Account,
@@ -141,7 +141,7 @@ void ISaveDataInfoReader::FindTemporaryStorageSaves(FileSys::SaveDataSpaceId spa
                 auto user_id_numeric = Common::HexStringToArray<0x10>(user_id->GetName());
                 std::reverse(user_id_numeric.begin(), user_id_numeric.end());
 
-                info.emplace_back(SaveDataInfo{
+                info.emplace_back(FileSys::SaveDataInfo{
                     0,
                     space,
                     FileSys::SaveDataType::Temporary,

@@ -73,7 +73,7 @@ void InitializeInitialAndCurrentProcessId(Core::System& system) {
         ASSERT(Svc::GetProcessId(system, std::addressof(g_current_process_id),
                                  Svc::PseudoHandle::CurrentProcess) == ResultSuccess);
 
-        /* Set initialized. */
+        // Set initialized
         g_initialized = true;
     }
 }

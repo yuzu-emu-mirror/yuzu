@@ -7,7 +7,7 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/fs_save_data_types.h"
 
 namespace FileSys::FsSrv::Impl {
 
@@ -30,13 +30,13 @@ public:
 
     static bool IsJournalingSupported(SaveDataType type) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
-        case SaveDataType::SaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::DeviceSaveData:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::System:
+        case SaveDataType::Account:
+        case SaveDataType::Bcat:
+        case SaveDataType::Device:
+        case SaveDataType::Cache:
             return true;
-        case SaveDataType::TemporaryStorage:
+        case SaveDataType::Temporary:
             return false;
         default:
             UNREACHABLE();
@@ -46,13 +46,13 @@ public:
 
     static bool IsMultiCommitSupported(SaveDataType type) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
-        case SaveDataType::SaveData:
-        case SaveDataType::DeviceSaveData:
+        case SaveDataType::System:
+        case SaveDataType::Account:
+        case SaveDataType::Device:
             return true;
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::TemporaryStorage:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::Bcat:
+        case SaveDataType::Temporary:
+        case SaveDataType::Cache:
             return false;
         default:
             UNREACHABLE();
@@ -62,13 +62,13 @@ public:
 
     static bool IsSharedOpenNeeded(SaveDataType type) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::TemporaryStorage:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::System:
+        case SaveDataType::Bcat:
+        case SaveDataType::Temporary:
+        case SaveDataType::Cache:
             return false;
-        case SaveDataType::SaveData:
-        case SaveDataType::DeviceSaveData:
+        case SaveDataType::Account:
+        case SaveDataType::Device:
             return true;
         default:
             UNREACHABLE();
@@ -78,13 +78,13 @@ public:
 
     static bool CanUseIndexerReservedArea(SaveDataType type) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
+        case SaveDataType::System:
             return true;
-        case SaveDataType::SaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::DeviceSaveData:
-        case SaveDataType::TemporaryStorage:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::Account:
+        case SaveDataType::Bcat:
+        case SaveDataType::Device:
+        case SaveDataType::Temporary:
+        case SaveDataType::Cache:
             return false;
         default:
             UNREACHABLE();
@@ -94,13 +94,13 @@ public:
 
     static bool IsSystemSaveData(SaveDataType type) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
+        case SaveDataType::System:
             return true;
-        case SaveDataType::SaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::DeviceSaveData:
-        case SaveDataType::TemporaryStorage:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::Account:
+        case SaveDataType::Bcat:
+        case SaveDataType::Device:
+        case SaveDataType::Temporary:
+        case SaveDataType::Cache:
             return false;
         default:
             UNREACHABLE();
@@ -117,13 +117,13 @@ public:
 
     static bool IsWipingNeededAtCleanUp(const SaveDataInfo& info) {
         switch (info.type) {
-        case SaveDataType::SystemSaveData:
+        case SaveDataType::System:
             break;
-        case SaveDataType::SaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::DeviceSaveData:
-        case SaveDataType::TemporaryStorage:
-        case SaveDataType::CacheStorage:
+        case SaveDataType::Account:
+        case SaveDataType::Bcat:
+        case SaveDataType::Device:
+        case SaveDataType::Temporary:
+        case SaveDataType::Cache:
             return true;
         default:
             UNREACHABLE();
@@ -146,14 +146,14 @@ public:
 
     static bool IsValidSpaceIdForSaveDataMover(SaveDataType type, SaveDataSpaceId space_id) {
         switch (type) {
-        case SaveDataType::SystemSaveData:
-        case SaveDataType::SaveData:
-        case SaveDataType::BcatDeliveryCacheStorage:
-        case SaveDataType::DeviceSaveData:
-        case SaveDataType::TemporaryStorage:
+        case SaveDataType::System:
+        case SaveDataType::Account:
+        case SaveDataType::Bcat:
+        case SaveDataType::Device:
+        case SaveDataType::Temporary:
             return false;
-        case SaveDataType::CacheStorage:
-            return space_id == SaveDataSpaceId::NandUser || space_id == SaveDataSpaceId::SdCardUser;
+        case SaveDataType::Cache:
+            return space_id == SaveDataSpaceId::User || space_id == SaveDataSpaceId::SdUser;
         default:
             UNREACHABLE();
             return false;
@@ -162,26 +162,26 @@ public:
 
     static bool IsReconstructible(SaveDataType type, SaveDataSpaceId space_id) {
         switch (space_id) {
-        case SaveDataSpaceId::NandSystem:
-        case SaveDataSpaceId::NandUser:
+        case SaveDataSpaceId::System:
+        case SaveDataSpaceId::User:
         case SaveDataSpaceId::ProperSystem:
         case SaveDataSpaceId::SafeMode:
             switch (type) {
-            case SaveDataType::SystemSaveData:
-            case SaveDataType::SaveData:
-            case SaveDataType::DeviceSaveData:
+            case SaveDataType::System:
+            case SaveDataType::Account:
+            case SaveDataType::Device:
                 return false;
-            case SaveDataType::BcatDeliveryCacheStorage:
-            case SaveDataType::TemporaryStorage:
-            case SaveDataType::CacheStorage:
+            case SaveDataType::Bcat:
+            case SaveDataType::Temporary:
+            case SaveDataType::Cache:
                 return true;
             default:
                 UNREACHABLE();
                 return false;
             }
-        case SaveDataSpaceId::SdCardSystem:
-        case SaveDataSpaceId::TemporaryStorage:
-        case SaveDataSpaceId::SdCardUser:
+        case SaveDataSpaceId::SdSystem:
+        case SaveDataSpaceId::Temporary:
+        case SaveDataSpaceId::SdUser:
             return true;
         default:
             UNREACHABLE();

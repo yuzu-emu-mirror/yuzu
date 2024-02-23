@@ -51,10 +51,11 @@ private:
     Result OpenFileSystemWithPatch(OutInterface<IFileSystem> out_interface,
                                    FileSystemProxyType type, u64 open_program_id);
     Result OpenSdCardFileSystem(OutInterface<IFileSystem> out_interface);
-    Result CreateSaveDataFileSystem(FileSys::SaveDataCreationInfo save_create_struct,
-                                    FileSys::SaveDataAttribute save_struct, u128 uid);
+    Result CreateSaveDataFileSystem(FileSys::SaveDataMetaInfo meta_info,
+                                    FileSys::SaveDataCreationInfo creation_info,
+                                    FileSys::SaveDataAttribute attribute);
     Result CreateSaveDataFileSystemBySystemSaveDataId(
-        FileSys::SaveDataAttribute save_struct, FileSys::SaveDataCreationInfo save_create_struct);
+        FileSys::SaveDataAttribute attribute, FileSys::SaveDataCreationInfo save_create_struct);
     Result OpenSaveDataFileSystem(OutInterface<IFileSystem> out_interface,
                                   FileSys::SaveDataSpaceId space_id,
                                   FileSys::SaveDataAttribute attribute);

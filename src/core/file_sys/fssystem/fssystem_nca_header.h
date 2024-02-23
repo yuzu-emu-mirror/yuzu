@@ -8,7 +8,7 @@
 #include "common/literals.h"
 
 #include "core/file_sys/errors.h"
-#include "core/file_sys/fssystem/fs_types.h"
+#include "core/file_sys/fs_common.h"
 
 namespace FileSys {
 

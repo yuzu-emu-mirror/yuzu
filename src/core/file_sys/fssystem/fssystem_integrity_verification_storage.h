@@ -5,8 +5,8 @@
 
 #include <optional>
 
+#include "core/file_sys/fs_common.h"
 #include "core/file_sys/fssystem/fs_i_storage.h"
-#include "core/file_sys/fssystem/fs_types.h"
 
 namespace FileSys {
 

@@ -41,6 +41,8 @@ enum class SaveDataRank : u8 {
     Secondary = 1,
 };
 
+enum class SaveDataFormatType : u8 { Normal = 0, NoJournal = 1 };
+
 struct SaveDataSize {
     u64 normal;
     u64 journal;
@@ -68,28 +70,13 @@ enum class SaveDataMetaType : u8 {
     ExtensionContext = 2,
 };
 
-struct SaveDataMetaInfo {
-    u32 size;
-    SaveDataMetaType type;
-    INSERT_PADDING_BYTES(0xB);
-};
-static_assert(std::is_trivially_copyable_v<SaveDataMetaInfo>,
-              "Data type must be trivially copyable.");
-static_assert(sizeof(SaveDataMetaInfo) == 0x10, "SaveDataMetaInfo has invalid size.");
+struct HashSalt {
+    static constexpr size_t Size = 32;
 
-struct SaveDataCreationInfo {
-    s64 size;
-    s64 journal_size;
-    s64 block_size;
-    u64 owner_id;
-    u32 flags;
-    SaveDataSpaceId space_id;
-    bool pseudo;
-    INSERT_PADDING_BYTES(0x1A);
+    std::array<u8, Size> value;
 };
-static_assert(std::is_trivially_copyable_v<SaveDataCreationInfo>,
-              "Data type must be trivially copyable.");
-static_assert(sizeof(SaveDataCreationInfo) == 0x40, "SaveDataCreationInfo has invalid size.");
+static_assert(std::is_trivially_copyable_v<HashSalt>, "Data type must be trivially copyable.");
+static_assert(sizeof(HashSalt) == HashSalt::Size);
 
 struct SaveDataAttribute {
     ProgramId program_id;
@@ -149,12 +136,73 @@ constexpr inline bool operator!=(const SaveDataAttribute& lhs, const SaveDataAtt
     return !(lhs == rhs);
 }
 
+struct SaveDataMetaInfo {
+    u32 size;
+    SaveDataMetaType type;
+    INSERT_PADDING_BYTES(0xB);
+};
+static_assert(std::is_trivially_copyable_v<SaveDataMetaInfo>,
+              "Data type must be trivially copyable.");
+static_assert(sizeof(SaveDataMetaInfo) == 0x10, "SaveDataMetaInfo has invalid size.");
+
+struct SaveDataInfo {
+    u64_le save_id_unknown;
+    FileSys::SaveDataSpaceId space;
+    FileSys::SaveDataType type;
+    INSERT_PADDING_BYTES(0x6);
+    std::array<u8, 0x10> user_id;
+    u64_le save_id;
+    u64_le title_id;
+    u64_le save_image_size;
+    u16_le index;
+    FileSys::SaveDataRank rank;
+    INSERT_PADDING_BYTES(0x25);
+};
+static_assert(sizeof(SaveDataInfo) == 0x60, "SaveDataInfo has incorrect size.");
+
+struct SaveDataCreationInfo {
+    s64 size;
+    s64 journal_size;
+    s64 block_size;
+    u64 owner_id;
+    u32 flags;
+    SaveDataSpaceId space_id;
+    bool pseudo;
+    INSERT_PADDING_BYTES(0x1A);
+};
+static_assert(std::is_trivially_copyable_v<SaveDataCreationInfo>,
+              "Data type must be trivially copyable.");
+static_assert(sizeof(SaveDataCreationInfo) == 0x40, "SaveDataCreationInfo has invalid size.");
+
+const u32 SaveDataCreationInfoV2Version = 0x00010000;
+struct SaveDataCreationInfoV2 {
+    u32 version;
+    SaveDataAttribute attribute;
+    s64 size;
+    s64 journal_size;
+    s64 block_size;
+    u64 owner_id;
+    SaveDataFlags flags;
+    SaveDataSpaceId space_id;
+    SaveDataFormatType format_type;
+    INSERT_PADDING_BYTES(0x2);
+    bool is_hash_salt_enabled;
+    INSERT_PADDING_BYTES(0x3);
+    HashSalt hash_salt;
+    SaveDataMetaType meta_type;
+    INSERT_PADDING_BYTES(0x3);
+    s32 meta_size;
+    INSERT_PADDING_BYTES(0x164);
+};
+static_assert(sizeof(SaveDataCreationInfoV2) == 0x200,
+              "SaveDataCreationInfoV2 has incorrect size.");
+
 struct SaveDataExtraData {
     SaveDataAttribute attr;
     u64 owner_id;
     s64 timestamp;
     u32 flags;
-    INSERT_PADDING_BYTES(4);
+    INSERT_PADDING_BYTES(0x4);
     s64 available_size;
     s64 journal_size;
     s64 commit_id;
