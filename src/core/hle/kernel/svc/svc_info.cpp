@@ -8,6 +8,7 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/svc.h"
+#include "core/hle/kernel/svc_common.h"
 
 namespace Kernel::Svc {
 

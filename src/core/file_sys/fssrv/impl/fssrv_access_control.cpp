@@ -1,33 +1,19 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/alignment.h"
 #include "common/enum_util.h"
+#include "common/swap.h"
 #include "core/file_sys/fssrv/impl/fssrv_access_control.h"
 
 namespace FileSys::FsSrv {
 
-namespace {
-constinit bool g_is_debug_flag_enabled = false;
-}
-
-bool IsDebugFlagEnabled() {
-    return g_is_debug_flag_enabled;
-}
-
-void SetDebugFlagEnabled(bool enabled) {
-    // Set global debug flag
-    g_is_debug_flag_enabled = enabled;
-}
-
 namespace Impl {
 
-namespace {
 constexpr u8 LatestFsAccessControlInfoVersion = 1;
-}
 
 AccessControl::AccessControl(const void* data, s64 data_size, const void* desc, s64 desc_size)
-    : AccessControl(data, data_size, desc, desc_size,
-                    g_is_debug_flag_enabled ? AllFlagBitsMask : DebugFlagDisableMask) {}
+    : AccessControl(data, data_size, desc, desc_size, DebugFlagDisableMask) {}
 
 AccessControl::AccessControl(const void* fac_data, s64 data_size, const void* fac_desc,
                              s64 desc_size, u64 flag_mask) {
@@ -418,7 +404,7 @@ Accessibility AccessControl::GetAccessibilityFor(AccessibilityType type) const {
                                                 m_flag_bits->CanMountHostWrite());
     case MountRegisteredUpdatePartition:
         return Accessibility::MakeAccessibility(
-            m_flag_bits->CanMountRegisteredUpdatePartitionRead() && g_is_debug_flag_enabled, false);
+            m_flag_bits->CanMountRegisteredUpdatePartitionRead(), false);
     case MountSaveDataInternalStorage:
         return Accessibility::MakeAccessibility(m_flag_bits->CanOpenSaveDataInternalStorageRead(),
                                                 m_flag_bits->CanOpenSaveDataInternalStorageWrite());
@@ -510,7 +496,7 @@ bool AccessControl::CanCall(OperationType type) const {
     case ExtendOthersSystemSaveData:
         return m_flag_bits->CanExtendOthersSystemSaveData();
     case RegisterUpdatePartition:
-        return m_flag_bits->CanRegisterUpdatePartition() && g_is_debug_flag_enabled;
+        return m_flag_bits->CanRegisterUpdatePartition();
     case OpenSaveDataTransferManager:
         return m_flag_bits->CanOpenSaveDataTransferManager();
     case OpenSaveDataTransferManagerVersion2:

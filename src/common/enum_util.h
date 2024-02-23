@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace Common {
 
 template <typename Enum>

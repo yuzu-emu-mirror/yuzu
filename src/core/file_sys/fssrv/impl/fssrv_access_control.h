@@ -10,13 +10,6 @@
 #include "common/intrusive_list.h"
 #include "core/file_sys/fssrv/impl/fssrv_access_control_bits.h"
 
-namespace FileSys::FsSrv {
-
-bool IsDebugFlagEnabled();
-void SetDebugFlagEnabled(bool enabled);
-
-} // namespace FileSys::FsSrv
-
 namespace FileSys::FsSrv::Impl {
 
 struct Accessibility {

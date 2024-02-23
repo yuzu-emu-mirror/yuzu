@@ -1,7 +1,6 @@
+// SPDX-FileCopyrightText: Copyright 2020 Alex Barney
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-2.0-or-later
-
-// TODO: Properly credit LibHac before this gets merged
+// SPDX-License-Identifier: MIT AND GPL-2.0-or-later
 
 #pragma once
 

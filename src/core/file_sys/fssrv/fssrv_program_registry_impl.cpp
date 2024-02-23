@@ -23,7 +23,7 @@ ProgramRegistryImpl::~ProgramRegistryImpl() {}
 
 void ProgramRegistryImpl::Initialize(ProgramRegistryServiceImpl* service) {
     // Check pre-conditions
-    ASSERT(g_impl != nullptr);
+    ASSERT(service != nullptr);
     ASSERT(g_impl == nullptr);
 
     // Set the global service

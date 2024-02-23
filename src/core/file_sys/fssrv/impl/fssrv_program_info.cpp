@@ -6,6 +6,7 @@
 #include "core/core.h"
 #include "core/file_sys/fssrv/impl/fssrv_program_info.h"
 #include "core/hle/kernel/svc.h"
+#include "core/hle/kernel/svc_common.h"
 
 namespace FileSys::FsSrv::Impl {
 
@@ -38,12 +39,6 @@ public:
         // No-op
     }
 };
-
-constexpr const u32 FileAccessControlForInitialProgram[0x1C / sizeof(u32)] = {
-    0x00000001, 0x00000000, 0x80000000, 0x0000001C, 0x00000000, 0x0000001C, 0x00000000};
-constexpr const u32 FileAccessControlDescForInitialProgram[0x2C / sizeof(u32)] = {
-    0x00000001, 0x00000000, 0x80000000, 0x00000000, 0x00000000, 0xFFFFFFFF,
-    0xFFFFFFFF, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF};
 
 constinit bool g_initialized = false;
 
@@ -86,6 +81,12 @@ std::shared_ptr<ProgramInfo> ProgramInfo::GetProgramInfoForInitialProcess() {
         ProgramInfoHelper(const void* data, s64 data_size, const void* desc, s64 desc_size)
             : ProgramInfo(data, data_size, desc, desc_size) {}
     };
+
+    constexpr const u32 FileAccessControlForInitialProgram[0x1C / sizeof(u32)] = {
+        0x00000001, 0x00000000, 0x80000000, 0x0000001C, 0x00000000, 0x0000001C, 0x00000000};
+    constexpr const u32 FileAccessControlDescForInitialProgram[0x2C / sizeof(u32)] = {
+        0x00000001, 0x00000000, 0x80000000, 0x00000000, 0x00000000, 0xFFFFFFFF,
+        0xFFFFFFFF, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF};
 
     static constinit Common::TypedStorage<std::shared_ptr<ProgramInfo>>
         s_fls_storage_for_s_initial_program_info{};

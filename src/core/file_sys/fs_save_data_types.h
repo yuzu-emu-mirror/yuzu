@@ -7,6 +7,7 @@
 #include <fmt/format.h>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/swap.h"
 
 namespace FileSys {
 
@@ -41,7 +42,10 @@ enum class SaveDataRank : u8 {
     Secondary = 1,
 };
 
-enum class SaveDataFormatType : u8 { Normal = 0, NoJournal = 1 };
+enum class SaveDataFormatType : u8 {
+    Normal = 0,
+    NoJournal = 1,
+};
 
 struct SaveDataSize {
     u64 normal;
@@ -224,13 +228,5 @@ struct SaveDataFilter {
 static_assert(sizeof(SaveDataFilter) == 0x48, "SaveDataFilter has invalid size.");
 static_assert(std::is_trivially_copyable_v<SaveDataFilter>,
               "Data type must be trivially copyable.");
-
-struct HashSalt {
-    static constexpr size_t Size = 32;
-
-    std::array<u8, Size> value;
-};
-static_assert(std::is_trivially_copyable_v<HashSalt>, "Data type must be trivially copyable.");
-static_assert(sizeof(HashSalt) == HashSalt::Size);
 
 } // namespace FileSys

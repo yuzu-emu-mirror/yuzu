@@ -48,9 +48,8 @@ public:
     static std::shared_ptr<ProgramInfo> GetProgramInfoForInitialProcess();
 
 private:
-    const u64 InvalidProgramId = {};
     ProgramInfo(const void* data, s64 data_size, const void* desc, s64 desc_size)
-        : m_process_id(InvalidProcessId), m_program_id(InvalidProgramId),
+        : m_process_id(InvalidProcessId), m_program_id(0),
           m_storage_id(static_cast<FileSys::StorageId>(0)),
           m_access_control(data, data_size, desc, desc_size, std::numeric_limits<u64>::max()) {}
 };
