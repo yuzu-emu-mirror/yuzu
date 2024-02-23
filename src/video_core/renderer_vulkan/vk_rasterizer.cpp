@@ -125,11 +125,23 @@ VkRect2D GetScissorState(const Maxwell& regs, size_t index, u32 up_scale = 1, u3
         return value < 0 ? std::min<s32>(converted_value - acumm, -1)
                          : std::max<s32>(converted_value + acumm, 1);
     };
+
+    const bool lower_left = regs.window_origin.mode != Maxwell::WindowOrigin::Mode::UpperLeft;
+    const s32 clip_height = regs.surface_clip.height;
+
+    // Flip coordinates if lower left
+    s32 min_y = lower_left ? (clip_height - src.max_y) : src.min_y.Value();
+    s32 max_y = lower_left ? (clip_height - src.min_y) : src.max_y.Value();
+
+    // Bound to render area
+    min_y = std::max(min_y, 0);
+    max_y = std::max(max_y, 0);
+
     if (src.enable) {
-        scissor.offset.x = scale_up(static_cast<s32>(src.min_x));
-        scissor.offset.y = scale_up(static_cast<s32>(src.min_y));
+        scissor.offset.x = scale_up(src.min_x);
+        scissor.offset.y = scale_up(min_y);
         scissor.extent.width = scale_up(src.max_x - src.min_x);
-        scissor.extent.height = scale_up(src.max_y - src.min_y);
+        scissor.extent.height = scale_up(max_y - min_y);
     } else {
         scissor.offset.x = 0;
         scissor.offset.y = 0;
