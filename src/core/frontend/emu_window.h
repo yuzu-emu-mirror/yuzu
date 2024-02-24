@@ -60,6 +60,9 @@ public:
         // Connection to a display server. This is used on X11 and Wayland platforms.
         void* display_connection = nullptr;
 
+        // Mouse pointer. This is used on Wayland platforms.
+        void* mouse_pointer = nullptr;
+
         // Render surface. This is a pointer to the native window handle, which depends
         // on the platform. e.g. HWND for Windows, Window for X11. If the surface is
         // set to nullptr, the video backend will run in headless mode.

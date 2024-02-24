@@ -23,6 +23,12 @@
 #include <qnamespace.h>
 #include <qobjectdefs.h>
 
+#ifdef HAS_WAYLAND
+#include <wayland-pointer-constraints-unstable-v1-client-protocol.h>
+#include <wayland-relative-pointer-unstable-v1-client-protocol.h>
+#include <wayland-viewporter-client-protocol.h>
+#endif
+
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/polyfill_thread.h"
@@ -227,6 +233,32 @@ signals:
     void TasPlaybackStateChanged();
 
 private:
+#ifdef HAS_WAYLAND
+    static void GlobalAddHandler(void* data, wl_registry* registry, u32 name, const char* interface,
+                                 u32 version);
+    static void GlobalRemoveHandler(void* data, wl_registry* registry, u32 name);
+    static void RelativePointerMotionHandler(void* data,
+                                             zwp_relative_pointer_v1* zwp_relative_pointer_v1,
+                                             u32 utime_hi, u32 utime_lo, wl_fixed_t dx,
+                                             wl_fixed_t dy, wl_fixed_t dx_unaccel,
+                                             wl_fixed_t dy_unaccel);
+    static void PointerLockedHandler(void* data, zwp_locked_pointer_v1* zwp_relative_pointer_v1);
+    static void PointerUnlockedHandler(void* data, zwp_locked_pointer_v1* zwp_relative_pointer_v1);
+
+    void CheckWaylandPointerLock();
+    bool IsWaylandPointerLocked();
+    void LockWaylandPointer();
+    void UnlockWaylandPointer();
+
+    zwp_pointer_constraints_v1* pointer_constraints = nullptr;
+    zwp_relative_pointer_manager_v1* relative_pointer_manager = nullptr;
+    wp_viewporter* viewporter = nullptr;
+
+    zwp_relative_pointer_v1* relative_pointer = nullptr;
+    zwp_locked_pointer_v1* locked_pointer = nullptr;
+    wp_viewport* viewport = nullptr;
+#endif
+
     void TouchBeginEvent(const QTouchEvent* event);
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
