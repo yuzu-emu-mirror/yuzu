@@ -8,8 +8,10 @@
 namespace FileSys::FsSrv {
 
 ProgramRegistryServiceImpl::ProgramRegistryServiceImpl(Core::System& system_,
+                                                       Impl::InitialProgramInfo& program_info,
                                                        const Configuration& cfg)
-    : m_config(cfg), m_registry_manager(std::make_unique<Impl::ProgramRegistryManager>(system_)),
+    : m_config(cfg),
+      m_registry_manager(std::make_unique<Impl::ProgramRegistryManager>(system_, program_info)),
       m_index_map_info_manager(std::make_unique<Impl::ProgramIndexMapInfoManager>()) {}
 
 Result ProgramRegistryServiceImpl::RegisterProgramInfo(u64 process_id, u64 program_id,

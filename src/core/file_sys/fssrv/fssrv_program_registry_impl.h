@@ -6,6 +6,7 @@
 #include "common/common_funcs.h"
 #include "core/hle/result.h"
 #include "core/hle/service/cmif_types.h"
+#include "core/file_sys/fssrv/impl/fssrv_program_info.h"
 
 namespace Core {
 class System;
@@ -16,10 +17,6 @@ namespace FileSys::FsSrv {
 using namespace Service;
 
 class ProgramRegistryServiceImpl;
-
-namespace Impl {
-class ProgramInfo;
-}
 
 class ProgramRegistryImpl {
     YUZU_NON_COPYABLE(ProgramRegistryImpl);
@@ -42,6 +39,7 @@ private:
     u64 m_process_id;
     Core::System& system;
 
+    Impl::InitialProgramInfo initial_program_info{};
     std::unique_ptr<ProgramRegistryServiceImpl> service_impl;
 };
 

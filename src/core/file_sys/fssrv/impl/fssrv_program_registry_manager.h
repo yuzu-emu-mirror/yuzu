@@ -19,7 +19,7 @@ class ProgramRegistryManager {
     YUZU_NON_MOVEABLE(ProgramRegistryManager);
 
 public:
-    explicit ProgramRegistryManager(Core::System& system_);
+    explicit ProgramRegistryManager(Core::System& system_, InitialProgramInfo& program_info);
 
     Result RegisterProgram(u64 process_id, u64 program_id, u8 storage_id, const void* data,
                            s64 data_size, const void* desc, s64 desc_size);
@@ -32,6 +32,7 @@ private:
     using ProgramInfoList = Common::IntrusiveListBaseTraits<ProgramInfoNode>::ListType;
 
     ProgramInfoList m_program_info_list{};
+    InitialProgramInfo& m_initial_program_info;
     mutable std::mutex m_mutex{};
     Core::System& system;
 };

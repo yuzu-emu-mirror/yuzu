@@ -29,6 +29,11 @@ public:
         m_storage_id = static_cast<FileSys::StorageId>(storage_id);
     }
 
+    ProgramInfo(const void* data, s64 data_size, const void* desc, s64 desc_size)
+        : m_process_id(InvalidProcessId), m_program_id(0),
+          m_storage_id(static_cast<FileSys::StorageId>(0)),
+          m_access_control(data, data_size, desc, desc_size, std::numeric_limits<u64>::max()) {}
+
     bool Contains(u64 process_id) const {
         return m_process_id == process_id;
     }
@@ -44,21 +49,29 @@ public:
     AccessControl& GetAccessControl() {
         return m_access_control;
     }
-
-    static std::shared_ptr<ProgramInfo> GetProgramInfoForInitialProcess();
-
-private:
-    ProgramInfo(const void* data, s64 data_size, const void* desc, s64 desc_size)
-        : m_process_id(InvalidProcessId), m_program_id(0),
-          m_storage_id(static_cast<FileSys::StorageId>(0)),
-          m_access_control(data, data_size, desc, desc_size, std::numeric_limits<u64>::max()) {}
 };
 
 struct ProgramInfoNode : public Common::IntrusiveListBaseNode<ProgramInfoNode> {
     std::shared_ptr<ProgramInfo> program_info;
 };
 
-bool IsInitialProgram(Core::System& system, u64 process_id);
-bool IsCurrentProcess(Core::System& system, u64 process_id);
+class InitialProgramInfo {
+private:
+    void InitializeInitialAndCurrentProcessId(Core::System& system);
+
+public:
+    std::shared_ptr<ProgramInfo> GetProgramInfoForInitialProcess();
+    bool IsInitialProgram(Core::System& system, u64 process_id);
+    bool IsCurrentProcess(Core::System& system, u64 process_id);
+
+private:
+    std::shared_ptr<ProgramInfo> initial_program_info = nullptr;
+
+    bool initialized_ids = false;
+
+    u64 initial_process_id_min = 0;
+    u64 initial_process_id_max = 0;
+    u64 current_process_id = 0;
+};
 
 } // namespace FileSys::FsSrv::Impl

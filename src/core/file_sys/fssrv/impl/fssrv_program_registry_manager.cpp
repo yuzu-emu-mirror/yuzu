@@ -7,7 +7,9 @@
 
 namespace FileSys::FsSrv::Impl {
 
-ProgramRegistryManager::ProgramRegistryManager(Core::System& system_) : system{system_} {}
+ProgramRegistryManager::ProgramRegistryManager(Core::System& system_,
+                                               InitialProgramInfo& program_info)
+    : m_initial_program_info{program_info}, system{system_} {}
 
 Result ProgramRegistryManager::RegisterProgram(u64 process_id, u64 program_id, u8 storage_id,
                                                const void* data, s64 data_size, const void* desc,
@@ -63,8 +65,8 @@ Result ProgramRegistryManager::GetProgramInfo(std::shared_ptr<ProgramInfo>* out,
     std::scoped_lock lk(m_mutex);
 
     // Check if we're getting permissions for an initial program
-    if (IsInitialProgram(system, process_id)) {
-        *out = ProgramInfo::GetProgramInfoForInitialProcess();
+    if (m_initial_program_info.IsInitialProgram(system, process_id)) {
+        *out = (m_initial_program_info.GetProgramInfoForInitialProcess());
         R_SUCCEED();
     }
 

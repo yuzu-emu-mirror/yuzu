@@ -5,7 +5,6 @@
 #include "core/file_sys/errors.h"
 #include "core/file_sys/fssrv/fssrv_program_registry_impl.h"
 #include "core/file_sys/fssrv/fssrv_program_registry_service.h"
-#include "core/file_sys/fssrv/impl/fssrv_program_info.h"
 
 namespace FileSys::FsSrv {
 
@@ -15,7 +14,7 @@ constexpr u64 InvalidProcessIdProgramRegistry = 0xffffffffffffffffULL;
 ProgramRegistryImpl::ProgramRegistryImpl(Core::System& system_)
     : m_process_id(InvalidProcessIdProgramRegistry), system{system_},
       service_impl{std::make_unique<ProgramRegistryServiceImpl>(
-          system, ProgramRegistryServiceImpl::Configuration{})} {}
+          system, initial_program_info, ProgramRegistryServiceImpl::Configuration{})} {}
 
 ProgramRegistryImpl::~ProgramRegistryImpl() {}
 
@@ -25,7 +24,7 @@ Result ProgramRegistryImpl::RegisterProgram(u64 process_id, u64 program_id, u8 s
                                             const InBuffer<BufferAttr_HipcMapAlias> desc,
                                             s64 desc_size) {
     // Check that we're allowed to register
-    R_UNLESS(FsSrv::Impl::IsInitialProgram(system, m_process_id), ResultPermissionDenied);
+    R_UNLESS(initial_program_info.IsInitialProgram(system, m_process_id), ResultPermissionDenied);
 
     // Check buffer sizes
     R_UNLESS(data.size() >= static_cast<size_t>(data_size), ResultInvalidSize);
@@ -38,7 +37,7 @@ Result ProgramRegistryImpl::RegisterProgram(u64 process_id, u64 program_id, u8 s
 
 Result ProgramRegistryImpl::UnregisterProgram(u64 process_id) {
     // Check that we're allowed to register
-    R_UNLESS(FsSrv::Impl::IsInitialProgram(system, m_process_id), ResultPermissionDenied);
+    R_UNLESS(initial_program_info.IsInitialProgram(system, m_process_id), ResultPermissionDenied);
 
     // Unregister the program
     R_RETURN(service_impl->UnregisterProgramInfo(process_id));
@@ -58,8 +57,9 @@ Result ProgramRegistryImpl::SetEnabledProgramVerification(bool enabled) {
 }
 
 void ProgramRegistryImpl::Reset() {
+    initial_program_info = {};
     service_impl = std::make_unique<ProgramRegistryServiceImpl>(
-        system, ProgramRegistryServiceImpl::Configuration{});
+        system, initial_program_info, ProgramRegistryServiceImpl::Configuration{});
 }
 
 } // namespace FileSys::FsSrv

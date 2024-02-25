@@ -17,13 +17,15 @@ namespace FileSys::FsSrv {
 
 namespace Impl {
 class ProgramInfo;
+class InitialProgramInfo;
 } // namespace Impl
 
 class ProgramRegistryServiceImpl {
 public:
     struct Configuration {};
 
-    ProgramRegistryServiceImpl(Core::System& system_, const Configuration& cfg);
+    ProgramRegistryServiceImpl(Core::System& system_,
+                               Impl::InitialProgramInfo& program_info, const Configuration& cfg);
 
     Result RegisterProgramInfo(u64 process_id, u64 program_id, u8 storage_id, const void* data,
                                s64 data_size, const void* desc, s64 desc_size);
