@@ -320,17 +320,33 @@ void RasterizerVulkan::DrawTexture() {
     const auto& draw_texture_state = maxwell3d->draw_manager->GetDrawTextureState();
     const auto& sampler = texture_cache.GetGraphicsSampler(draw_texture_state.src_sampler);
     const auto& texture = texture_cache.GetImageView(draw_texture_state.src_texture);
-    Region2D dst_region = {Offset2D{.x = static_cast<s32>(draw_texture_state.dst_x0),
-                                    .y = static_cast<s32>(draw_texture_state.dst_y0)},
-                           Offset2D{.x = static_cast<s32>(draw_texture_state.dst_x1),
-                                    .y = static_cast<s32>(draw_texture_state.dst_y1)}};
-    Region2D src_region = {Offset2D{.x = static_cast<s32>(draw_texture_state.src_x0),
-                                    .y = static_cast<s32>(draw_texture_state.src_y0)},
-                           Offset2D{.x = static_cast<s32>(draw_texture_state.src_x1),
-                                    .y = static_cast<s32>(draw_texture_state.src_y1)}};
-    blit_image.BlitColor(texture_cache.GetFramebuffer(), texture.RenderTarget(),
-                         texture.ImageHandle(), sampler->Handle(), dst_region, src_region,
-                         texture.size);
+    const auto* framebuffer = texture_cache.GetFramebuffer();
+
+    const bool src_rescaling = texture_cache.IsRescaling() && texture.IsRescaled();
+    const bool dst_rescaling = texture_cache.IsRescaling() && framebuffer->IsRescaled();
+
+    const auto ScaleSrc = [&](auto dim_f) -> s32 {
+        auto dim = static_cast<s32>(dim_f);
+        return src_rescaling ? Settings::values.resolution_info.ScaleUp(dim) : dim;
+    };
+
+    const auto ScaleDst = [&](auto dim_f) -> s32 {
+        auto dim = static_cast<s32>(dim_f);
+        return dst_rescaling ? Settings::values.resolution_info.ScaleUp(dim) : dim;
+    };
+
+    Region2D dst_region = {Offset2D{.x = ScaleDst(draw_texture_state.dst_x0),
+                                    .y = ScaleDst(draw_texture_state.dst_y0)},
+                           Offset2D{.x = ScaleDst(draw_texture_state.dst_x1),
+                                    .y = ScaleDst(draw_texture_state.dst_y1)}};
+    Region2D src_region = {Offset2D{.x = ScaleSrc(draw_texture_state.src_x0),
+                                    .y = ScaleSrc(draw_texture_state.src_y0)},
+                           Offset2D{.x = ScaleSrc(draw_texture_state.src_x1),
+                                    .y = ScaleSrc(draw_texture_state.src_y1)}};
+    Extent3D src_size = {static_cast<u32>(ScaleSrc(texture.size.width)),
+                         static_cast<u32>(ScaleSrc(texture.size.height)), texture.size.depth};
+    blit_image.BlitColor(framebuffer, texture.RenderTarget(), texture.ImageHandle(),
+                         sampler->Handle(), dst_region, src_region, src_size);
 }
 
 void RasterizerVulkan::Clear(u32 layer_count) {
