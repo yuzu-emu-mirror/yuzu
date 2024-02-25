@@ -12,33 +12,7 @@ namespace FileSys::FsSrv::Impl {
 
 namespace {
 
-constinit std::aligned_storage<0x80>::type g_static_buffer_for_program_info_for_initial_process =
-    {};
-
-template <typename T>
-class StaticAllocatorForProgramInfoForInitialProcess : public std::allocator<T> {
-public:
-    StaticAllocatorForProgramInfoForInitialProcess() {}
-
-    template <typename U>
-    StaticAllocatorForProgramInfoForInitialProcess(
-        const StaticAllocatorForProgramInfoForInitialProcess<U>&) {}
-
-    template <typename U>
-    struct rebind {
-        using other = StaticAllocatorForProgramInfoForInitialProcess<U>;
-    };
-
-    [[nodiscard]] T* allocate(::std::size_t n) {
-        ASSERT(sizeof(T) * n <= sizeof(g_static_buffer_for_program_info_for_initial_process));
-        return reinterpret_cast<T*>(
-            std::addressof(g_static_buffer_for_program_info_for_initial_process));
-    }
-
-    void deallocate([[maybe_unused]] T* p, [[maybe_unused]] std::size_t n) {
-        // No-op
-    }
-};
+constinit bool s_fls_initialized_s_initial_program_info = false;
 
 constinit bool g_initialized = false;
 
@@ -82,30 +56,18 @@ std::shared_ptr<ProgramInfo> ProgramInfo::GetProgramInfoForInitialProcess() {
             : ProgramInfo(data, data_size, desc, desc_size) {}
     };
 
-    constexpr const u32 FileAccessControlForInitialProgram[0x1C / sizeof(u32)] = {
+    constexpr const std::array<u32, 0x1C / sizeof(u32)> FileAccessControlForInitialProgram = {
         0x00000001, 0x00000000, 0x80000000, 0x0000001C, 0x00000000, 0x0000001C, 0x00000000};
-    constexpr const u32 FileAccessControlDescForInitialProgram[0x2C / sizeof(u32)] = {
+    constexpr const std::array<u32, 0x2C / sizeof(u32)> FileAccessControlDescForInitialProgram = {
         0x00000001, 0x00000000, 0x80000000, 0x00000000, 0x00000000, 0xFFFFFFFF,
         0xFFFFFFFF, 0x00000000, 0x00000000, 0xFFFFFFFF, 0xFFFFFFFF};
 
-    static constinit Common::TypedStorage<std::shared_ptr<ProgramInfo>>
-        s_fls_storage_for_s_initial_program_info{};
-    static constinit bool s_fls_initialized_s_initial_program_info = false;
-    static std::mutex s_fls_init_lock_s_initial_program_info{};
-    if (!(s_fls_initialized_s_initial_program_info)) {
-        std::scoped_lock sl_fls_for_s_initial_program_info{s_fls_init_lock_s_initial_program_info};
-        if (!(s_fls_initialized_s_initial_program_info)) {
-            new (Common::Impl::GetPointerForConstructAt(s_fls_storage_for_s_initial_program_info))
-                std::shared_ptr<ProgramInfo>(std::allocate_shared<ProgramInfoHelper>(
-                    StaticAllocatorForProgramInfoForInitialProcess<char>{},
-                    FileAccessControlForInitialProgram, sizeof(FileAccessControlForInitialProgram),
-                    FileAccessControlDescForInitialProgram,
-                    sizeof(FileAccessControlDescForInitialProgram)));
-            s_fls_initialized_s_initial_program_info = true;
-        }
-    }
-    std::shared_ptr<ProgramInfo>& s_initial_program_info =
-        Common::GetReference(s_fls_storage_for_s_initial_program_info);
+    // if (!s_fls_initialized_s_initial_program_info) {
+    std::shared_ptr<ProgramInfo> s_initial_program_info = std::make_shared<ProgramInfoHelper>(
+        FileAccessControlForInitialProgram.data(), sizeof(FileAccessControlForInitialProgram),
+        FileAccessControlDescForInitialProgram.data(),
+        sizeof(FileAccessControlDescForInitialProgram));
+    //}
 
     return s_initial_program_info;
 }
