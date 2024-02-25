@@ -7,7 +7,7 @@
 namespace Service::FileSystem {
 
 IProgramRegistry::IProgramRegistry(Core::System& system_)
-    : ServiceFramework{system_, "fsp:pr"}, registry{system_} {
+    : ServiceFramework{system_, "fsp:pr"}, registry{system_.GetProgramRegistry()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, C<&IProgramRegistry::RegisterProgram>, "RegisterProgram"},

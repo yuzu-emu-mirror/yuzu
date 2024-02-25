@@ -9,35 +9,21 @@
 
 namespace FileSys::FsSrv {
 
-namespace {
-constinit ProgramRegistryServiceImpl* g_impl = nullptr;
-}
-
 // TODO: Move this to a common types file
 constexpr u64 InvalidProcessIdProgramRegistry = 0xffffffffffffffffULL;
 
 ProgramRegistryImpl::ProgramRegistryImpl(Core::System& system_)
-    : m_process_id(InvalidProcessIdProgramRegistry), system{system_} {}
+    : m_process_id(InvalidProcessIdProgramRegistry), system{system_},
+      service_impl{std::make_unique<ProgramRegistryServiceImpl>(
+          system, ProgramRegistryServiceImpl::Configuration{})} {}
 
 ProgramRegistryImpl::~ProgramRegistryImpl() {}
-
-void ProgramRegistryImpl::Initialize(ProgramRegistryServiceImpl* service) {
-    // Check pre-conditions
-    ASSERT(service != nullptr);
-    ASSERT(g_impl == nullptr);
-
-    // Set the global service
-    g_impl = service;
-}
 
 Result ProgramRegistryImpl::RegisterProgram(u64 process_id, u64 program_id, u8 storage_id,
                                             const InBuffer<BufferAttr_HipcMapAlias> data,
                                             s64 data_size,
                                             const InBuffer<BufferAttr_HipcMapAlias> desc,
                                             s64 desc_size) {
-    // Check pre-conditions
-    ASSERT(g_impl != nullptr);
-
     // Check that we're allowed to register
     R_UNLESS(FsSrv::Impl::IsInitialProgram(system, m_process_id), ResultPermissionDenied);
 
@@ -46,19 +32,16 @@ Result ProgramRegistryImpl::RegisterProgram(u64 process_id, u64 program_id, u8 s
     R_UNLESS(desc.size() >= static_cast<size_t>(desc_size), ResultInvalidSize);
 
     // Register the program
-    R_RETURN(g_impl->RegisterProgramInfo(process_id, program_id, storage_id, data.data(), data_size,
-                                         desc.data(), desc_size));
+    R_RETURN(service_impl->RegisterProgramInfo(process_id, program_id, storage_id, data.data(),
+                                               data_size, desc.data(), desc_size));
 }
 
 Result ProgramRegistryImpl::UnregisterProgram(u64 process_id) {
-    // Check pre-conditions
-    ASSERT(g_impl != nullptr);
-
     // Check that we're allowed to register
     R_UNLESS(FsSrv::Impl::IsInitialProgram(system, m_process_id), ResultPermissionDenied);
 
     // Unregister the program
-    R_RETURN(g_impl->UnregisterProgramInfo(process_id));
+    R_RETURN(service_impl->UnregisterProgramInfo(process_id));
 }
 
 Result ProgramRegistryImpl::SetCurrentProcess(const Service::ClientProcessId& client_pid) {
@@ -72,6 +55,11 @@ Result ProgramRegistryImpl::SetEnabledProgramVerification(bool enabled) {
     // TODO: How to deal with this backwards compat?
     ASSERT_MSG(false, "TODO: SetEnabledProgramVerification");
     R_THROW(ResultNotImplemented);
+}
+
+void ProgramRegistryImpl::Reset() {
+    service_impl = std::make_unique<ProgramRegistryServiceImpl>(
+        system, ProgramRegistryServiceImpl::Configuration{});
 }
 
 } // namespace FileSys::FsSrv

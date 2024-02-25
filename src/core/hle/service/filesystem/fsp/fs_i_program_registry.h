@@ -30,7 +30,7 @@ public:
     Result SetEnabledProgramVerification(bool enabled);
 
 private:
-    FileSys::FsSrv::ProgramRegistryImpl registry;
+    FileSys::FsSrv::ProgramRegistryImpl& registry;
 };
 
 } // namespace Service::FileSystem

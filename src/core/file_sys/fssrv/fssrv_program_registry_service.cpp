@@ -3,9 +3,7 @@
 
 #include "core/core.h"
 #include "core/file_sys/fssrv/fssrv_program_registry_service.h"
-#include "core/file_sys/fssrv/impl/fssrv_program_index_map_info_manager.h"
 #include "core/file_sys/fssrv/impl/fssrv_program_info.h"
-#include "core/file_sys/fssrv/impl/fssrv_program_registry_manager.h"
 
 namespace FileSys::FsSrv {
 

@@ -5,6 +5,8 @@
 
 #include <optional>
 #include "core/file_sys/fs_program_index_map_info.h"
+#include "core/file_sys/fssrv/impl/fssrv_program_index_map_info_manager.h"
+#include "core/file_sys/fssrv/impl/fssrv_program_registry_manager.h"
 #include "core/hle/result.h"
 
 namespace Core {
@@ -15,8 +17,6 @@ namespace FileSys::FsSrv {
 
 namespace Impl {
 class ProgramInfo;
-class ProgramRegistryManager;
-class ProgramIndexMapInfoManager;
 } // namespace Impl
 
 class ProgramRegistryServiceImpl {

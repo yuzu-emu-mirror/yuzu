@@ -22,6 +22,7 @@
 #include "core/device_memory.h"
 #include "core/file_sys/bis_factory.h"
 #include "core/file_sys/fs_filesystem.h"
+#include "core/file_sys/fssrv/fssrv_program_registry_impl.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"
@@ -137,8 +138,9 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
 
 struct System::Impl {
     explicit Impl(System& system)
-        : kernel{system}, fs_controller{system}, hid_core{}, room_network{}, cpu_manager{system},
-          reporter{system}, applet_manager{system}, frontend_applets{system}, profile_manager{} {}
+        : kernel{system}, fs_controller{system}, program_registry{system}, hid_core{},
+          room_network{}, cpu_manager{system}, reporter{system}, applet_manager{system},
+          frontend_applets{system}, profile_manager{} {}
 
     void Initialize(System& system) {
         device_memory = std::make_unique<Core::DeviceMemory>();
@@ -470,6 +472,7 @@ struct System::Impl {
         services.reset();
         service_manager.reset();
         fs_controller.Reset();
+        program_registry.Reset();
         cheat_engine.reset();
         telemetry_session.reset();
         core_timing.ClearPendingEvents();
@@ -556,6 +559,7 @@ struct System::Impl {
     /// ContentProviderUnion instance
     std::unique_ptr<FileSys::ContentProviderUnion> content_provider;
     Service::FileSystem::FileSystemController fs_controller;
+    FileSys::FsSrv::ProgramRegistryImpl program_registry;
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
     std::unique_ptr<Tegra::GPU> gpu_core;
@@ -937,6 +941,14 @@ void System::RegisterContentProvider(FileSys::ContentProviderUnionSlot slot,
 
 void System::ClearContentProvider(FileSys::ContentProviderUnionSlot slot) {
     impl->content_provider->ClearSlot(slot);
+}
+
+FileSys::FsSrv::ProgramRegistryImpl& System::GetProgramRegistry() {
+    return impl->program_registry;
+}
+
+const FileSys::FsSrv::ProgramRegistryImpl& System::GetProgramRegistry() const {
+    return impl->program_registry;
 }
 
 const Reporter& System::GetReporter() const {

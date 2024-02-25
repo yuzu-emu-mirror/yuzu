@@ -24,6 +24,10 @@ class ContentProvider;
 class ContentProviderUnion;
 enum class ContentProviderUnionSlot;
 class VfsFilesystem;
+
+namespace FsSrv {
+class ProgramRegistryImpl;
+}
 } // namespace FileSys
 
 namespace Kernel {
@@ -372,6 +376,9 @@ public:
                                  FileSys::ContentProvider* provider);
 
     void ClearContentProvider(FileSys::ContentProviderUnionSlot slot);
+
+    [[nodiscard]] FileSys::FsSrv::ProgramRegistryImpl& GetProgramRegistry();
+    [[nodiscard]] const FileSys::FsSrv::ProgramRegistryImpl& GetProgramRegistry() const;
 
     [[nodiscard]] const Reporter& GetReporter() const;
 

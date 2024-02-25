@@ -29,8 +29,6 @@ public:
     ProgramRegistryImpl(Core::System& system_);
     ~ProgramRegistryImpl();
 
-    static void Initialize(ProgramRegistryServiceImpl* service);
-
     Result RegisterProgram(u64 process_id, u64 program_id, u8 storage_id,
                            const InBuffer<BufferAttr_HipcMapAlias> data, s64 data_size,
                            const InBuffer<BufferAttr_HipcMapAlias> desc, s64 desc_size);
@@ -38,9 +36,13 @@ public:
     Result SetCurrentProcess(const Service::ClientProcessId& client_pid);
     Result SetEnabledProgramVerification(bool enabled);
 
+    void Reset();
+
 private:
     u64 m_process_id;
     Core::System& system;
+
+    std::unique_ptr<ProgramRegistryServiceImpl> service_impl;
 };
 
 } // namespace FileSys::FsSrv
