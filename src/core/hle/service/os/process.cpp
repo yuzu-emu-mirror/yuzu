@@ -18,7 +18,7 @@ Process::~Process() {
     this->Finalize();
 }
 
-bool Process::Initialize(Loader::AppLoader& loader) {
+bool Process::Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_load_result) {
     // First, ensure we are not holding another process.
     this->Finalize();
 
@@ -33,6 +33,7 @@ bool Process::Initialize(Loader::AppLoader& loader) {
 
     // Insert process modules into memory.
     const auto [load_result, load_parameters] = loader.Load(*process, m_system);
+    out_load_result = load_result;
 
     // Ensure loading was successful.
     if (load_result != Loader::ResultStatus::Success) {

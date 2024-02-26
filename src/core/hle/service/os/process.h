@@ -11,7 +11,8 @@ class System;
 
 namespace Loader {
 class AppLoader;
-}
+enum class ResultStatus : u16;
+} // namespace Loader
 
 namespace Kernel {
 class KProcess;
@@ -24,7 +25,7 @@ public:
     explicit Process(Core::System& system);
     ~Process();
 
-    bool Initialize(Loader::AppLoader& loader);
+    bool Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_load_result);
     void Finalize();
 
     bool Run();

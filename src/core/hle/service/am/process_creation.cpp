@@ -37,8 +37,30 @@ FileSys::StorageId GetStorageIdForFrontendSlot(
 }
 
 std::unique_ptr<Process> CreateProcessImpl(std::unique_ptr<Loader::AppLoader>& out_loader,
-                                           Core::System& system, u64 program_id,
-                                           u8 minimum_key_generation, u8 maximum_key_generation) {
+                                           Loader::ResultStatus& out_load_result,
+                                           Core::System& system, FileSys::VirtualFile file,
+                                           u64 program_id, u64 program_index) {
+    // Get the appropriate loader to parse this NCA.
+    out_loader = Loader::GetLoader(system, file, program_id, program_index);
+
+    // Ensure we have a loader which can parse the NCA.
+    if (!out_loader) {
+        return nullptr;
+    }
+
+    // Try to load the process.
+    auto process = std::make_unique<Process>(system);
+    if (process->Initialize(*out_loader, out_load_result)) {
+        return process;
+    }
+
+    return nullptr;
+}
+
+} // Anonymous namespace
+
+std::unique_ptr<Process> CreateProcess(Core::System& system, u64 program_id,
+                                       u8 minimum_key_generation, u8 maximum_key_generation) {
     // Attempt to load program NCA.
     FileSys::VirtualFile nca_raw{};
 
@@ -63,43 +85,24 @@ std::unique_ptr<Process> CreateProcessImpl(std::unique_ptr<Loader::AppLoader>& o
         }
     }
 
-    // Get the appropriate loader to parse this NCA.
-    out_loader = Loader::GetLoader(system, nca_raw, program_id, 0);
-
-    // Ensure we have a loader which can parse the NCA.
-    if (!out_loader) {
-        return nullptr;
-    }
-
-    // Try to load the process.
-    auto process = std::make_unique<Process>(system);
-    if (process->Initialize(*out_loader)) {
-        return process;
-    }
-
-    return nullptr;
-}
-
-} // Anonymous namespace
-
-std::unique_ptr<Process> CreateProcess(Core::System& system, u64 program_id,
-                                       u8 minimum_key_generation, u8 maximum_key_generation) {
     std::unique_ptr<Loader::AppLoader> loader;
-    return CreateProcessImpl(loader, system, program_id, minimum_key_generation,
-                             maximum_key_generation);
+    Loader::ResultStatus status;
+    return CreateProcessImpl(loader, status, system, nca_raw, program_id, 0);
 }
 
 std::unique_ptr<Process> CreateApplicationProcess(std::vector<u8>& out_control,
-                                                  Core::System& system, u64 application_id,
-                                                  u64 program_id) {
-    std::unique_ptr<Loader::AppLoader> loader;
-    auto process = CreateProcessImpl(loader, system, program_id, 0, 0);
+                                                  std::unique_ptr<Loader::AppLoader>& out_loader,
+                                                  Loader::ResultStatus& out_load_result,
+                                                  Core::System& system, FileSys::VirtualFile file,
+                                                  u64 program_id, u64 program_index) {
+    auto process =
+        CreateProcessImpl(out_loader, out_load_result, system, file, program_id, program_index);
     if (!process) {
         return nullptr;
     }
 
     FileSys::NACP nacp;
-    if (loader->ReadControlData(nacp) == Loader::ResultStatus::Success) {
+    if (out_loader->ReadControlData(nacp) == Loader::ResultStatus::Success) {
         out_control = nacp.GetRawBytes();
     } else {
         out_control.resize(sizeof(FileSys::RawNACP));
@@ -107,7 +110,7 @@ std::unique_ptr<Process> CreateApplicationProcess(std::vector<u8>& out_control,
 
     auto& storage = system.GetContentProviderUnion();
     Service::Glue::ApplicationLaunchProperty launch{};
-    launch.title_id = program_id;
+    launch.title_id = process->GetProgramId();
 
     FileSys::PatchManager pm{launch.title_id, system.GetFileSystemController(), storage};
     launch.version = pm.GetGameVersion().value_or(0);
