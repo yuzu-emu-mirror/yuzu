@@ -11,6 +11,7 @@
 #include "core/hle/service/am/service/library_applet_accessor.h"
 #include "core/hle/service/am/service/library_applet_creator.h"
 #include "core/hle/service/am/service/storage.h"
+#include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
 #include "core/hle/service/sm/sm.h"
 
@@ -94,6 +95,7 @@ AppletProgramId AppletIdToProgramId(AppletId applet_id) {
 }
 
 std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
+                                                          WindowSystem& window_system,
                                                           std::shared_ptr<Applet> caller_applet,
                                                           AppletId applet_id,
                                                           LibraryAppletMode mode) {
@@ -148,6 +150,7 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
 }
 
 std::shared_ptr<ILibraryAppletAccessor> CreateFrontendApplet(Core::System& system,
+                                                             WindowSystem& window_system,
                                                              std::shared_ptr<Applet> caller_applet,
                                                              AppletId applet_id,
                                                              LibraryAppletMode mode) {
@@ -170,8 +173,10 @@ std::shared_ptr<ILibraryAppletAccessor> CreateFrontendApplet(Core::System& syste
 
 } // namespace
 
-ILibraryAppletCreator::ILibraryAppletCreator(Core::System& system_, std::shared_ptr<Applet> applet)
-    : ServiceFramework{system_, "ILibraryAppletCreator"}, m_applet{std::move(applet)} {
+ILibraryAppletCreator::ILibraryAppletCreator(Core::System& system_, std::shared_ptr<Applet> applet,
+                                             WindowSystem& window_system)
+    : ServiceFramework{system_, "ILibraryAppletCreator"},
+      m_window_system{window_system}, m_applet{std::move(applet)} {
     static const FunctionInfo functions[] = {
         {0, D<&ILibraryAppletCreator::CreateLibraryApplet>, "CreateLibraryApplet"},
         {1, nullptr, "TerminateAllLibraryApplets"},
@@ -193,10 +198,12 @@ Result ILibraryAppletCreator::CreateLibraryApplet(
 
     std::shared_ptr<ILibraryAppletAccessor> library_applet;
     if (ShouldCreateGuestApplet(applet_id)) {
-        library_applet = CreateGuestApplet(system, m_applet, applet_id, library_applet_mode);
+        library_applet =
+            CreateGuestApplet(system, m_window_system, m_applet, applet_id, library_applet_mode);
     }
     if (!library_applet) {
-        library_applet = CreateFrontendApplet(system, m_applet, applet_id, library_applet_mode);
+        library_applet =
+            CreateFrontendApplet(system, m_window_system, m_applet, applet_id, library_applet_mode);
     }
     if (!library_applet) {
         LOG_ERROR(Service_AM, "Applet doesn't exist! applet_id={}", applet_id);
