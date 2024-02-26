@@ -4,6 +4,7 @@
 #include "core/hle/service/am/applet.h"
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/service/window_controller.h"
+#include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
 
 namespace Service::AM {
@@ -65,13 +66,9 @@ Result IWindowController::RejectToChangeIntoBackground() {
 }
 
 Result IWindowController::SetAppletWindowVisibility(bool visible) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_INFO(Service_AM, "called");
 
-    std::scoped_lock lk{m_applet->lock};
-    m_applet->lifecycle_manager.SetFocusState(visible ? FocusState::InFocus
-                                                      : FocusState::NotInFocus);
-    m_applet->SetInteractibleLocked(visible);
-    m_applet->UpdateSuspensionStateLocked(true);
+    m_window_system.RequestAppletVisibilityState(*m_applet, visible);
 
     R_SUCCEED();
 }
