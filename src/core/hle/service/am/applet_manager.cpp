@@ -267,13 +267,12 @@ void AppletManager::TerminateAndRemoveApplet(u64 aruid) {
 }
 
 void AppletManager::CreateAndInsertByFrontendAppletParameters(
-    u64 aruid, const FrontendAppletParameters& params) {
+    std::unique_ptr<Process> process, const FrontendAppletParameters& params) {
     // TODO: this should be run inside AM so that the events will have a parent process
     // TODO: have am create the guest process
-    auto applet = std::make_shared<Applet>(m_system, std::make_unique<Process>(m_system),
+    auto applet = std::make_shared<Applet>(m_system, std::move(process),
                                            params.applet_id == AppletId::Application);
 
-    applet->aruid.pid = aruid;
     applet->program_id = params.program_id;
     applet->applet_id = params.applet_id;
     applet->type = params.applet_type;
@@ -329,6 +328,7 @@ void AppletManager::CreateAndInsertByFrontendAppletParameters(
 
     // Applet was started by frontend, so it is foreground.
     applet->lifecycle_manager.SetFocusState(FocusState::InFocus);
+    applet->process->Run();
 
     this->InsertApplet(std::move(applet));
 }

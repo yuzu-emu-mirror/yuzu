@@ -12,6 +12,10 @@ namespace Core {
 class System;
 }
 
+namespace Service {
+class Process;
+}
+
 namespace Service::AM {
 
 enum class LaunchType {
@@ -36,7 +40,7 @@ public:
     void InsertApplet(std::shared_ptr<Applet> applet);
     void TerminateAndRemoveApplet(u64 aruid);
 
-    void CreateAndInsertByFrontendAppletParameters(u64 aruid,
+    void CreateAndInsertByFrontendAppletParameters(std::unique_ptr<Process> process,
                                                    const FrontendAppletParameters& params);
     std::shared_ptr<Applet> GetByAppletResourceUserId(u64 aruid) const;
 
