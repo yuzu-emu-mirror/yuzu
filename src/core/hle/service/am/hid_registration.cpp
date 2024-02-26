@@ -11,23 +11,29 @@
 namespace Service::AM {
 
 HidRegistration::HidRegistration(Core::System& system, Process& process) : m_process(process) {
-    m_hid_server = system.ServiceManager().GetService<HID::IHidServer>("hid");
+    m_hid_server = system.ServiceManager().GetService<HID::IHidServer>("hid", true);
 
-    if (m_hid_server && m_process.IsInitialized()) {
+    if (m_process.IsInitialized()) {
         m_hid_server->GetResourceManager()->RegisterAppletResourceUserId(m_process.GetProcessId(),
                                                                          true);
+        m_hid_server->GetResourceManager()->SetAruidValidForVibration(m_process.GetProcessId(),
+                                                                      true);
     }
 }
 
 HidRegistration::~HidRegistration() {
-    if (m_hid_server && m_process.IsInitialized()) {
+    if (m_process.IsInitialized()) {
+        m_hid_server->GetResourceManager()->SetAruidValidForVibration(m_process.GetProcessId(),
+                                                                      false);
         m_hid_server->GetResourceManager()->UnregisterAppletResourceUserId(
             m_process.GetProcessId());
     }
 }
 
 void HidRegistration::EnableAppletToGetInput(bool enable) {
-    if (m_hid_server && m_process.IsInitialized()) {
+    if (m_process.IsInitialized()) {
+        m_hid_server->GetResourceManager()->SetAruidValidForVibration(m_process.GetProcessId(),
+                                                                      enable);
         m_hid_server->GetResourceManager()->EnableInput(m_process.GetProcessId(), enable);
     }
 }

@@ -30,10 +30,7 @@ public:
     ~WindowSystem();
 
 public:
-    void SetEventObserver(EventObserver* event_observer) {
-        m_event_observer = event_observer;
-    }
-
+    void SetEventObserver(EventObserver* event_observer);
     void Update();
 
 public:

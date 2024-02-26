@@ -75,7 +75,7 @@ Result IAllSystemAppletProxiesService::OpenLibraryAppletProxyOld(
 
 std::shared_ptr<Applet> IAllSystemAppletProxiesService::GetAppletFromProcessId(
     ProcessId process_id) {
-    return system.GetAppletManager().GetByAppletResourceUserId(process_id.pid);
+    return m_window_system.GetByAppletResourceUserId(process_id.pid);
 }
 
 } // namespace Service::AM

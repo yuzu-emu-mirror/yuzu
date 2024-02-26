@@ -11,7 +11,14 @@ namespace Service::AM {
 
 WindowSystem::WindowSystem(Core::System& system) : m_system(system) {}
 
-WindowSystem::~WindowSystem() {}
+WindowSystem::~WindowSystem() {
+    m_system.GetAppletManager().SetWindowSystem(nullptr);
+}
+
+void WindowSystem::SetEventObserver(EventObserver* observer) {
+    m_event_observer = observer;
+    m_system.GetAppletManager().SetWindowSystem(this);
+}
 
 void WindowSystem::Update() {
     std::scoped_lock lk{m_lock};

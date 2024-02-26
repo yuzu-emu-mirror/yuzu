@@ -144,8 +144,6 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
     applet->caller_applet = caller_applet;
     applet->caller_applet_broker = broker;
 
-    system.GetAppletManager().InsertApplet(applet);
-
     return std::make_shared<ILibraryAppletAccessor>(system, broker, applet);
 }
 
