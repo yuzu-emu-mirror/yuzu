@@ -124,25 +124,14 @@ std::shared_ptr<ILibraryAppletAccessor> CreateGuestApplet(Core::System& system,
     applet->applet_id = applet_id;
     applet->type = AppletType::LibraryApplet;
     applet->library_applet_mode = mode;
-
-    // Set focus state
-    switch (mode) {
-    case LibraryAppletMode::AllForeground:
-    case LibraryAppletMode::NoUi:
-    case LibraryAppletMode::PartialForeground:
-    case LibraryAppletMode::PartialForegroundIndirectDisplay:
-        applet->lifecycle_manager.SetFocusState(FocusState::InFocus);
-        applet->SetInteractibleLocked(true);
-        break;
-    case LibraryAppletMode::AllForegroundInitiallyHidden:
-        applet->lifecycle_manager.SetFocusState(FocusState::NotInFocus);
-        applet->SetInteractibleLocked(false);
-        break;
-    }
+    applet->window_visible = mode != LibraryAppletMode::AllForegroundInitiallyHidden;
 
     auto broker = std::make_shared<AppletDataBroker>(system);
     applet->caller_applet = caller_applet;
     applet->caller_applet_broker = broker;
+    caller_applet->child_applets.push_back(applet);
+
+    window_system.TrackApplet(applet, false);
 
     return std::make_shared<ILibraryAppletAccessor>(system, broker, applet);
 }
@@ -165,6 +154,9 @@ std::shared_ptr<ILibraryAppletAccessor> CreateFrontendApplet(Core::System& syste
     applet->caller_applet = caller_applet;
     applet->caller_applet_broker = storage;
     applet->frontend = system.GetFrontendAppletHolder().GetApplet(applet, applet_id, mode);
+    caller_applet->child_applets.push_back(applet);
+
+    window_system.TrackApplet(applet, false);
 
     return std::make_shared<ILibraryAppletAccessor>(system, storage, applet);
 }
