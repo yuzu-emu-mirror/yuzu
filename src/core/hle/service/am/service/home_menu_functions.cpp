@@ -4,6 +4,7 @@
 #include "core/hle/result.h"
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/service/home_menu_functions.h"
+#include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
 
 namespace Service::AM {
@@ -39,17 +40,20 @@ IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_, std::shared_ptr<Ap
 IHomeMenuFunctions::~IHomeMenuFunctions() = default;
 
 Result IHomeMenuFunctions::RequestToGetForeground() {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_INFO(Service_AM, "called");
+    m_window_system.RequestHomeMenuToGetForeground();
     R_SUCCEED();
 }
 
 Result IHomeMenuFunctions::LockForeground() {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_INFO(Service_AM, "called");
+    m_window_system.RequestLockHomeMenuIntoForeground();
     R_SUCCEED();
 }
 
 Result IHomeMenuFunctions::UnlockForeground() {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_INFO(Service_AM, "called");
+    m_window_system.RequestUnlockHomeMenuIntoForeground();
     R_SUCCEED();
 }
 
