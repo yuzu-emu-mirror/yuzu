@@ -134,16 +134,30 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
         ui->theme_combobox->addItem(theme_name, theme_dir);
     }
 
-    ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
-// Windows dark mode is based on palette swap made by OS, so the "Always On" option disabled.
-// We could check if the dark mode state is "On" and force a dark palette like on Linux to support
-// "Always On"
+    QByteArray current_qt_qpa = qgetenv("QT_QPA_PLATFORM");
 #ifdef _WIN32
-    ui->dark_mode_label->setText(tr("Dark mode (needs restart)"));
+    // Indicate which option needs a restart to be applied, depending on current environment
+    // variable
+    if (current_qt_qpa.contains("darkmode=2")) {
+        ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
+        ui->dark_mode_combobox->addItem(tr("Always On") + QStringLiteral(" (") +
+                                            tr("Needs restart") + QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::On));
+        ui->dark_mode_combobox->addItem(tr("Always Off") + QStringLiteral(" (") +
+                                            tr("Needs restart") + QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::Off));
+    } else {
+        ui->dark_mode_combobox->addItem(tr("Auto") + QStringLiteral(" (") + tr("Needs restart") +
+                                            QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::Auto));
+        ui->dark_mode_combobox->addItem(tr("Always On"), QVariant::fromValue(DarkModeState::On));
+        ui->dark_mode_combobox->addItem(tr("Always Off"), QVariant::fromValue(DarkModeState::Off));
+    }
 #else
+    ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
     ui->dark_mode_combobox->addItem(tr("Always On"), QVariant::fromValue(DarkModeState::On));
-#endif
     ui->dark_mode_combobox->addItem(tr("Always Off"), QVariant::fromValue(DarkModeState::Off));
+#endif
 
     InitializeIconSizeComboBox();
     InitializeRowComboBoxes();

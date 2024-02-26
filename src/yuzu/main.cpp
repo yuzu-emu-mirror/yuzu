@@ -4916,12 +4916,33 @@ void GMainWindow::UpdateThemePalette() {
     QPalette themePalette(qApp->palette());
 #ifdef _WIN32
     QColor dark(25, 25, 25);
-    QColor darkGray(100, 100, 100);
-    QColor gray(150, 150, 150);
-    QColor light(230, 230, 230);
-    // By default, revert fusion style set for Windows dark theme
-    QString style;
+    QString style_name;
     if (CheckDarkMode()) {
+        // We check that the dark mode state is "On" and force a dark palette
+        if (UISettings::values.dark_mode_state == DarkModeState::On) {
+            // Set Default Windows Dark palette on Windows platforms to force Dark mode
+            themePalette.setColor(QPalette::Window, Qt::black);
+            themePalette.setColor(QPalette::WindowText, Qt::white);
+            themePalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor(127, 127, 127));
+            themePalette.setColor(QPalette::Base, Qt::black);
+            themePalette.setColor(QPalette::AlternateBase, dark);
+            themePalette.setColor(QPalette::ToolTipBase, Qt::white);
+            themePalette.setColor(QPalette::ToolTipText, Qt::black);
+            themePalette.setColor(QPalette::Text, Qt::white);
+            themePalette.setColor(QPalette::Disabled, QPalette::Text, QColor(127, 127, 127));
+            themePalette.setColor(QPalette::Dark, QColor(128, 128, 128));
+            themePalette.setColor(QPalette::Shadow, Qt::white);
+            themePalette.setColor(QPalette::Button, Qt::black);
+            themePalette.setColor(QPalette::ButtonText, Qt::white);
+            themePalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127, 127, 127));
+            themePalette.setColor(QPalette::BrightText, QColor(192, 192, 192));
+            themePalette.setColor(QPalette::Link, QColor(0, 140, 200));
+            themePalette.setColor(QPalette::Highlight, QColor(0, 85, 255));
+            themePalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(0, 85, 255));
+            themePalette.setColor(QPalette::HighlightedText, Qt::white);
+            themePalette.setColor(QPalette::Disabled, QPalette::HighlightedText, Qt::white);
+        }
+
         // AlternateBase is kept at rgb(233, 231, 227) or rgb(245, 245, 245) on Windows dark
         // palette, fix this. Sometimes, it even is rgb(0, 0, 0), but uses a very light gray for
         // alternate rows, do not know why
@@ -4932,18 +4953,20 @@ void GMainWindow::UpdateThemePalette() {
             alternate_base_modified = true;
         }
         // Use fusion theme, since its close to windowsvista, but works well with a dark palette
-        style = QStringLiteral("fusion");
+        style_name = QStringLiteral("fusion");
     } else {
         // Reset AlternateBase if it has been modified
         if (alternate_base_modified) {
             themePalette.setColor(QPalette::AlternateBase, QColor(245, 245, 245));
             alternate_base_modified = false;
         }
+        // Reset light palette
+        themePalette = this->style()->standardPalette();
         // Reset Windows theme to the default
-        style = QStringLiteral("windowsvista");
+        style_name = QStringLiteral("windowsvista");
     }
-    LOG_DEBUG(Frontend, "Using style: {}", style.toStdString());
-    qApp->setStyle(style);
+    LOG_DEBUG(Frontend, "Using style: {}", style_name.toStdString());
+    qApp->setStyle(style_name);
 #else
     if (CheckDarkMode()) {
         // Set Dark palette on non Windows platforms (that may not have a dark palette)
@@ -4968,7 +4991,7 @@ void GMainWindow::UpdateThemePalette() {
         themePalette.setColor(QPalette::HighlightedText, Qt::white);
         themePalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(127, 127, 127));
     } else {
-        // Reset light palette on non Windows platforms
+        // Reset light palette
         themePalette = this->style()->standardPalette();
     }
 #endif
@@ -5295,11 +5318,29 @@ int main(int argc, char* argv[]) {
 
 #ifdef _WIN32
     QByteArray current_qt_qpa = qgetenv("QT_QPA_PLATFORM");
-    // Follow dark mode setting, if the "-platform" launch option is not set
-    if (UISettings::values.dark_mode_state == DarkModeState::Auto && current_qt_qpa.isEmpty()) {
-        // When setting is Auto, force adapting window decoration and stylesheet palette to use
-        // Windows theme. Default is darkmode:0, which always uses light palette
-        qputenv("QT_QPA_PLATFORM", QByteArray("windows:darkmode=2"));
+    // Follow dark mode setting, if the "-platform" launch option is not set.
+    // Otherwise, just follow dark mode for the window decoration (title bar).
+    if (!current_qt_qpa.contains(":darkmode=")) {
+        if (UISettings::values.dark_mode_state == DarkModeState::Auto) {
+            // When setting is Auto, force adapting window decoration and stylesheet palette to use
+            // Windows theme. Default is darkmode:0, which always uses light palette
+            if (current_qt_qpa.isEmpty()) {
+                // Set the value
+                qputenv("QT_QPA_PLATFORM", QByteArray("windows:darkmode=2"));
+            } else {
+                // Concatenate to the existing value
+                qputenv("QT_QPA_PLATFORM", current_qt_qpa + ",darkmode=2");
+            }
+        } else {
+            // When setting is no Auto, adapt window decoration to the palette used
+            if (current_qt_qpa.isEmpty()) {
+                // Set the value
+                qputenv("QT_QPA_PLATFORM", QByteArray("windows:darkmode=1"));
+            } else {
+                // Concatenate to the existing value
+                qputenv("QT_QPA_PLATFORM", current_qt_qpa + ",darkmode=1");
+            }
+        }
     }
     // Increases the maximum open file limit to 8192
     _setmaxstdio(8192);
