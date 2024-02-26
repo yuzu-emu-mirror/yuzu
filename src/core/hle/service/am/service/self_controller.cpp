@@ -86,8 +86,7 @@ ISelfController::~ISelfController() {
 Result ISelfController::Exit() {
     LOG_DEBUG(Service_AM, "called");
 
-    // TODO
-    system.Exit();
+    m_applet->process->Terminate();
 
     R_SUCCEED();
 }
@@ -95,7 +94,16 @@ Result ISelfController::Exit() {
 Result ISelfController::LockExit() {
     LOG_DEBUG(Service_AM, "called");
 
-    system.SetExitLocked(true);
+    std::scoped_lock lk{m_applet->lock};
+
+    if (m_applet->lifecycle_manager.GetExitRequested()) {
+        // With exit already requested, ignore and terminate immediately.
+        m_applet->process->Terminate();
+    } else {
+        // Otherwise, set exit lock state.
+        m_applet->exit_locked = true;
+        system.SetExitLocked(true);
+    }
 
     R_SUCCEED();
 }
@@ -103,10 +111,13 @@ Result ISelfController::LockExit() {
 Result ISelfController::UnlockExit() {
     LOG_DEBUG(Service_AM, "called");
 
+    std::scoped_lock lk{m_applet->lock};
+
+    m_applet->exit_locked = false;
     system.SetExitLocked(false);
 
-    if (system.GetExitRequested()) {
-        system.Exit();
+    if (m_applet->lifecycle_manager.GetExitRequested()) {
+        m_applet->process->Terminate();
     }
 
     R_SUCCEED();
