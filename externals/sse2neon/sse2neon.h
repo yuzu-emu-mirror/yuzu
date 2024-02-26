@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright 2015-2024 SSE2NEON Contributors
+// SPDX-License-Identifier: MIT
+
 #ifndef SSE2NEON_H
 #define SSE2NEON_H
 

@@ -248,16 +248,19 @@ void Vic::ReadProgressiveY8__V8U8_N420(const SlotStruct& slot,
 #endif
 
 #if defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64)
+    const auto alpha_linear{static_cast<u16>(slot.config.planar_alpha.Value())};
     const auto alpha =
         _mm_slli_epi64(_mm_set1_epi64x(static_cast<s64>(slot.config.planar_alpha.Value())), 48);
 
     const auto shuffle_mask = _mm_set_epi8(13, 15, 14, 12, 9, 11, 10, 8, 5, 7, 6, 4, 1, 3, 2, 0);
+    const auto sse_aligned_width = Common::AlignDown(in_luma_width, 16);
 
     for (s32 y = 0; y < in_luma_height; y++) {
         const auto src_luma{y * in_luma_stride};
         const auto src_chroma{(y / 2) * in_chroma_stride};
         const auto dst{y * out_luma_stride};
-        for (s32 x = 0; x < in_luma_width; x += 16) {
+        s32 x = 0;
+        for (; x < sse_aligned_width; x += 16) {
             // clang-format off
             // Prefetch next iteration's memory
             _mm_prefetch((const char*)&luma_buffer[src_luma + x + 16], _MM_HINT_T0);
@@ -380,6 +383,23 @@ void Vic::ReadProgressiveY8__V8U8_N420(const SlotStruct& slot,
             _mm_store_si128((__m128i*)&slot_surface[dst + x + 14], yuv1415);
 
             // clang-format on
+        }
+
+        for (; x < in_luma_width; x++) {
+            slot_surface[dst + x].r = static_cast<u16>(luma_buffer[src_luma + x] << 2);
+            // Chroma samples are duplicated horizontally and vertically.
+            if constexpr (Planar) {
+                slot_surface[dst + x].g =
+                    static_cast<u16>(chroma_u_buffer[src_chroma + x / 2] << 2);
+                slot_surface[dst + x].b =
+                    static_cast<u16>(chroma_v_buffer[src_chroma + x / 2] << 2);
+            } else {
+                slot_surface[dst + x].g =
+                    static_cast<u16>(chroma_u_buffer[src_chroma + (x & ~1) + 0] << 2);
+                slot_surface[dst + x].b =
+                    static_cast<u16>(chroma_u_buffer[src_chroma + (x & ~1) + 1] << 2);
+            }
+            slot_surface[dst + x].a = alpha_linear;
         }
     }
 #else
@@ -827,11 +847,14 @@ void Vic::WriteY8__V8U8_N420(const OutputSurfaceConfig& output_surface_config) {
         // luma_mask   = [00 00] [00 00] [00 00] [FF FF] [00 00] [00 00] [00 00] [FF FF]
         const auto luma_mask = _mm_set_epi16(0, 0, 0, -1, 0, 0, 0, -1);
 
+        const auto sse_aligned_width = Common::AlignDown(surface_width, 16);
+
         for (u32 y = 0; y < surface_height; ++y) {
             const auto src = y * surface_stride;
             const auto dst_luma = y * out_luma_stride;
             const auto dst_chroma = (y / 2) * out_chroma_stride;
-            for (u32 x = 0; x < surface_width; x += 16) {
+            u32 x = 0;
+            for (; x < sse_aligned_width; x += 16) {
                 // clang-format off
                 // Prefetch the next cache lines, 2 per iteration
                 _mm_prefetch((const char*)&output_surface[src + x + 16], _MM_HINT_T0);
@@ -948,6 +971,16 @@ void Vic::WriteY8__V8U8_N420(const OutputSurfaceConfig& output_surface_config) {
                 }
 
                 // clang-format on
+            }
+
+            const auto src_chroma = y * surface_stride;
+            for (; x < surface_width; x += 2) {
+                out_luma[dst_luma + x + 0] = static_cast<u8>(output_surface[src + x + 0].r >> 2);
+                out_luma[dst_luma + x + 1] = static_cast<u8>(output_surface[src + x + 1].r >> 2);
+                out_chroma[dst_chroma + x + 0] =
+                    static_cast<u8>(output_surface[src_chroma + x].g >> 2);
+                out_chroma[dst_chroma + x + 1] =
+                    static_cast<u8>(output_surface[src_chroma + x].b >> 2);
             }
         }
 #else
@@ -1083,10 +1116,14 @@ void Vic::WriteABGR(const OutputSurfaceConfig& output_surface_config) {
 #endif
 
 #if defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64)
+        constexpr size_t SseAlignment = 16;
+        const auto sse_aligned_width = Common::AlignDown(surface_width, SseAlignment);
+
         for (u32 y = 0; y < surface_height; y++) {
             const auto src = y * surface_stride;
             const auto dst = y * out_luma_stride;
-            for (u32 x = 0; x < surface_width; x += 16) {
+            u32 x = 0;
+            for (; x < sse_aligned_width; x += SseAlignment) {
                 // clang-format off
                 // Prefetch the next 2 cache lines
                 _mm_prefetch((const char*)&output_surface[src + x + 16], _MM_HINT_T0);
@@ -1145,6 +1182,20 @@ void Vic::WriteABGR(const OutputSurfaceConfig& output_surface_config) {
                 _mm_store_si128((__m128i*)&out_buffer[dst + x * 4 + 48], pixels1_hi);
 
                 // clang-format on
+            }
+
+            for (; x < surface_width; x++) {
+                if constexpr (Format == VideoPixelFormat::A8R8G8B8) {
+                    out_buffer[dst + x * 4 + 0] = static_cast<u8>(output_surface[src + x].b >> 2);
+                    out_buffer[dst + x * 4 + 1] = static_cast<u8>(output_surface[src + x].g >> 2);
+                    out_buffer[dst + x * 4 + 2] = static_cast<u8>(output_surface[src + x].r >> 2);
+                    out_buffer[dst + x * 4 + 3] = static_cast<u8>(output_surface[src + x].a >> 2);
+                } else {
+                    out_buffer[dst + x * 4 + 0] = static_cast<u8>(output_surface[src + x].r >> 2);
+                    out_buffer[dst + x * 4 + 1] = static_cast<u8>(output_surface[src + x].g >> 2);
+                    out_buffer[dst + x * 4 + 2] = static_cast<u8>(output_surface[src + x].b >> 2);
+                    out_buffer[dst + x * 4 + 3] = static_cast<u8>(output_surface[src + x].a >> 2);
+                }
             }
         }
 #else
