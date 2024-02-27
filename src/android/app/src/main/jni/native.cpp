@@ -61,6 +61,7 @@
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/vulkan_common/vulkan_instance.h"
+#include "video_core/vulkan_common/vulkan_library.h"
 #include "video_core/vulkan_common/vulkan_surface.h"
 
 #define jconst [[maybe_unused]] const auto
@@ -525,13 +526,16 @@ jboolean JNICALL Java_org_yuzu_yuzu_1emu_utils_GpuDriverHelper_supportsCustomDri
 
 jobjectArray Java_org_yuzu_yuzu_1emu_utils_GpuDriverHelper_getSystemDriverInfo(
     JNIEnv* env, jobject j_obj, jobject j_surf, jstring j_hook_lib_dir) {
+#ifdef ARCHITECTURE_arm64
     const char* file_redirect_dir_{};
     int featureFlags{};
     std::string hook_lib_dir = Common::Android::GetJString(env, j_hook_lib_dir);
     auto handle = adrenotools_open_libvulkan(RTLD_NOW, featureFlags, nullptr, hook_lib_dir.c_str(),
                                              nullptr, nullptr, file_redirect_dir_, nullptr);
     auto driver_library = std::make_shared<Common::DynamicLibrary>(handle);
-    InputCommon::InputSubsystem input_subsystem;
+#else
+    auto driver_library = Vulkan::OpenLibrary();
+#endif
     auto window =
         std::make_unique<EmuWindow_Android>(ANativeWindow_fromSurface(env, j_surf), driver_library);
 
