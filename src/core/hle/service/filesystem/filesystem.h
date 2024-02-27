@@ -121,19 +121,8 @@ public:
     // above is called.
     void CreateFactories(FileSys::VfsFilesystem& vfs, bool overwrite = true);
 
-    void Reset();
-
 private:
     std::shared_ptr<FileSys::SaveDataFactory> CreateSaveDataFactory(ProgramId program_id);
-
-    struct Registration {
-        ProgramId program_id;
-        std::shared_ptr<FileSys::RomFSFactory> romfs_factory;
-        std::shared_ptr<FileSys::SaveDataFactory> save_data_factory;
-    };
-
-    std::mutex registration_lock;
-    std::map<ProcessId, Registration> registrations;
 
     std::unique_ptr<FileSys::SDMCFactory> sdmc_factory;
     std::unique_ptr<FileSys::BISFactory> bis_factory;

@@ -22,6 +22,13 @@ Result ProgramRegistryServiceImpl::RegisterProgramInfo(u64 process_id, u64 progr
                                                  data_size, desc, desc_size));
 }
 
+Result ProgramRegistryServiceImpl::RegisterProgramInfoForLoader(
+    u64 process_id, u64 program_id, std::shared_ptr<FileSys::RomFSFactory> romfs_factory,
+    std::shared_ptr<FileSys::SaveDataFactory> save_data_factory) {
+    R_RETURN(m_registry_manager->RegisterProgram(process_id, program_id, 0, nullptr, 0, nullptr, 0,
+                                                 romfs_factory, save_data_factory));
+}
+
 Result ProgramRegistryServiceImpl::UnregisterProgramInfo(u64 process_id) {
     R_RETURN(m_registry_manager->UnregisterProgram(process_id));
 }

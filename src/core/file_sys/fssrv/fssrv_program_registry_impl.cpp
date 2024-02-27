@@ -35,12 +35,24 @@ Result ProgramRegistryImpl::RegisterProgram(u64 process_id, u64 program_id, u8 s
                                                data_size, desc.data(), desc_size));
 }
 
+Result ProgramRegistryImpl::RegisterProgramForLoader(
+    u64 process_id, u64 program_id, std::shared_ptr<FileSys::RomFSFactory> romfs_factory,
+    std::shared_ptr<FileSys::SaveDataFactory> save_data_factory) {
+    R_RETURN(service_impl->RegisterProgramInfoForLoader(process_id, program_id, romfs_factory,
+                                                        save_data_factory));
+}
+
 Result ProgramRegistryImpl::UnregisterProgram(u64 process_id) {
     // Check that we're allowed to register
     R_UNLESS(initial_program_info.IsInitialProgram(system, m_process_id), ResultPermissionDenied);
 
     // Unregister the program
     R_RETURN(service_impl->UnregisterProgramInfo(process_id));
+}
+
+Result ProgramRegistryImpl::GetProgramInfo(std::shared_ptr<Impl::ProgramInfo>* out,
+                                           u64 process_id) {
+    R_RETURN(service_impl->GetProgramInfo(out, process_id));
 }
 
 Result ProgramRegistryImpl::SetCurrentProcess(const Service::ClientProcessId& client_pid) {

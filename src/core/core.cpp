@@ -471,7 +471,6 @@ struct System::Impl {
         applet_manager.Reset();
         services.reset();
         service_manager.reset();
-        fs_controller.Reset();
         program_registry.Reset();
         cheat_engine.reset();
         telemetry_session.reset();

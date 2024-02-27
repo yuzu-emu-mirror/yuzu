@@ -13,11 +13,8 @@
 
 namespace FileSys::FsSrv::Impl {
 
-struct ProgramIndexMapInfoEntry : public Common::IntrusiveListBaseNode<ProgramIndexMapInfoEntry> {
-    u64 program_id;
-    u64 base_program_id;
-    u8 program_index;
-};
+struct ProgramIndexMapInfoEntry : public ProgramIndexMapInfo,
+                                  public Common::IntrusiveListBaseNode<ProgramIndexMapInfoEntry> {};
 
 class ProgramIndexMapInfoManager {
     YUZU_NON_COPYABLE(ProgramIndexMapInfoManager);

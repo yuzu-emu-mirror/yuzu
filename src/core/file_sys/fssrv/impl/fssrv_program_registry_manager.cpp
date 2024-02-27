@@ -11,9 +11,10 @@ ProgramRegistryManager::ProgramRegistryManager(Core::System& system_,
                                                InitialProgramInfo& program_info)
     : m_initial_program_info{program_info}, system{system_} {}
 
-Result ProgramRegistryManager::RegisterProgram(u64 process_id, u64 program_id, u8 storage_id,
-                                               const void* data, s64 data_size, const void* desc,
-                                               s64 desc_size) {
+Result ProgramRegistryManager::RegisterProgram(
+    u64 process_id, u64 program_id, u8 storage_id, const void* data, s64 data_size,
+    const void* desc, s64 desc_size, std::shared_ptr<FileSys::RomFSFactory> romfs_factory,
+    std::shared_ptr<FileSys::SaveDataFactory> save_data_factory) {
     // Allocate a new node
     std::unique_ptr<ProgramInfoNode> new_node(new ProgramInfoNode());
     R_UNLESS(new_node != nullptr, ResultAllocationMemoryFailedInProgramRegistryManagerA);
@@ -21,8 +22,9 @@ Result ProgramRegistryManager::RegisterProgram(u64 process_id, u64 program_id, u
     // Create a new program info
     {
         // Allocate the new info
-        std::shared_ptr<ProgramInfo> new_info = std::make_shared<ProgramInfo>(
-            process_id, program_id, storage_id, data, data_size, desc, desc_size);
+        std::shared_ptr<ProgramInfo> new_info =
+            std::make_shared<ProgramInfo>(process_id, program_id, storage_id, data, data_size, desc,
+                                          desc_size, romfs_factory, save_data_factory);
         R_UNLESS(new_info != nullptr, ResultAllocationMemoryFailedInProgramRegistryManagerA);
 
         // Set the info in the node

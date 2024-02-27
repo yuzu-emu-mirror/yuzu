@@ -5,6 +5,7 @@
 
 #include "core/file_sys/fssrv/impl/fssrv_access_control.h"
 #include "core/file_sys/romfs_factory.h"
+#include "core/file_sys/savedata_factory.h"
 
 namespace Core {
 class System;
@@ -20,13 +21,19 @@ private:
     u64 m_program_id;
     FileSys::StorageId m_storage_id;
     AccessControl m_access_control;
+    // Needed to work around current fs limitations
+    std::shared_ptr<RomFSFactory> m_romfs_factory;
+    std::shared_ptr<SaveDataFactory> m_save_data_factory;
 
 public:
     ProgramInfo(u64 process_id, u64 program_id, u8 storage_id, const void* data, s64 data_size,
-                const void* desc, s64 desc_size)
+                const void* desc, s64 desc_size, std::shared_ptr<RomFSFactory> romfs_factory,
+                std::shared_ptr<SaveDataFactory> save_data_factory)
         : m_process_id(process_id), m_access_control(data, data_size, desc, desc_size) {
         m_program_id = program_id;
         m_storage_id = static_cast<FileSys::StorageId>(storage_id);
+        m_romfs_factory = romfs_factory;
+        m_save_data_factory = save_data_factory;
     }
 
     ProgramInfo(const void* data, s64 data_size, const void* desc, s64 desc_size)
@@ -48,6 +55,12 @@ public:
     }
     AccessControl& GetAccessControl() {
         return m_access_control;
+    }
+    std::shared_ptr<RomFSFactory> GetRomFsFactory() {
+        return m_romfs_factory;
+    }
+    std::shared_ptr<SaveDataFactory> GetSaveDataFactory() {
+        return m_save_data_factory;
     }
 };
 
