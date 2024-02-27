@@ -14,7 +14,8 @@ enum class SaveDataType : u8;
 
 namespace Kernel {
 class KReadableEvent;
-}
+class KTransferMemory;
+} // namespace Kernel
 
 namespace Service::AM {
 

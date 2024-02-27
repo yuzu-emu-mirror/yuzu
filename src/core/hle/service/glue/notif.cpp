@@ -10,6 +10,7 @@
 #include "core/hle/service/glue/notif.h"
 #include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/os/event.h"
 
 namespace Service::Glue {
 
@@ -178,7 +179,8 @@ class INotificationSystemEventAccessor final
 public:
     explicit INotificationSystemEventAccessor(Core::System& system_)
         : ServiceFramework{system_, "INotificationSystemEventAccessor"},
-          service_context{system_, "INotificationSystemEventAccessor"} {
+          service_context{system_, "INotificationSystemEventAccessor"}, notification_event{
+                                                                            service_context} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, D<&INotificationSystemEventAccessor::GetSystemEvent>, "GetSystemEvent"},
@@ -186,25 +188,20 @@ public:
         // clang-format on
 
         RegisterHandlers(functions);
-
-        notification_event =
-            service_context.CreateEvent("INotificationSystemEventAccessor:NotificationEvent");
     }
 
-    ~INotificationSystemEventAccessor() {
-        service_context.CloseEvent(notification_event);
-    }
+    ~INotificationSystemEventAccessor() = default;
 
 private:
     Result GetSystemEvent(OutCopyHandle<Kernel::KReadableEvent> out_readable_event) {
         LOG_WARNING(Service_NOTIF, "(STUBBED) called");
 
-        *out_readable_event = &notification_event->GetReadableEvent();
+        *out_readable_event = notification_event.GetHandle();
         R_SUCCEED();
     }
 
     KernelHelpers::ServiceContext service_context;
-    Kernel::KEvent* notification_event;
+    Event notification_event;
 };
 
 INotificationServices::INotificationServices(Core::System& system_)

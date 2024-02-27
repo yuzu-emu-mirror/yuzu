@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/settings.h"
+#include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/vfs/vfs.h"

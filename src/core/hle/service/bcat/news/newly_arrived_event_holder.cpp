@@ -7,9 +7,8 @@
 namespace Service::News {
 
 INewlyArrivedEventHolder::INewlyArrivedEventHolder(Core::System& system_)
-    : ServiceFramework{system_, "INewlyArrivedEventHolder"}, service_context{
-                                                                 system_,
-                                                                 "INewlyArrivedEventHolder"} {
+    : ServiceFramework{system_, "INewlyArrivedEventHolder"},
+      service_context{system_, "INewlyArrivedEventHolder"}, arrived_event{service_context} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, D<&INewlyArrivedEventHolder::Get>, "Get"},
@@ -17,17 +16,14 @@ INewlyArrivedEventHolder::INewlyArrivedEventHolder(Core::System& system_)
     // clang-format on
 
     RegisterHandlers(functions);
-    arrived_event = service_context.CreateEvent("INewlyArrivedEventHolder::ArrivedEvent");
 }
 
-INewlyArrivedEventHolder::~INewlyArrivedEventHolder() {
-    service_context.CloseEvent(arrived_event);
-}
+INewlyArrivedEventHolder::~INewlyArrivedEventHolder() = default;
 
 Result INewlyArrivedEventHolder::Get(OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_INFO(Service_BCAT, "called");
 
-    *out_event = &arrived_event->GetReadableEvent();
+    *out_event = arrived_event.GetHandle();
     R_SUCCEED();
 }
 

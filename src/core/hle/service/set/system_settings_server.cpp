@@ -10,6 +10,7 @@
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "common/string_util.h"
+#include "common/thread.h"
 #include "core/core.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/errors.h"

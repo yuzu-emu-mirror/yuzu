@@ -3,6 +3,8 @@
 
 #include "audio_core/audio_core.h"
 #include "common/string_util.h"
+#include "core/core.h"
+#include "core/hle/kernel/k_event.h"
 #include "core/hle/service/audio/audio_device.h"
 #include "core/hle/service/cmif_serialization.h"
 

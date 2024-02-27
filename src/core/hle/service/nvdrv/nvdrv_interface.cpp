@@ -173,7 +173,7 @@ void NVDRV::Initialize(HLERequestContext& ctx) {
 
     auto& container = nvdrv->GetContainer();
     auto process = ctx.GetObjectFromHandle<Kernel::KProcess>(process_handle);
-    session_id = container.OpenSession(process.GetPointerUnsafe());
+    session_id = container.OpenSession(process);
 
     is_initialized = true;
 }
