@@ -273,27 +273,10 @@ struct Values {
         "shader_backend", Category::Renderer,  Specialization::RuntimeList};
     SwitchableSetting<int> vulkan_device{linkage, 0, "vulkan_device", Category::Renderer,
                                          Specialization::RuntimeList};
-
-    SwitchableSetting<bool> use_disk_shader_cache{linkage, true, "use_disk_shader_cache",
-                                                  Category::Renderer};
-    SwitchableSetting<bool> use_asynchronous_gpu_emulation{
-        linkage, true, "use_asynchronous_gpu_emulation", Category::Renderer};
-    SwitchableSetting<AstcDecodeMode, true> accelerate_astc{linkage,
-#ifdef ANDROID
-                                                            AstcDecodeMode::Cpu,
-#else
-                                                            AstcDecodeMode::Gpu,
-#endif
-                                                            AstcDecodeMode::Cpu,
-                                                            AstcDecodeMode::CpuAsynchronous,
-                                                            "accelerate_astc",
-                                                            Category::Renderer};
     SwitchableSetting<VSyncMode, true> vsync_mode{
         linkage,     VSyncMode::Fifo,    VSyncMode::Immediate,        VSyncMode::FifoRelaxed,
         "use_vsync", Category::Renderer, Specialization::RuntimeList, true,
         true};
-    SwitchableSetting<NvdecEmulation> nvdec_emulation{linkage, NvdecEmulation::Gpu,
-                                                      "nvdec_emulation", Category::Renderer};
     // *nix platforms may have issues with the borderless windowed fullscreen mode.
     // Default to exclusive fullscreen on these platforms for now.
     SwitchableSetting<FullscreenMode, true> fullscreen_mode{linkage,
@@ -378,6 +361,17 @@ struct Values {
                                                            AnisotropyMode::X16,
                                                            "max_anisotropy",
                                                            Category::RendererAdvanced};
+    SwitchableSetting<AstcDecodeMode, true> accelerate_astc{linkage,
+#ifdef ANDROID
+                                                            AstcDecodeMode::Cpu,
+#else
+                                                            AstcDecodeMode::Gpu,
+#endif
+                                                            AstcDecodeMode::Cpu,
+                                                            AstcDecodeMode::CpuAsynchronous,
+                                                            "accelerate_astc",
+                                                            Category::RendererAdvanced};
+    SwitchableSetting<NvdecEmulation> nvdec_emulation{linkage, NvdecEmulation::Gpu, "nvdec_emulation", Category::RendererAdvanced};
     SwitchableSetting<AstcRecompression, true> astc_recompression{linkage,
                                                                   AstcRecompression::Uncompressed,
                                                                   AstcRecompression::Uncompressed,
@@ -390,6 +384,10 @@ struct Values {
                                                            VramUsageMode::Aggressive,
                                                            "vram_usage_mode",
                                                            Category::RendererAdvanced};
+    SwitchableSetting<bool> use_disk_shader_cache{linkage, true, "use_disk_shader_cache",
+                                                  Category::RendererAdvanced};
+    SwitchableSetting<bool> use_asynchronous_gpu_emulation{
+        linkage, true, "use_asynchronous_gpu_emulation", Category::RendererAdvanced};
     SwitchableSetting<bool> async_presentation{linkage,
 #ifdef ANDROID
                                                true,
