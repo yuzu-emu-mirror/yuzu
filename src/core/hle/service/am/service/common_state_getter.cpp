@@ -154,9 +154,9 @@ Result ICommonStateGetter::GetPerformanceMode(Out<APM::PerformanceMode> out_perf
     R_SUCCEED();
 }
 
-Result ICommonStateGetter::GetBootMode(Out<PM::SystemBootMode> out_boot_mode) {
+Result ICommonStateGetter::GetBootMode(Out<PM::BootMode> out_boot_mode) {
     LOG_DEBUG(Service_AM, "called");
-    *out_boot_mode = Service::PM::SystemBootMode::Normal;
+    *out_boot_mode = Service::PM::BootMode::Normal;
     R_SUCCEED();
 }
 

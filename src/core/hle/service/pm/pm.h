@@ -9,11 +9,6 @@ class System;
 
 namespace Service::PM {
 
-enum class SystemBootMode {
-    Normal,
-    Maintenance,
-};
-
 void LoopProcess(Core::System& system);
 
 } // namespace Service::PM
