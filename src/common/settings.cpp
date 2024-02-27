@@ -151,10 +151,7 @@ bool IsGPULevelHigh() {
 }
 
 bool IsFastmemEnabled() {
-    if (values.cpu_debug_mode) {
-        return static_cast<bool>(values.cpuopt_fastmem);
-    }
-    return true;
+    return static_cast<bool>(values.cpuopt_fastmem);
 }
 
 static bool is_nce_enabled = false;

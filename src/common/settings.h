@@ -371,7 +371,8 @@ struct Values {
                                                             AstcDecodeMode::CpuAsynchronous,
                                                             "accelerate_astc",
                                                             Category::RendererAdvanced};
-    SwitchableSetting<NvdecEmulation> nvdec_emulation{linkage, NvdecEmulation::Gpu, "nvdec_emulation", Category::RendererAdvanced};
+    SwitchableSetting<NvdecEmulation> nvdec_emulation{
+        linkage, NvdecEmulation::Gpu, "nvdec_emulation", Category::RendererAdvanced};
     SwitchableSetting<AstcRecompression, true> astc_recompression{linkage,
                                                                   AstcRecompression::Uncompressed,
                                                                   AstcRecompression::Uncompressed,
