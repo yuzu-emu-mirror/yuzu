@@ -9,17 +9,17 @@ namespace Service::PM {
 DebugMonitorService::DebugMonitorService(Core::System& system_)
     : ServiceFramework{system_, "pm:dmnt"} {
     // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "GetExceptionProcessIdList"},
-            {1, nullptr, "StartProcess"},
-            {2, C<&DebugMonitorService::GetProcessId>, "GetProcessId"},
-            {3, nullptr, "HookToCreateProcess"},
-            {4, C<&DebugMonitorService::GetApplicationProcessId>, "GetApplicationProcessId"},
-            {5, nullptr, "HookToCreateApplicationProgress"},
-            {6, nullptr, "ClearHook"},
-            {65000, C<&DebugMonitorService::AtmosphereGetProcessInfo>, "AtmosphereGetProcessInfo"},
-            {65001, nullptr, "AtmosphereGetCurrentLimitInfo"},
-        };
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetExceptionProcessIdList"},
+        {1, nullptr, "StartProcess"},
+        {2, C<&DebugMonitorService::GetProcessId>, "GetProcessId"},
+        {3, nullptr, "HookToCreateProcess"},
+        {4, C<&DebugMonitorService::GetApplicationProcessId>, "GetApplicationProcessId"},
+        {5, nullptr, "HookToCreateApplicationProcess"},
+        {6, nullptr, "ClearHook"},
+        {65000, C<&DebugMonitorService::AtmosphereGetProcessInfo>, "AtmosphereGetProcessInfo"},
+        {65001, nullptr, "AtmosphereGetCurrentLimitInfo"},
+    };
     // clang-format on
 
     RegisterHandlers(functions);
