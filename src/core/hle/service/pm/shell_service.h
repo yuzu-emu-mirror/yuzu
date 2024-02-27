@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "core/hle/service/cmif_types.h"
 #include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/service.h"
 
@@ -13,7 +14,7 @@ public:
     explicit ShellService(Core::System& system_);
 
 private:
-    void GetApplicationProcessIdForShell(HLERequestContext& ctx);
+    Result GetApplicationProcessIdForShell(Out<ProcessId> out_process_id);
 };
 
 } // namespace Service::PM

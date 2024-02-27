@@ -7,7 +7,7 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/result.h"
-#include "core/hle/service/ipc_helpers.h"
+#include "core/hle/service/cmif_types.h"
 
 namespace Service::PM {
 
@@ -26,6 +26,18 @@ enum class BootMode {
     SafeMode = 2,
 };
 
+struct ProgramLocation {
+    u64 program_id;
+    u8 storage_id;
+};
+static_assert(sizeof(ProgramLocation) == 0x10, "ProgramLocation has an invalid size");
+
+struct OverrideStatus {
+    u64 keys_held;
+    u64 flags;
+};
+static_assert(sizeof(OverrideStatus) == 0x10, "OverrideStatus has an invalid size");
+
 using ProcessList = std::list<Kernel::KScopedAutoObject<Kernel::KProcess>>;
 
 template <typename F>
@@ -40,12 +52,14 @@ static inline Kernel::KScopedAutoObject<Kernel::KProcess> SearchProcessList(
     return iter->GetPointerUnsafe();
 }
 
-static inline void GetApplicationPidGeneric(HLERequestContext& ctx, ProcessList& process_list) {
+static inline Result GetApplicationPidGeneric(Out<ProcessId> out_process_id,
+                                              ProcessList& process_list) {
     auto process = SearchProcessList(process_list, [](auto& p) { return p->IsApplication(); });
 
-    IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(ResultSuccess);
-    rb.Push(process.IsNull() ? NO_PROCESS_FOUND_PID : process->GetProcessId());
+    *out_process_id =
+        process.IsNull() ? ProcessId(NO_PROCESS_FOUND_PID) : ProcessId(process->GetProcessId());
+
+    R_SUCCEED();
 }
 
 } // namespace Service::PM

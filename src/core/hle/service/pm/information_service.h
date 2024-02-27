@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "core/hle/service/ipc_helpers.h"
+#include "core/hle/service/cmif_types.h"
 #include "core/hle/service/service.h"
 
 namespace Service::PM {
@@ -13,8 +13,8 @@ public:
     explicit InformationService(Core::System& system_);
 
 private:
-    void GetProgramId(HLERequestContext& ctx);
-    void AtmosphereGetProcessId(HLERequestContext& ctx);
+    Result GetProgramId(Out<u64> out_program_id, u64 process_id);
+    Result AtmosphereGetProcessId(Out<ProcessId> out_process_id, u64 program_id);
 };
 
 } // namespace Service::PM

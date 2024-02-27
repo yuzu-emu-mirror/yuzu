@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "core/hle/service/ipc_helpers.h"
+#include "core/hle/service/cmif_types.h"
+#include "core/hle/service/pm/pm_types.h"
 #include "core/hle/service/service.h"
 
 namespace Service::PM {
@@ -13,8 +14,10 @@ public:
     explicit DebugMonitorService(Core::System& system_);
 
 private:
-    void GetProcessId(HLERequestContext& ctx);
-    void GetApplicationProcessId(HLERequestContext& ctx);
-    void AtmosphereGetProcessInfo(HLERequestContext& ctx);
+    Result GetProcessId(Out<ProcessId> out_process_id, u64 program_id);
+    Result GetApplicationProcessId(Out<ProcessId> out_process_id);
+    Result AtmosphereGetProcessInfo(OutCopyHandle<Kernel::KProcess> out_process_handle,
+                                    Out<ProgramLocation> out_location,
+                                    Out<OverrideStatus> out_status, ProcessId process_id);
 };
 } // namespace Service::PM

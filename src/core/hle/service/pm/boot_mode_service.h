@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "core/hle/service/ipc_helpers.h"
+#include "core/hle/service/cmif_types.h"
 #include "core/hle/service/pm/pm_types.h"
 #include "core/hle/service/service.h"
 
@@ -14,8 +14,8 @@ public:
     explicit BootModeService(Core::System& system_);
 
 private:
-    void GetBootMode(HLERequestContext& ctx);
-    void SetMaintenanceBoot(HLERequestContext& ctx);
+    Result GetBootMode(Out<u32> out_boot_mode);
+    Result SetMaintenanceBoot();
 
     BootMode boot_mode = BootMode::Normal;
 };
