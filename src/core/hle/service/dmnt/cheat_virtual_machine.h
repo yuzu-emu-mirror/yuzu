@@ -3,13 +3,14 @@
 
 #pragma once
 
+#include <span>
 #include <variant>
-#include <vector>
-#include <fmt/printf.h>
-#include "common/common_types.h"
-#include "core/memory/dmnt_cheat_types.h"
 
-namespace Core::Memory {
+#include "common/common_types.h"
+#include "core/hle/service/dmnt/dmnt_types.h"
+
+namespace Service::DMNT {
+class CheatProcessManager;
 
 enum class CheatVmOpcodeType : u32 {
     StoreStatic = 0,
@@ -259,25 +260,8 @@ struct CheatVmOpcode {
         opcode{};
 };
 
-class DmntCheatVm {
+class CheatVirtualMachine {
 public:
-    /// Helper Type for DmntCheatVm <=> yuzu Interface
-    class Callbacks {
-    public:
-        virtual ~Callbacks();
-
-        virtual void MemoryReadUnsafe(VAddr address, void* data, u64 size) = 0;
-        virtual void MemoryWriteUnsafe(VAddr address, const void* data, u64 size) = 0;
-
-        virtual u64 HidKeysDown() = 0;
-
-        virtual void PauseProcess() = 0;
-        virtual void ResumeProcess() = 0;
-
-        virtual void DebugLog(u8 id, u64 value) = 0;
-        virtual void CommandLog(std::string_view data) = 0;
-    };
-
     static constexpr std::size_t MaximumProgramOpcodeCount = 0x400;
     static constexpr std::size_t NumRegisters = 0x10;
     static constexpr std::size_t NumReadableStaticRegisters = 0x80;
@@ -285,18 +269,43 @@ public:
     static constexpr std::size_t NumStaticRegisters =
         NumReadableStaticRegisters + NumWritableStaticRegisters;
 
-    explicit DmntCheatVm(std::unique_ptr<Callbacks> callbacks_);
-    ~DmntCheatVm();
+    explicit CheatVirtualMachine(CheatProcessManager& cheat_manager);
+    ~CheatVirtualMachine();
 
     std::size_t GetProgramSize() const {
         return this->num_opcodes;
     }
 
-    bool LoadProgram(const std::vector<CheatEntry>& cheats);
+    bool LoadProgram(std::span<const CheatEntry> cheats);
     void Execute(const CheatProcessMetadata& metadata);
 
+    u64 GetStaticRegister(std::size_t register_index) const {
+        return static_registers[register_index];
+    }
+
+    void SetStaticRegister(std::size_t register_index, u64 value) {
+        static_registers[register_index] = value;
+    }
+
+    void ResetStaticRegisters() {
+        static_registers = {};
+    }
+
 private:
-    std::unique_ptr<Callbacks> callbacks;
+    bool DecodeNextOpcode(CheatVmOpcode& out);
+    void SkipConditionalBlock(bool is_if);
+    void ResetState();
+
+    // For implementing the DebugLog opcode.
+    void DebugLog(u32 log_id, u64 value) const;
+
+    void LogOpcode(const CheatVmOpcode& opcode) const;
+
+    static u64 GetVmInt(VmInt value, u32 bit_width);
+    static u64 GetCheatProcessAddress(const CheatProcessMetadata& metadata,
+                                      MemoryAccessType mem_type, u64 rel_address);
+
+    CheatProcessManager& manager;
 
     std::size_t num_opcodes = 0;
     std::size_t instruction_ptr = 0;
@@ -307,19 +316,6 @@ private:
     std::array<u64, NumRegisters> saved_values{};
     std::array<u64, NumStaticRegisters> static_registers{};
     std::array<std::size_t, NumRegisters> loop_tops{};
-
-    bool DecodeNextOpcode(CheatVmOpcode& out);
-    void SkipConditionalBlock(bool is_if);
-    void ResetState();
-
-    // For implementing the DebugLog opcode.
-    void DebugLog(u32 log_id, u64 value);
-
-    void LogOpcode(const CheatVmOpcode& opcode);
-
-    static u64 GetVmInt(VmInt value, u32 bit_width);
-    static u64 GetCheatProcessAddress(const CheatProcessMetadata& metadata,
-                                      MemoryAccessType mem_type, u64 rel_address);
 };
 
-}; // namespace Core::Memory
+}; // namespace Service::DMNT

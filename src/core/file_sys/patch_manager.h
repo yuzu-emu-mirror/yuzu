@@ -10,7 +10,7 @@
 #include "common/common_types.h"
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/vfs/vfs_types.h"
-#include "core/memory/dmnt_cheat_types.h"
+#include "core/hle/service/dmnt/dmnt_types.h"
 
 namespace Core {
 class System;
@@ -18,6 +18,10 @@ class System;
 
 namespace Service::FileSystem {
 class FileSystemController;
+}
+
+namespace Service::DMNT {
+struct CheatEntry;
 }
 
 namespace FileSys {
@@ -65,7 +69,7 @@ public:
     [[nodiscard]] bool HasNSOPatch(const BuildID& build_id, std::string_view name) const;
 
     // Creates a CheatList object with all
-    [[nodiscard]] std::vector<Core::Memory::CheatEntry> CreateCheatList(
+    [[nodiscard]] std::vector<Service::DMNT::CheatEntry> CreateCheatList(
         const BuildID& build_id) const;
 
     // Currently tracked RomFS patches:

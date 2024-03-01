@@ -40,7 +40,6 @@ enum class ResultStatus : u16;
 } // namespace Loader
 
 namespace Core::Memory {
-struct CheatEntry;
 class Memory;
 } // namespace Core::Memory
 
@@ -63,6 +62,11 @@ class FrontendAppletHolder;
 namespace APM {
 class Controller;
 }
+
+namespace DMNT {
+struct CheatEntry;
+class CheatProcessManager;
+} // namespace DMNT
 
 namespace FileSystem {
 class FileSystemController;
@@ -345,7 +349,7 @@ public:
 
     [[nodiscard]] FileSys::VirtualFilesystem GetFilesystem() const;
 
-    void RegisterCheatList(const std::vector<Memory::CheatEntry>& list,
+    void RegisterCheatList(std::span<const Service::DMNT::CheatEntry> list,
                            const std::array<u8, 0x20>& build_id, u64 main_region_begin,
                            u64 main_region_size);
 
@@ -386,6 +390,9 @@ public:
 
     [[nodiscard]] Core::Debugger& GetDebugger();
     [[nodiscard]] const Core::Debugger& GetDebugger() const;
+
+    [[nodiscard]] Service::DMNT::CheatProcessManager& GetCheatManager();
+    [[nodiscard]] const Service::DMNT::CheatProcessManager& GetCheatManager() const;
 
     /// Gets a mutable reference to the Room Network.
     [[nodiscard]] Network::RoomNetwork& GetRoomNetwork();

@@ -24,12 +24,13 @@
 #include "core/file_sys/vfs/vfs_cached.h"
 #include "core/file_sys/vfs/vfs_layered.h"
 #include "core/file_sys/vfs/vfs_vector.h"
+#include "core/hle/service/dmnt/cheat_parser.h"
+#include "core/hle/service/dmnt/dmnt_types.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ns/language.h"
 #include "core/hle/service/set/settings_server.h"
 #include "core/loader/loader.h"
 #include "core/loader/nso.h"
-#include "core/memory/cheat_engine.h"
 
 namespace FileSys {
 namespace {
@@ -79,7 +80,7 @@ VirtualDir FindSubdirectoryCaseless(const VirtualDir dir, std::string_view name)
 #endif
 }
 
-std::optional<std::vector<Core::Memory::CheatEntry>> ReadCheatFileFromFolder(
+std::optional<std::vector<Service::DMNT::CheatEntry>> ReadCheatFileFromFolder(
     u64 title_id, const PatchManager::BuildID& build_id_, const VirtualDir& base_path, bool upper) {
     const auto build_id_raw = Common::HexToString(build_id_, upper);
     const auto build_id = build_id_raw.substr(0, sizeof(u64) * 2);
@@ -98,7 +99,7 @@ std::optional<std::vector<Core::Memory::CheatEntry>> ReadCheatFileFromFolder(
         return std::nullopt;
     }
 
-    const Core::Memory::TextCheatParser parser;
+    const Service::DMNT::CheatParser parser;
     return parser.Parse(std::string_view(reinterpret_cast<const char*>(data.data()), data.size()));
 }
 
@@ -313,7 +314,7 @@ bool PatchManager::HasNSOPatch(const BuildID& build_id_, std::string_view name) 
     return !CollectPatches(patch_dirs, build_id).empty();
 }
 
-std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(
+std::vector<Service::DMNT::CheatEntry> PatchManager::CreateCheatList(
     const BuildID& build_id_) const {
     const auto load_dir = fs_controller.GetModificationLoadRoot(title_id);
     if (load_dir == nullptr) {
@@ -326,7 +327,7 @@ std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(
     std::sort(patch_dirs.begin(), patch_dirs.end(),
               [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
 
-    std::vector<Core::Memory::CheatEntry> out;
+    std::vector<Service::DMNT::CheatEntry> out;
     for (const auto& subdir : patch_dirs) {
         if (std::find(disabled.cbegin(), disabled.cend(), subdir->GetName()) != disabled.cend()) {
             continue;
