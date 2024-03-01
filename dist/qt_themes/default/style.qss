@@ -1,3 +1,17 @@
+/*
+* SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+* SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+QWidget:item:hover {
+    background-color: #18465d;
+    color: #eff0f1;
+}
+
+QWidget:item:selected {
+    background-color: #18465d;
+}
+
 QAbstractSpinBox {
     min-height: 19px;
 }
@@ -11,7 +25,7 @@ QPushButton#TogglableStatusBarButton {
 }
 
 QPushButton#TogglableStatusBarButton:checked {
-    color: #000000;
+    color: palette(text);
 }
 
 QPushButton#TogglableStatusBarButton:hover {
@@ -38,6 +52,10 @@ QPushButton#RendererStatusBarButton:!checked {
     color: #0066ff;
 }
 
+QPushButton#RendererStatusBarButton:!checked[dark=true] {
+    color: #00ccdd;
+}
+
 QPushButton#GPUStatusBarButton {
     color: #656565;
     border: 1px solid transparent;
@@ -54,13 +72,21 @@ QPushButton#GPUStatusBarButton:checked {
     color: #b06020;
 }
 
+QPushButton#GPUStatusBarButton:checked[dark=true] {
+    color: #ff8040;
+}
+
 QPushButton#GPUStatusBarButton:!checked {
     color: #109010;
 }
 
+QPushButton#GPUStatusBarButton:!checked[dark=true] {
+    color: #40dd40;
+}
+
 QPushButton#DockingStatusBarButton {
     min-width: 0px;
-    color: #000000;
+    color: palette(text);
     border: 1px solid transparent;
     background-color: transparent;
     padding: 0px 3px 0px 3px;
@@ -117,10 +143,6 @@ QWidget#middleControllerApplet QComboBox {
 }
 
 QWidget#connectedControllers {
-    background: transparent;
-}
-
-QWidget#closeButtons {
     background: transparent;
 }
 
@@ -372,7 +394,7 @@ QStackedWidget#stackedDialog QTextBrowser QScrollBar::vertical {
     border-radius: 4px;
 }
 
-QStackedWidget#stackedDialog QTextBrowser QScrollBar::horizoncal {
+QStackedWidget#stackedDialog QTextBrowser QScrollBar::horizontal {
     background: #cdcdcd;
     height: 15px;
     margin: 3px 15px 3px 15px;

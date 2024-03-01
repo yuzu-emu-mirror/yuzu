@@ -18,6 +18,7 @@
 #include <QString>
 #include <QToolButton>
 #include <QVariant>
+#include <QtGlobal>
 
 #include "common/common_types.h"
 #include "common/fs/path_util.h"
@@ -28,6 +29,8 @@
 #include "core/frontend/framebuffer_layout.h"
 #include "ui_configure_ui.h"
 #include "yuzu/uisettings.h"
+
+using Settings::DarkModeState;
 
 namespace {
 constexpr std::array default_game_icon_sizes{
@@ -106,10 +109,55 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
 
     InitializeLanguageComboBox();
 
-    for (const auto& theme : UISettings::themes) {
+    for (const auto& theme : UISettings::included_themes) {
         ui->theme_combobox->addItem(QString::fromUtf8(theme.first),
                                     QString::fromUtf8(theme.second));
     }
+
+    // Add custom styles stored in yuzu directory
+    const QDir local_dir(
+        QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ThemesDir)));
+    for (const QString& theme_dir :
+         local_dir.entryList(QDir::NoDot | QDir::NoDotDot | QDir::Dirs)) {
+        // folders ending with "_dark" are reserved for dark variant icons of other styles
+        if (theme_dir.endsWith(QStringLiteral("_dark"))) {
+            continue;
+        }
+        // Split at _ and capitalize words in name
+        QStringList cased_name;
+        for (QString word : theme_dir.split(QChar::fromLatin1('_'))) {
+            cased_name.append(word.at(0).toUpper() + word.mid(1));
+        }
+        QString theme_name = cased_name.join(QChar::fromLatin1(' '));
+        theme_name += QStringLiteral(" (%1)").arg(tr("Custom"));
+
+        ui->theme_combobox->addItem(theme_name, theme_dir);
+    }
+
+    QByteArray current_qt_qpa = qgetenv("QT_QPA_PLATFORM");
+#ifdef _WIN32
+    // Indicate which option needs a restart to be applied, depending on current environment
+    // variable
+    if (current_qt_qpa.contains("darkmode=2")) {
+        ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
+        ui->dark_mode_combobox->addItem(tr("Always On") + QStringLiteral(" (") +
+                                            tr("Needs restart") + QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::On));
+        ui->dark_mode_combobox->addItem(tr("Always Off") + QStringLiteral(" (") +
+                                            tr("Needs restart") + QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::Off));
+    } else {
+        ui->dark_mode_combobox->addItem(tr("Auto") + QStringLiteral(" (") + tr("Needs restart") +
+                                            QStringLiteral(")"),
+                                        QVariant::fromValue(DarkModeState::Auto));
+        ui->dark_mode_combobox->addItem(tr("Always On"), QVariant::fromValue(DarkModeState::On));
+        ui->dark_mode_combobox->addItem(tr("Always Off"), QVariant::fromValue(DarkModeState::Off));
+    }
+#else
+    ui->dark_mode_combobox->addItem(tr("Auto"), QVariant::fromValue(DarkModeState::Auto));
+    ui->dark_mode_combobox->addItem(tr("Always On"), QVariant::fromValue(DarkModeState::On));
+    ui->dark_mode_combobox->addItem(tr("Always Off"), QVariant::fromValue(DarkModeState::Off));
+#endif
 
     InitializeIconSizeComboBox();
     InitializeRowComboBoxes();
@@ -164,7 +212,9 @@ ConfigureUi::~ConfigureUi() = default;
 
 void ConfigureUi::ApplyConfiguration() {
     UISettings::values.theme =
-        ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString().toStdString();
+        ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
+    UISettings::values.dark_mode_state =
+        static_cast<DarkModeState>(ui->dark_mode_combobox->currentData().toUInt());
     UISettings::values.show_add_ons = ui->show_add_ons->isChecked();
     UISettings::values.show_compat = ui->show_compat->isChecked();
     UISettings::values.show_size = ui->show_size->isChecked();
@@ -191,8 +241,9 @@ void ConfigureUi::RequestGameListUpdate() {
 }
 
 void ConfigureUi::SetConfiguration() {
-    ui->theme_combobox->setCurrentIndex(
-        ui->theme_combobox->findData(QString::fromStdString(UISettings::values.theme)));
+    ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
+    ui->dark_mode_combobox->setCurrentIndex(
+        ui->dark_mode_combobox->findData(QVariant::fromValue(UISettings::values.dark_mode_state)));
     ui->language_combobox->setCurrentIndex(ui->language_combobox->findData(
         QString::fromStdString(UISettings::values.language.GetValue())));
     ui->show_add_ons->setChecked(UISettings::values.show_add_ons.GetValue());

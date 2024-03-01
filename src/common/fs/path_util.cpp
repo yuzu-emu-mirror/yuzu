@@ -121,6 +121,7 @@ public:
         GenerateYuzuPath(YuzuPath::ConfigDir, yuzu_path_config);
         GenerateYuzuPath(YuzuPath::CrashDumpsDir, yuzu_path / CRASH_DUMPS_DIR);
         GenerateYuzuPath(YuzuPath::DumpDir, yuzu_path / DUMP_DIR);
+        GenerateYuzuPath(YuzuPath::IconsDir, yuzu_path / ICONS_DIR);
         GenerateYuzuPath(YuzuPath::KeysDir, yuzu_path / KEYS_DIR);
         GenerateYuzuPath(YuzuPath::LoadDir, yuzu_path / LOAD_DIR);
         GenerateYuzuPath(YuzuPath::LogDir, yuzu_path / LOG_DIR);
@@ -130,7 +131,7 @@ public:
         GenerateYuzuPath(YuzuPath::SDMCDir, yuzu_path / SDMC_DIR);
         GenerateYuzuPath(YuzuPath::ShaderDir, yuzu_path / SHADER_DIR);
         GenerateYuzuPath(YuzuPath::TASDir, yuzu_path / TAS_DIR);
-        GenerateYuzuPath(YuzuPath::IconsDir, yuzu_path / ICONS_DIR);
+        GenerateYuzuPath(YuzuPath::ThemesDir, yuzu_path / THEMES_DIR);
     }
 
 private:
