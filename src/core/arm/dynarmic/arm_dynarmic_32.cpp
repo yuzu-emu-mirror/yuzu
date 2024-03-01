@@ -225,45 +225,45 @@ std::shared_ptr<Dynarmic::A32::Jit> ArmDynarmic32::MakeJit(Common::PageTable* pa
     }
 
     // Safe optimizations
-    if (Settings::values.cpu_debug_mode) {
-        if (!Settings::values.cpuopt_page_tables) {
-            config.page_table = nullptr;
-        }
-        if (!Settings::values.cpuopt_block_linking) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::BlockLinking;
-        }
-        if (!Settings::values.cpuopt_return_stack_buffer) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::ReturnStackBuffer;
-        }
-        if (!Settings::values.cpuopt_fast_dispatcher) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::FastDispatch;
-        }
-        if (!Settings::values.cpuopt_context_elimination) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::GetSetElimination;
-        }
-        if (!Settings::values.cpuopt_const_prop) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::ConstProp;
-        }
-        if (!Settings::values.cpuopt_misc_ir) {
-            config.optimizations &= ~Dynarmic::OptimizationFlag::MiscIROpt;
-        }
-        if (!Settings::values.cpuopt_reduce_misalign_checks) {
-            config.only_detect_misalignment_via_page_table_on_page_boundary = false;
-        }
-        if (!Settings::values.cpuopt_fastmem) {
-            config.fastmem_pointer = nullptr;
-            config.fastmem_exclusive_access = false;
-        }
-        if (!Settings::values.cpuopt_fastmem_exclusives) {
-            config.fastmem_exclusive_access = false;
-        }
-        if (!Settings::values.cpuopt_recompile_exclusives) {
-            config.recompile_on_exclusive_fastmem_failure = false;
-        }
-        if (!Settings::values.cpuopt_ignore_memory_aborts) {
-            config.check_halt_on_memory_access = true;
-        }
-    } else {
+    if (!Settings::values.cpuopt_page_tables) {
+        config.page_table = nullptr;
+    }
+    if (!Settings::values.cpuopt_block_linking) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::BlockLinking;
+    }
+    if (!Settings::values.cpuopt_return_stack_buffer) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::ReturnStackBuffer;
+    }
+    if (!Settings::values.cpuopt_fast_dispatcher) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::FastDispatch;
+    }
+    if (!Settings::values.cpuopt_context_elimination) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::GetSetElimination;
+    }
+    if (!Settings::values.cpuopt_const_prop) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::ConstProp;
+    }
+    if (!Settings::values.cpuopt_misc_ir) {
+        config.optimizations &= ~Dynarmic::OptimizationFlag::MiscIROpt;
+    }
+    if (!Settings::values.cpuopt_reduce_misalign_checks) {
+        config.only_detect_misalignment_via_page_table_on_page_boundary = false;
+    }
+    if (!Settings::values.cpuopt_fastmem) {
+        config.fastmem_pointer = nullptr;
+        config.fastmem_exclusive_access = false;
+    }
+    if (!Settings::values.cpuopt_fastmem_exclusives) {
+        config.fastmem_exclusive_access = false;
+    }
+    if (!Settings::values.cpuopt_recompile_exclusives) {
+        config.recompile_on_exclusive_fastmem_failure = false;
+    }
+    if (!Settings::values.cpuopt_ignore_memory_aborts) {
+        config.check_halt_on_memory_access = true;
+    }
+
+    if (!Settings::values.cpu_debug_mode) {
         // Unsafe optimizations
         if (Settings::values.cpu_accuracy.GetValue() == Settings::CpuAccuracy::Unsafe) {
             config.unsafe_optimizations = true;
