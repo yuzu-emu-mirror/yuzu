@@ -48,6 +48,7 @@ Core::Frontend::EmuWindow::WindowSystemInfo GetWindowSystemInfo(QWindow* window)
 #else
     QPlatformNativeInterface* pni = QGuiApplication::platformNativeInterface();
     wsi.display_connection = pni->nativeResourceForWindow("display", window);
+    wsi.mouse_pointer = pni->nativeResourceForIntegration("wl_pointer");
     if (wsi.type == Core::Frontend::WindowSystemType::Wayland)
         wsi.render_surface = window ? pni->nativeResourceForWindow("surface", window) : nullptr;
     else

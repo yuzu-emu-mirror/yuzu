@@ -33,6 +33,11 @@
 #include <QWindow>
 #include <QtCore/qobjectdefs.h>
 
+#ifdef HAS_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
+#include <wayland-client.h>
+#endif
+
 #ifdef HAS_OPENGL
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -354,6 +359,17 @@ void GRenderWindow::OnFramebufferSizeChanged() {
     const qreal pixel_ratio = windowPixelRatio();
     const u32 width = this->width() * pixel_ratio;
     const u32 height = this->height() * pixel_ratio;
+
+#ifdef HAS_WAYLAND
+    if (viewport) {
+        if (width > 0 && height > 0) {
+            wp_viewport_set_destination(viewport, this->width(), this->height());
+        } else {
+            wp_viewport_set_destination(viewport, -1, -1);
+        }
+    }
+#endif // HAS_WAYLAND
+
     UpdateCurrentFramebufferLayout(width, height);
 }
 
@@ -661,7 +677,99 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
     emit MouseActivity();
 }
 
+#ifdef HAS_WAYLAND
+void GRenderWindow::GlobalAddHandler(void* data, wl_registry* registry, u32 name,
+                                     const char* interface, u32 version) {
+    GRenderWindow* render_window = static_cast<GRenderWindow*>(data);
+
+    if (std::strcmp(interface, zwp_pointer_constraints_v1_interface.name) == 0 &&
+        version == static_cast<u32>(zwp_pointer_constraints_v1_interface.version)) {
+        render_window->pointer_constraints = static_cast<zwp_pointer_constraints_v1*>(
+            wl_registry_bind(registry, name, &zwp_pointer_constraints_v1_interface, version));
+    } else if (std::strcmp(interface, zwp_relative_pointer_manager_v1_interface.name) == 0 &&
+               version == static_cast<u32>(zwp_relative_pointer_manager_v1_interface.version)) {
+        render_window->relative_pointer_manager = static_cast<zwp_relative_pointer_manager_v1*>(
+            wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, version));
+    } else if (std::strcmp(interface, wp_viewporter_interface.name) == 0) {
+        render_window->viewporter = static_cast<wp_viewporter*>(
+            wl_registry_bind(registry, name, &wp_viewporter_interface, version));
+    }
+}
+
+void GRenderWindow::GlobalRemoveHandler(void* data, wl_registry* registry, u32 name) {}
+
+void GRenderWindow::RelativePointerMotionHandler(void* data,
+                                                 zwp_relative_pointer_v1* zwp_relative_pointer_v1,
+                                                 u32 utime_hi, u32 utime_lo, wl_fixed_t dx,
+                                                 wl_fixed_t dy, wl_fixed_t dx_unaccel,
+                                                 wl_fixed_t dy_unaccel) {
+    GRenderWindow* render_window = static_cast<GRenderWindow*>(data);
+    render_window->CheckWaylandPointerLock();
+    if (!render_window->IsWaylandPointerLocked())
+        return;
+
+    render_window->input_subsystem->GetMouse()->Move(wl_fixed_to_int(dx_unaccel),
+                                                     wl_fixed_to_int(dy_unaccel), 0, 0);
+}
+
+void GRenderWindow::PointerLockedHandler(void* data, zwp_locked_pointer_v1*) {
+    GRenderWindow* render_window = static_cast<GRenderWindow*>(data);
+    render_window->setCursor(QCursor(Qt::BlankCursor));
+}
+void GRenderWindow::PointerUnlockedHandler(void* data, zwp_locked_pointer_v1*) {
+    GRenderWindow* render_window = static_cast<GRenderWindow*>(data);
+    render_window->locked_pointer = nullptr;
+    render_window->unsetCursor();
+}
+
+void GRenderWindow::CheckWaylandPointerLock() {
+    if (!pointer_constraints || !relative_pointer_manager)
+        return;
+
+    bool mouse_panning = Settings::values.mouse_panning && !Settings::values.mouse_enabled;
+
+    if (IsWaylandPointerLocked() != mouse_panning) {
+        if (mouse_panning) {
+            LockWaylandPointer();
+        } else {
+            UnlockWaylandPointer();
+        }
+    }
+}
+
+bool GRenderWindow::IsWaylandPointerLocked() {
+    return locked_pointer;
+}
+
+void GRenderWindow::LockWaylandPointer() {
+    if (pointer_constraints && relative_pointer && !locked_pointer) {
+        locked_pointer = zwp_pointer_constraints_v1_lock_pointer(
+            pointer_constraints, static_cast<wl_surface*>(window_info.render_surface),
+            static_cast<wl_pointer*>(window_info.mouse_pointer), nullptr,
+            ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_ONESHOT);
+
+        static constexpr zwp_locked_pointer_v1_listener locked_pointer_listener = {
+            .locked = PointerLockedHandler,
+            .unlocked = PointerUnlockedHandler,
+        };
+        zwp_locked_pointer_v1_add_listener(locked_pointer, &locked_pointer_listener, this);
+    }
+}
+
+void GRenderWindow::UnlockWaylandPointer() {
+    if (locked_pointer) {
+        zwp_locked_pointer_v1_destroy(locked_pointer);
+        locked_pointer = nullptr;
+    }
+}
+#endif // HAS_WAYLAND
+
 void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
+#ifdef HAS_WAYLAND
+    if (IsWaylandPointerLocked())
+        return;
+#endif // HAS_WAYLAND
+
     // Touch input is handled in TouchUpdateEvent
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
@@ -940,6 +1048,39 @@ bool GRenderWindow::InitRenderTarget() {
 
     // Update the Window System information with the new render target
     window_info = QtCommon::GetWindowSystemInfo(child_widget->windowHandle());
+
+#ifdef HAS_WAYLAND
+    if (window_info.type == Core::Frontend::WindowSystemType::Wayland) {
+        wl_display* display = static_cast<wl_display*>(window_info.display_connection);
+
+        wl_registry* registry = wl_display_get_registry(display);
+
+        static constexpr wl_registry_listener registryListener = {
+            .global = GlobalAddHandler,
+            .global_remove = GlobalRemoveHandler,
+        };
+        wl_registry_add_listener(registry, &registryListener, this);
+
+        // This should run GlobalAddHandler getting the protocol globals
+        wl_display_roundtrip(display);
+
+        if (viewporter) {
+            viewport = wp_viewporter_get_viewport(
+                viewporter, static_cast<wl_surface*>(window_info.render_surface));
+        }
+
+        if (relative_pointer_manager) {
+            relative_pointer = zwp_relative_pointer_manager_v1_get_relative_pointer(
+                relative_pointer_manager, static_cast<wl_pointer*>(window_info.mouse_pointer));
+
+            static const zwp_relative_pointer_v1_listener relative_pointer_listener = {
+                .relative_motion = RelativePointerMotionHandler,
+            };
+            zwp_relative_pointer_v1_add_listener(relative_pointer, &relative_pointer_listener,
+                                                 this);
+        }
+    }
+#endif // HAS_WAYLAND
 
     child_widget->resize(Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height);
     layout()->addWidget(child_widget);

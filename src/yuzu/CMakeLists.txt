@@ -393,6 +393,33 @@ if (UNIX AND NOT APPLE)
     target_link_libraries(yuzu PRIVATE Qt${QT_MAJOR_VERSION}::DBus)
 endif()
 
+if (UNIX AND NOT APPLE)
+    find_package(ECM NO_MODULE)
+    if (ECM_FOUND)
+        list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+        find_package(Wayland COMPONENTS Client)
+        if (Wayland_FOUND)
+            find_package(WaylandScanner REQUIRED)
+            find_package(WaylandProtocols 1.15 REQUIRED)
+            ecm_add_wayland_client_protocol(WAYLAND_PROTOCOL_SRCS
+                PROTOCOL ${WaylandProtocols_DATADIR}/unstable/relative-pointer/relative-pointer-unstable-v1.xml
+                BASENAME relative-pointer-unstable-v1)
+            ecm_add_wayland_client_protocol(WAYLAND_PROTOCOL_SRCS
+                PROTOCOL ${WaylandProtocols_DATADIR}/unstable/pointer-constraints/pointer-constraints-unstable-v1.xml
+                BASENAME pointer-constraints-unstable-v1)
+            ecm_add_wayland_client_protocol(WAYLAND_PROTOCOL_SRCS
+                PROTOCOL ${WaylandProtocols_DATADIR}/stable/viewporter/viewporter.xml
+                BASENAME viewporter)
+
+            target_link_libraries(yuzu PRIVATE Wayland::Client)
+            target_sources(yuzu PRIVATE ${WAYLAND_PROTOCOL_SRCS})
+            set_source_files_properties(${WAYLAND_PROTOCOL_SRCS} PROPERTIES SKIP_PRECOMPILE_HEADERS TRUE)
+
+            target_compile_definitions(yuzu PRIVATE HAS_WAYLAND)
+        endif()
+    endif()
+endif()
+
 target_compile_definitions(yuzu PRIVATE
     # Use QStringBuilder for string concatenation to reduce
     # the overall number of temporary strings created.
