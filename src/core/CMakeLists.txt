@@ -930,8 +930,17 @@ add_library(core STATIC
     hle/service/pctl/pctl_types.h
     hle/service/pcv/pcv.cpp
     hle/service/pcv/pcv.h
+    hle/service/pm/boot_mode_service.cpp
+    hle/service/pm/boot_mode_service.h
+    hle/service/pm/debug_monitor_service.cpp
+    hle/service/pm/debug_monitor_service.h
+    hle/service/pm/information_service.cpp
+    hle/service/pm/information_service.h
     hle/service/pm/pm.cpp
     hle/service/pm/pm.h
+    hle/service/pm/pm_types.h
+    hle/service/pm/shell_service.cpp
+    hle/service/pm/shell_service.h
     hle/service/prepo/prepo.cpp
     hle/service/prepo/prepo.h
     hle/service/psc/ovln/ovln_types.h

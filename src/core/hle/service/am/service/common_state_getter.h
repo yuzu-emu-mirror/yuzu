@@ -6,7 +6,7 @@
 #include "core/hle/service/am/am_types.h"
 #include "core/hle/service/apm/apm_controller.h"
 #include "core/hle/service/cmif_types.h"
-#include "core/hle/service/pm/pm.h"
+#include "core/hle/service/pm/pm_types.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings_types.h"
 
@@ -37,7 +37,7 @@ private:
     Result GetDefaultDisplayResolutionChangeEvent(OutCopyHandle<Kernel::KReadableEvent> out_event);
     Result GetOperationMode(Out<OperationMode> out_operation_mode);
     Result GetPerformanceMode(Out<APM::PerformanceMode> out_performance_mode);
-    Result GetBootMode(Out<PM::SystemBootMode> out_boot_mode);
+    Result GetBootMode(Out<PM::BootMode> out_boot_mode);
     Result IsVrModeEnabled(Out<bool> out_is_vr_mode_enabled);
     Result SetVrModeEnabled(bool is_vr_mode_enabled);
     Result SetLcdBacklighOffEnabled(bool is_lcd_backlight_off_enabled);
