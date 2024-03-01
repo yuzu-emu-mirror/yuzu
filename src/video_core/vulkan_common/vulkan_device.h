@@ -304,6 +304,11 @@ public:
         return properties.properties.limits.maxComputeSharedMemorySize;
     }
 
+    /// Returns the maximum number of uniform buffers allowed per stage.
+    VkDeviceSize GetMaxPerStageUniformBuffers() const {
+        return properties.properties.limits.maxPerStageDescriptorUniformBuffers;
+    }
+
     /// Returns float control properties of the device.
     const VkPhysicalDeviceFloatControlsPropertiesKHR& FloatControlProperties() const {
         return properties.float_controls;

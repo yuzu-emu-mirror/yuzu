@@ -46,6 +46,15 @@ std::string ChooseCbuf(EmitContext& ctx, const IR::Value& binding, std::string_v
 void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
              const IR::Value& offset, u32 num_bits, std::string_view cast = {},
              std::string_view bit_offset = {}) {
+    if (binding.IsImmediate()) {
+        const u32 binding_index{binding.U32()};
+        const u32 max_num_cbufs{ctx.runtime_info.max_num_cbufs};
+        if (binding_index >= max_num_cbufs) {
+            // cbuf index exceeds device limit
+            ctx.Add("{}=0u;", ret);
+            return;
+        }
+    }
     const bool is_immediate{offset.IsImmediate()};
     const bool component_indexing_bug{!is_immediate && ctx.profile.has_gl_component_indexing_bug};
     if (is_immediate) {

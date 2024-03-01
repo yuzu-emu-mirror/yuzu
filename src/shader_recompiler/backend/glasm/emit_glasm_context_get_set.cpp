@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/glasm/glasm_emit_context.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/profile.h"
+#include "shader_recompiler/runtime_info.h"
 #include "shader_recompiler/shader_info.h"
 
 namespace Shader::Backend::GLASM {
@@ -23,7 +24,14 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
     }
 
     if (binding.IsImmediate()) {
-        ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
+        const u32 binding_index{binding.U32()};
+        const u32 max_num_cbufs{ctx.runtime_info.max_num_cbufs};
+        if (binding_index >= max_num_cbufs) {
+            // cbuf index exceeds device limit
+            ctx.Add("MOV.S {},0;", ret);
+            return;
+        }
+        ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding_index, offset);
         return;
     }
 
