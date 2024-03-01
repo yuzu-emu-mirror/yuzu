@@ -6,27 +6,9 @@
 #include <type_traits>
 
 #include "common/assert.h"
+#include "common/typed_storage.h"
 
 namespace Common {
-namespace detail {
-template <typename T, size_t Size, size_t Align>
-struct TypedStorageImpl {
-    alignas(Align) u8 storage_[Size];
-};
-} // namespace detail
-
-template <typename T>
-using TypedStorage = detail::TypedStorageImpl<T, sizeof(T), alignof(T)>;
-
-template <typename T>
-static constexpr T* GetPointer(TypedStorage<T>& ts) {
-    return static_cast<T*>(static_cast<void*>(std::addressof(ts.storage_)));
-}
-
-template <typename T>
-static constexpr const T* GetPointer(const TypedStorage<T>& ts) {
-    return static_cast<const T*>(static_cast<const void*>(std::addressof(ts.storage_)));
-}
 
 namespace impl {
 

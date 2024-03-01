@@ -57,6 +57,7 @@ Result GetThreadId(Core::System& system, uint64_t* out_thread_id, Handle thread_
 void Break(Core::System& system, BreakReason break_reason, uint64_t arg, uint64_t size);
 Result OutputDebugString(Core::System& system, uint64_t debug_str, uint64_t len);
 void ReturnFromException(Core::System& system, Result result);
+Result GetInitialProcessIdRange(u64 *out, InitialProcessIdRangeInfo info);
 Result GetInfo(Core::System& system, uint64_t* out, InfoType info_type, Handle handle, uint64_t info_subtype);
 void FlushEntireDataCache(Core::System& system);
 Result FlushDataCache(Core::System& system, uint64_t address, uint64_t size);

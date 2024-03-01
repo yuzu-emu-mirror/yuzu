@@ -4,8 +4,9 @@
 #pragma once
 
 #include "common/alignment.h"
+#include "core/file_sys/fs_common.h"
+#include "core/file_sys/fs_save_data_types.h"
 #include "core/file_sys/fssystem/fs_i_storage.h"
-#include "core/file_sys/fssystem/fs_types.h"
 #include "core/file_sys/fssystem/fssystem_alignment_matching_storage.h"
 #include "core/file_sys/fssystem/fssystem_integrity_verification_storage.h"
 #include "core/file_sys/vfs/vfs_offset.h"

@@ -20,8 +20,8 @@
 #include "core/file_sys/vfs/vfs.h"
 #include "core/file_sys/vfs/vfs_offset.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/filesystem/fsp/fs_i_program_registry.h"
 #include "core/hle/service/filesystem/fsp/fsp_ldr.h"
-#include "core/hle/service/filesystem/fsp/fsp_pr.h"
 #include "core/hle/service/filesystem/fsp/fsp_srv.h"
 #include "core/hle/service/filesystem/romfs_controller.h"
 #include "core/hle/service/filesystem/save_data_controller.h"
@@ -298,13 +298,8 @@ FileSystemController::~FileSystemController() = default;
 Result FileSystemController::RegisterProcess(
     ProcessId process_id, ProgramId program_id,
     std::shared_ptr<FileSys::RomFSFactory>&& romfs_factory) {
-    std::scoped_lock lk{registration_lock};
-
-    registrations.emplace(process_id, Registration{
-                                          .program_id = program_id,
-                                          .romfs_factory = std::move(romfs_factory),
-                                          .save_data_factory = CreateSaveDataFactory(program_id),
-                                      });
+    system.GetProgramRegistry().RegisterProgramForLoader(
+        process_id, program_id, std::move(romfs_factory), CreateSaveDataFactory(program_id));
 
     LOG_DEBUG(Service_FS, "Registered for process {}", process_id);
     return ResultSuccess;
@@ -313,31 +308,28 @@ Result FileSystemController::RegisterProcess(
 Result FileSystemController::OpenProcess(
     ProgramId* out_program_id, std::shared_ptr<SaveDataController>* out_save_data_controller,
     std::shared_ptr<RomFsController>* out_romfs_controller, ProcessId process_id) {
-    std::scoped_lock lk{registration_lock};
-
-    const auto it = registrations.find(process_id);
-    if (it == registrations.end()) {
+    std::shared_ptr<FileSys::FsSrv::Impl::ProgramInfo> out_info;
+    if (system.GetProgramRegistry().GetProgramInfo(&out_info, process_id) != ResultSuccess) {
         return FileSys::ResultTargetNotFound;
     }
 
-    *out_program_id = it->second.program_id;
+    *out_program_id = out_info->GetProgramId();
     *out_save_data_controller =
-        std::make_shared<SaveDataController>(system, it->second.save_data_factory);
+        std::make_shared<SaveDataController>(system, out_info->GetSaveDataFactory());
     *out_romfs_controller =
-        std::make_shared<RomFsController>(it->second.romfs_factory, it->second.program_id);
+        std::make_shared<RomFsController>(out_info->GetRomFsFactory(), out_info->GetProgramId());
     return ResultSuccess;
 }
 
 void FileSystemController::SetPackedUpdate(ProcessId process_id, FileSys::VirtualFile update_raw) {
     LOG_TRACE(Service_FS, "Setting packed update for romfs");
 
-    std::scoped_lock lk{registration_lock};
-    const auto it = registrations.find(process_id);
-    if (it == registrations.end()) {
+    std::shared_ptr<FileSys::FsSrv::Impl::ProgramInfo> out_info;
+    if (system.GetProgramRegistry().GetProgramInfo(&out_info, process_id) != ResultSuccess) {
         return;
     }
 
-    it->second.romfs_factory->SetPackedUpdate(std::move(update_raw));
+    out_info->GetRomFsFactory()->SetPackedUpdate(std::move(update_raw));
 }
 
 std::shared_ptr<SaveDataController> FileSystemController::OpenSaveDataController() {
@@ -715,18 +707,13 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     }
 }
 
-void FileSystemController::Reset() {
-    std::scoped_lock lk{registration_lock};
-    registrations.clear();
-}
-
 void LoopProcess(Core::System& system) {
     auto server_manager = std::make_unique<ServerManager>(system);
 
     const auto FileSystemProxyFactory = [&] { return std::make_shared<FSP_SRV>(system); };
 
     server_manager->RegisterNamedService("fsp-ldr", std::make_shared<FSP_LDR>(system));
-    server_manager->RegisterNamedService("fsp:pr", std::make_shared<FSP_PR>(system));
+    server_manager->RegisterNamedService("fsp:pr", std::make_shared<IProgramRegistry>(system));
     server_manager->RegisterNamedService("fsp-srv", std::move(FileSystemProxyFactory));
     ServerManager::RunServer(std::move(server_manager));
 }

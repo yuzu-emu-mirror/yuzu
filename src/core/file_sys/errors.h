@@ -16,11 +16,13 @@ constexpr Result ResultPortSdCardNoDevice{ErrorModule::FS, 2001};
 constexpr Result ResultNotImplemented{ErrorModule::FS, 3001};
 constexpr Result ResultUnsupportedVersion{ErrorModule::FS, 3002};
 constexpr Result ResultOutOfRange{ErrorModule::FS, 3005};
+constexpr Result ResultAllocationMemoryFailedInProgramRegistryManagerA{ErrorModule::FS, 3258};
 constexpr Result ResultAllocationMemoryFailedInFileSystemBuddyHeapA{ErrorModule::FS, 3294};
 constexpr Result ResultAllocationMemoryFailedInNcaFileSystemDriverI{ErrorModule::FS, 3341};
 constexpr Result ResultAllocationMemoryFailedInNcaReaderA{ErrorModule::FS, 3363};
 constexpr Result ResultAllocationMemoryFailedInAesCtrCounterExtendedStorageA{ErrorModule::FS, 3399};
 constexpr Result ResultAllocationMemoryFailedInIntegrityRomFsStorageA{ErrorModule::FS, 3412};
+constexpr Result ResultAllocationMemoryFailedNew{ErrorModule::FS, 3420};
 constexpr Result ResultAllocationMemoryFailedMakeUnique{ErrorModule::FS, 3422};
 constexpr Result ResultAllocationMemoryFailedAllocateShared{ErrorModule::FS, 3423};
 constexpr Result ResultInvalidAesCtrCounterExtendedEntryOffset{ErrorModule::FS, 4012};
@@ -92,6 +94,7 @@ constexpr Result ResultUnsupportedSetSizeForIndirectStorage{ErrorModule::FS, 632
 constexpr Result ResultUnsupportedWriteForCompressedStorage{ErrorModule::FS, 6387};
 constexpr Result ResultUnsupportedOperateRangeForCompressedStorage{ErrorModule::FS, 6388};
 constexpr Result ResultPermissionDenied{ErrorModule::FS, 6400};
+constexpr Result ResultProgramInfoNotFound{ErrorModule::FS, 6605};
 constexpr Result ResultBufferAllocationFailed{ErrorModule::FS, 6705};
 
 } // namespace FileSys

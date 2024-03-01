@@ -225,23 +225,23 @@ Result FSP_SRV::OpenSdCardFileSystem(OutInterface<IFileSystem> out_interface) {
     R_SUCCEED();
 }
 
-Result FSP_SRV::CreateSaveDataFileSystem(FileSys::SaveDataCreationInfo save_create_struct,
-                                         FileSys::SaveDataAttribute save_struct, u128 uid) {
-    LOG_DEBUG(Service_FS, "called save_struct = {}, uid = {:016X}{:016X}", save_struct.DebugInfo(),
-              uid[1], uid[0]);
+Result FSP_SRV::CreateSaveDataFileSystem(FileSys::SaveDataMetaInfo meta_info,
+                                         FileSys::SaveDataCreationInfo creation_info,
+                                         FileSys::SaveDataAttribute attribute) {
+    LOG_DEBUG(Service_FS, "called save_struct = {}", attribute.DebugInfo());
 
     FileSys::VirtualDir save_data_dir{};
     R_RETURN(save_data_controller->CreateSaveData(&save_data_dir, FileSys::SaveDataSpaceId::User,
-                                                  save_struct));
+                                                  attribute));
 }
 
 Result FSP_SRV::CreateSaveDataFileSystemBySystemSaveDataId(
-    FileSys::SaveDataAttribute save_struct, FileSys::SaveDataCreationInfo save_create_struct) {
-    LOG_DEBUG(Service_FS, "called save_struct = {}", save_struct.DebugInfo());
+    FileSys::SaveDataAttribute attribute, FileSys::SaveDataCreationInfo save_create_struct) {
+    LOG_DEBUG(Service_FS, "called save_struct = {}", attribute.DebugInfo());
 
     FileSys::VirtualDir save_data_dir{};
     R_RETURN(save_data_controller->CreateSaveData(&save_data_dir, FileSys::SaveDataSpaceId::System,
-                                                  save_struct));
+                                                  attribute));
 }
 
 Result FSP_SRV::OpenSaveDataFileSystem(OutInterface<IFileSystem> out_interface,
