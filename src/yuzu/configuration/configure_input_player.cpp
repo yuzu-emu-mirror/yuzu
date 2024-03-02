@@ -370,6 +370,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         }
 
         connect(button, &QPushButton::clicked, [=, this] {
+            LOG_INFO(Frontend, "Wheee");
             HandleClick(
                 button, button_id,
                 [=, this](const Common::ParamPackage& params) {
@@ -442,6 +443,20 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                             button_map[button_id]->setText(ButtonToText(param));
                             emulated_controller->SetButtonParam(button_id, param);
                         });
+                        context_menu.addAction(tr("Toggle Offset"), [&] {
+                            int offset = param.Get("offset", 0);
+                            if (offset == 0) {
+                                LOG_INFO(Frontend, "Boosting offset/range");
+                                param.Set("offset", -1.0f);
+                                param.Set("range", 2);
+                            } else {
+                                LOG_INFO(Frontend, "Unboosting offset/range");
+                                param.Set("offset", 0);
+                                param.Set("range", 1);
+                            }
+                            button_map[button_id]->setText(ButtonToText(param));
+                            emulated_controller->SetButtonParam(button_id, param);
+                        });
                     }
                     context_menu.exec(button_map[button_id]->mapToGlobal(menu_location));
                 });
@@ -495,6 +510,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             emulated_controller->GetButtonParam(Settings::NativeButton::ZL);
         if (param.Has("threshold")) {
             const auto slider_value = ui->sliderZLThreshold->value();
+            ui->sliderZLThreshold->setToolTip(QString::number(ui->sliderZLThreshold->value()));
             param.Set("threshold", slider_value / 100.0f);
             emulated_controller->SetButtonParam(Settings::NativeButton::ZL, param);
         }
@@ -1470,6 +1486,7 @@ void ConfigureInputPlayer::HandleClick(
     QWidget::grabKeyboard();
 
     if (type == InputCommon::Polling::InputType::Button) {
+        LOG_INFO(Frontend, "Wheee");
         ui->controllerFrame->BeginMappingButton(button_id);
     } else if (type == InputCommon::Polling::InputType::Stick) {
         ui->controllerFrame->BeginMappingAnalog(button_id);

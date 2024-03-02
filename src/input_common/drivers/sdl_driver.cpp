@@ -723,6 +723,9 @@ Common::ParamPackage SDLDriver::BuildAnalogParamPackageForButton(int port, const
     params.Set("guid", guid.RawString());
     params.Set("axis", axis);
     params.Set("threshold", "0.5");
+    LOG_INFO(Frontend, "This didn't work");
+    params.Set("range", "2");
+    params.Set("offset", "-1.000000");
     params.Set("invert", value < 0 ? "-" : "+");
     return params;
 }
@@ -759,6 +762,7 @@ Common::ParamPackage SDLDriver::BuildMotionParam(int port, const Common::UUID& g
 
 Common::ParamPackage SDLDriver::BuildParamPackageForBinding(
     int port, const Common::UUID& guid, const SDL_GameControllerButtonBind& binding) const {
+    LOG_INFO(Frontend, "I thought this would get called when I bind the axis");
     switch (binding.bindType) {
     case SDL_CONTROLLER_BINDTYPE_NONE:
         break;
