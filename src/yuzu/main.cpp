@@ -185,6 +185,12 @@ extern "C" {
 __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
+#elif defined(__linux__)
+#include <QtX11Extras/QX11Info>
+#include <X11/Xlib.h>
+#undef KeyPress
+#undef None
+#undef Success
 #endif
 
 constexpr int default_mouse_hide_timeout = 2500;
@@ -5338,6 +5344,15 @@ int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "C");
 
     GMainWindow main_window{std::move(config), has_broken_vulkan};
+#if defined(__linux__)
+    if (QX11Info::isPlatformX11()) {
+        long disable_compositor = 1;
+        XChangeProperty(QX11Info::display(), static_cast<Window>(main_window.winId()),
+                        XInternAtom(QX11Info::display(), "_NET_WM_BYPASS_COMPOSITOR", false),
+                        XCB_ATOM_CARDINAL, 32, PropModeReplace, (unsigned char*)&disable_compositor,
+                        1);
+    }
+#endif
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 

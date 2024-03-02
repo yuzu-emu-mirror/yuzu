@@ -365,11 +365,15 @@ if(ENABLE_QT6 AND Qt6_LOCATION)
     list(APPEND CMAKE_PREFIX_PATH "${Qt6_LOCATION}")
 endif()
 
+if (UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+endif()
+
 function(set_yuzu_qt_components)
     # Best practice is to ask for all components at once, so they are from the same version
     set(YUZU_QT_COMPONENTS2 Core Widgets Concurrent)
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        list(APPEND YUZU_QT_COMPONENTS2 DBus)
+    if (UNIX AND NOT APPLE)
+        list(APPEND YUZU_QT_COMPONENTS2 DBus X11Extras)
     endif()
     if (YUZU_USE_QT_MULTIMEDIA)
         list(APPEND YUZU_QT_COMPONENTS2 Multimedia)

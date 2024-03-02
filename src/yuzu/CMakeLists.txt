@@ -386,11 +386,14 @@ target_link_libraries(yuzu PRIVATE Boost::headers glad Qt${QT_MAJOR_VERSION}::Wi
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 target_link_libraries(yuzu PRIVATE Vulkan::Headers)
+
 if (NOT WIN32)
     target_include_directories(yuzu PRIVATE ${Qt${QT_MAJOR_VERSION}Gui_PRIVATE_INCLUDE_DIRS})
 endif()
 if (UNIX AND NOT APPLE)
     target_link_libraries(yuzu PRIVATE Qt${QT_MAJOR_VERSION}::DBus)
+    target_link_libraries(yuzu PRIVATE Qt${QT_MAJOR_VERSION}X11Extras)
+    target_link_libraries(yuzu PRIVATE ${X11_LIBRARIES})
 endif()
 
 target_compile_definitions(yuzu PRIVATE
