@@ -5236,7 +5236,7 @@ static void SetHighDPIAttributes() {
 
     if (max_ratio > real_ratio) {
         QApplication::setHighDpiScaleFactorRoundingPolicy(
-            Qt::HighDpiScaleFactorRoundingPolicy::Round);
+            Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
     } else {
         QApplication::setHighDpiScaleFactorRoundingPolicy(
             Qt::HighDpiScaleFactorRoundingPolicy::Floor);
